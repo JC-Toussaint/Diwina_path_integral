@@ -1,0 +1,92 @@
+# FeeLLGood default configuration parameters.
+
+# This file documents the default configuration parameters used by
+# feeLLGood. It has the format and structure feeLLGood expects from the
+# user-supplied configuration file. It can thus be used as a template.
+#
+# The file format is YAML. Everything after a ‘#’ character is a
+# comment. Settings are organized in sections (YAML “objects”) which are
+# defined by the indentation, e.g:
+#
+#   outputs:                # ‘outputs’ section
+#     file_basename: foo    # a setting in the ‘outputs’ section
+#   mesh:                   # ‘mesh’ section
+#     filename: foo.msh     # a setting in the ‘mesh’ section
+#     volume_regions:       # a sub-section of ‘mesh’
+#       main_volume:        # a sub-section of ‘volume_regions’
+#         Ae: 1.5e-11       # a setting in the ‘main_volume’ section
+#
+# For a short primer on the YAML syntax, see
+# https://getopentest.org/reference/yaml-primer.html
+#
+# Some numeric values are unit-less, like the reduced magnetization. All
+# other values are in SI units.
+#
+# Unit vectors need not be of unit length: they will be normalized by
+# feeLLGood upon reading the file.
+
+# The ‘outputs’ section defines what data will be saved by feeLLGood,
+# and in which files.
+outputs:
+
+  # Directory where the output files will be stored. The default value
+  # (.) means the working directory where the feeLLGood process is
+  # started. If the directory does not exist, it will be created.
+  directory: .
+
+  # This string will be used as a prefix for the names of all generated
+  # files. Defaults to the base name of the mesh file.
+  file_basename:
+
+# Description of the meshed object.
+mesh:
+
+  # Name of the file containing the mesh. As there is no valid default,
+  # the user must provide this in their configuration file.
+  filename:
+
+  # Unit of length used in the mesh file, in meters.
+  length_unit: 1e-9
+
+  # Material parameters of the volume regions defined by the mesh. Each
+  # region is defined as a subsection of ‘volume_regions’.
+  volume_regions:
+
+    # Defaults that apply to all regions. Note that ‘__default__’ is not
+    # a valid region name: it is a placeholder for the defaults. In the
+    # user-supplied configuration file, ‘__default__’ should be replaced
+    # by the region name.
+    __default__:
+
+      # Saturation magnetization times µ₀, in tesla.
+      Js: 1
+
+      #i XMCD absorption parameters:
+      lbp: 0.01
+      lbm: 0.018
+
+  # Material parameters of the surface regions defined by the mesh.
+  surface_regions:
+
+    # Defaults that apply to all regions. Again, ‘__default__’ is a
+    # placeholder, not a valid region name.
+    __default__:
+
+# The initial magnetization can be provided as either:
+# - the name of a file in feeLLGood’s format (‘.sol’ file)
+# - an array of three expression depending on the Cartesian spatial
+#   coordinates (x, y, z); the expression may be constants.
+initial_magnetization: [0, 0, 1]
+
+# Rotation angles in degrees, and respective axes.
+rotations:
+  angle1: 0
+  axe1: [0, 0, 1]
+  angle2: 0
+  axe2: [0, 0, 1]
+
+filled: false
+
+detector:
+  zoom: 1
+  meshSize: 1e-9
