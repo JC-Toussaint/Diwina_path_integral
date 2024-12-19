@@ -12,7 +12,6 @@ sphere = meshMaker.Ellipsoid(r,r,meshSize,"sphere_surface","sphere_volume")
 sphere.make("smoke-test.msh")
 
 val = subprocess.run(["./pathIntegral","smoke-test.yml"], text=True)
-success = not(val.returncode)
 
 # Use ANSI colors if printing to a terminal.
 if sys.stdout.isatty():
@@ -24,8 +23,26 @@ else:
     red    = ""
     normal = ""
 
-# Report success status.
-if success:
+num_ref_line = 70000
+values = [num_ref_line, -2.8001436037e-08, -2.8001436037e-08, 1, 1.8363100675e-07, 0, 0, 1.4612891207e-01, 6.2582530362e-01]
+okVals = False
+tol = 1e-8
+if(val.returncode == 0):
+    with open("smoke-test_M_integrals.out",'r') as f:
+        nb_lig = 0;
+        for line in f:
+            if (nb_lig <num_ref_line):
+                nb_lig += 1
+                pass
+            else:
+                break
+        data = line.split()
+    okVals = True
+    for i in range(len(data)):
+        okVals = ( okVals and ( abs(values[i] - float(data[i]) ) < tol ) )
+
+    # Report success status.
+if ((val.returncode == 0) and okVals):
     print(f"test {green}PASSED{normal}")
     sys.exit(0)
 else:
