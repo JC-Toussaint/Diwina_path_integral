@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <unistd.h>  // for sysconf(), gethostname()
 
@@ -272,11 +273,20 @@ void Settings::read(YAML::Node yaml)
 
 bool Settings::read(std::string filename)
     {
-    YAML::Node config;
+    std::ostringstream buffer;
     if (filename == "-")
-        config = YAML::Load(std::cin);
+        {
+        buffer << std::cin.rdbuf();
+        }
     else
-        config = YAML::LoadFile(filename);
+        {
+        std::ifstream input(filename, std::ios::in);
+        buffer << input.rdbuf();
+        input.close();
+        }
+    yaml_source = buffer.str();
+
+    YAML::Node config = YAML::Load(yaml_source);
     if (config.IsNull()) return false;
     read(config);
     return true;

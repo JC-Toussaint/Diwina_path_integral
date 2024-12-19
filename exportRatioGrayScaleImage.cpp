@@ -16,11 +16,12 @@
 #include <unordered_map>
 #include <functional>
 
+#include "config.h"
 #include "fem2d.h"
 #include "write_png.h"
 
 // Private method for managing export
-int Fem2d::handleExport(const std::string &simName, ExportType eType, const std::function<double(const Node2d&)>& valueExtractor) {
+int Fem2d::handleExport(const Settings &settings, ExportType eType, const std::function<double(const Node2d&)>& valueExtractor) {
     const int NOD = node.size();
     const int N = static_cast<int>(sqrt(static_cast<double>(NOD)));
     if (NOD != N * N) {
@@ -50,15 +51,15 @@ int Fem2d::handleExport(const std::string &simName, ExportType eType, const std:
 
     switch (eType) {
    	case ExportType::CONTRAST:
-		filename=simName+"_STXM_XMCD.png";
+		filename=settings.getSimName()+"_STXM_XMCD.png";
 		unit = "dimless";
 		break;
 	case ExportType::MZ_INTEGRAL:
-		filename=simName+"_MZ.png";
+		filename=settings.getSimName()+"_MZ.png";
 		unit = "A";
 		break;
 	case ExportType::PATH_LENGTH:
-		filename=simName+"_PATH_LENGTH.png";
+		filename=settings.getSimName()+"_PATH_LENGTH.png";
 		unit = "m";
 		break;
 	default:
@@ -73,7 +74,11 @@ int Fem2d::handleExport(const std::string &simName, ExportType eType, const std:
         .pixels = pixels,
         .pixel_size = meshSize,
         .unit = unit,
-        .metadata = {}
+        .metadata = {
+            {"Software", "pathIntegral"},
+            {"Version", pathIntegral_version},
+            {"Simulation parameters", settings.yaml_source}
+        }
     };
 
     // Saving image
@@ -90,7 +95,7 @@ int Fem2d::handleExport(const std::string &simName, ExportType eType, const std:
     return 0;
 }
 
-int Fem2d::exportRatioGrayScaleImage(const std::string &simName, ExportType eType) {
+int Fem2d::exportRatioGrayScaleImage(const Settings &settings, ExportType eType) {
     // Map of extraction functions associated with each type
     static const std::unordered_map<ExportType, std::function<double(const Node2d&)>> valueExtractors = {
         {ExportType::CONTRAST,    [](const Node2d& node) { return node.contrast; }},
@@ -106,6 +111,6 @@ int Fem2d::exportRatioGrayScaleImage(const std::string &simName, ExportType eTyp
     }
 
     // Apply the right extractor
-    return handleExport(simName, eType, it->second);
+    return handleExport(settings, eType, it->second);
 }
 

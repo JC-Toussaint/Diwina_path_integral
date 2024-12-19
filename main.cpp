@@ -280,9 +280,9 @@ int main(int argc, char *argv[])
 	// exporting Magnetization integrals along the beam
  	fem2d.exportMagIntegrals(mySettings.getSimName());
 
-    fem2d.exportRatioGrayScaleImage(mySettings.getSimName(), ExportType::CONTRAST);
-	fem2d.exportRatioGrayScaleImage(mySettings.getSimName(), ExportType::MZ_INTEGRAL);
-	fem2d.exportRatioGrayScaleImage(mySettings.getSimName(), ExportType::PATH_LENGTH);
+    fem2d.exportRatioGrayScaleImage(mySettings, ExportType::CONTRAST);
+	fem2d.exportRatioGrayScaleImage(mySettings, ExportType::MZ_INTEGRAL);
+	fem2d.exportRatioGrayScaleImage(mySettings, ExportType::PATH_LENGTH);
 
 	double total_time = counter.fp_elapsed();
 	std::cout << "\nComputing time: " << counter.convertSeconds(total_time);

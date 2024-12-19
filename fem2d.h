@@ -8,6 +8,8 @@
 
 #include <eigen3/Eigen/Dense>
 
+#include "settings.h"
+
 enum class ExportType { CONTRAST=0, MZ_INTEGRAL, PATH_LENGTH };
 
 struct Node2d
@@ -76,7 +78,7 @@ public:
 
     inline int getNbNode(void) const { return node.size(); }
 
-	int exportRatioGrayScaleImage(const std::string &simName, ExportType eType);
+	int exportRatioGrayScaleImage(const Settings &settings, ExportType eType);
     int exportMagIntegrals(const std::string &simName);
 
 	/** getter : return node.p */
@@ -202,6 +204,6 @@ private:
     - const std::function<double(const Node2d&)>& valueExtractor: A callable function (or lambda) that
       specifies how to extract the desired data from a Node2d object.
 	*/
-	int handleExport(const std::string &simName, ExportType eType, const std::function<double(const Node2d&)>& valueExtractor);
+	int handleExport(const Settings &settings, ExportType eType, const std::function<double(const Node2d&)>& valueExtractor);
 };
 #endif

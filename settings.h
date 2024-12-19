@@ -67,6 +67,9 @@ public:
     /** getter for geometrical scaling factor for physical coordinates of the mesh */
     inline double getScale(void) const { return _scale; }
 
+    /** YAML source of these settings. **/
+    std::string yaml_source;
+
     /** boolean flag to mention if you want output in txt tsv file format */
     bool withTsv;
 
