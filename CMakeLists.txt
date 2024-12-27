@@ -6,6 +6,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# settings for fortran
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -std=f2018")
+SET (CMAKE_Fortran_COMPILER  gfortran)
+ENABLE_LANGUAGE(Fortran)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS OFF) # ON to get a .json with compiler calls for all targets
 
 find_library(GMSH_LIB gmsh)
@@ -52,6 +57,30 @@ if(NOT ${ENABLE_SEQ})
         message(WARNING "sequential mode is active")
         set(ENABLE_SEQ TRUE)
     endif()
+endif()
+
+#===========================================================================
+# TinyXML2 integration (installed in /usr/local)
+#===========================================================================
+# Add /usr/local to the search paths
+set(CMAKE_PREFIX_PATH "/usr/local" ${CMAKE_PREFIX_PATH})
+set(CMAKE_LIBRARY_PATH "/usr/local/lib" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/usr/local/include" ${CMAKE_INCLUDE_PATH})
+
+# Locate tinyxml2 manually
+find_path(TINYXML2_INCLUDE_DIR tinyxml2.h PATHS /usr/local/include)
+if(NOT TINYXML2_INCLUDE_DIR)
+    message(FATAL_ERROR "Could not find tinyxml2.h in /usr/local/include")
+else()
+    message(STATUS "Found tinyxml2 include directory: ${TINYXML2_INCLUDE_DIR}")
+    include_directories(${TINYXML2_INCLUDE_DIR})
+endif()
+
+find_library(TINYXML2_LIBRARY tinyxml2 PATHS /usr/local/lib)
+if(NOT TINYXML2_LIBRARY)
+    message(FATAL_ERROR "Could not find the tinyxml2 library in /usr/local/lib")
+else()
+    message(STATUS "Found tinyxml2 library: ${TINYXML2_LIBRARY}")
 endif()
 
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
@@ -102,7 +131,10 @@ SET(HEADERS config.h node.h  expression_parser.h mesh.h
     chronometer.h element.h geo.h fem2d.h write_png.h pathIntegral.h)
 
 SET(SOURCES settings.cpp read.cpp tetra.cpp expression_parser.cpp chronometer.cpp
-    tags.cpp write_png.cpp exportRatioGrayScaleImage.cpp exportMagIntegrals.cpp pathIntegral.cpp)
+    tags.cpp write_png.cpp exportRatioGrayScaleImage.cpp exportMagIntegrals.cpp chapeaux.cpp fmm2d_sum.cpp femutil.cpp correction.cpp 
+    exportHoloPhase.cpp exportRatioRGBscaleImage.cpp pathIntegral.cpp)
+
+set(SOURCES_FORTRAN rfmm2d.f90)
 
 configure_file(config.h.in ./config.h)
 
@@ -118,10 +150,11 @@ add_custom_command(
 # -fsanitize=address leak null undefined # both compiler and linker
 #===========================================================================
 
-ADD_EXECUTABLE(pathIntegral main.cpp ${HEADERS} ${SOURCES} default-settings.o)
+ADD_EXECUTABLE(pathIntegral main.cpp ${HEADERS} ${SOURCES} ${SOURCES_FORTRAN} default-settings.o)
 target_compile_options( pathIntegral PUBLIC -Wall -Wextra -O3 -march=native )
 target_compile_definitions(pathIntegral PUBLIC -DCGAL_HAS_THREADS -DNDEBUG -DTBB_SUPPRESS_DEPRECATED_MESSAGES )
-target_link_libraries(pathIntegral yaml-cpp duktape ${TBB_LINK} Eigen3::Eigen ${GMSH_LIB})
+target_link_libraries(pathIntegral yaml-cpp duktape ${TBB_LINK} Eigen3::Eigen ${GMSH_LIB} ${TINYXML2_LIBRARY} 
+	-lfmm2d -lgfortran -lm -lblas -llapack)
 
 #===========================================================================
 

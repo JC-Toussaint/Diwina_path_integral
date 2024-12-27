@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
 	Fem2d fem2d(fem.msh.c, fem.msh.l, mySettings.p_detector.zoomFactor, mySettings.p_detector.meshSize);
 	fem2d.infos();
 
-	std::vector<int> nodeIndices(fem2d.getNbNode());
+	std::vector<int> nodeIndices(fem2d.getNbNodes());
 	std::iota(nodeIndices.begin(), nodeIndices.end(), 0);
 
 	std::for_each(std::execution::par, nodeIndices.begin(), nodeIndices.end(),
@@ -286,5 +286,19 @@ int main(int argc, char *argv[])
 
 	double total_time = counter.fp_elapsed();
 	std::cout << "\nComputing time: " << counter.convertSeconds(total_time);
+
+        for (auto& node : fem2d.getNodes()){ //recuperation des numeros et aimantations integrees pour chaque noeud du maillage 2d
+                /* M' = ez x M  => Mx'=-My  My'=Mx */
+                node.Mx = -node.My_integral;
+                node.My = +node.Mx_integral;
+        }
+	fem2d.util();
+	
+	std::cout << "Fast Multipole Calculation\n";
+    int ierr = pot2D::fmm2d_sum(fem2d);
+    std::cout << "fmm2D returned " << ierr << std::endl;
+
+ 	fem2d.exportHoloPhase(mySettings.getSimName());
+ 	fem2d.exportRatioRGBscaleImage(mySettings, ExportType::HOLO_PHASE);
 	return 0;
 }

@@ -8,42 +8,99 @@
 
 #include <eigen3/Eigen/Dense>
 
+#include <boost/format.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
+
 #include "settings.h"
 
-enum class ExportType { CONTRAST=0, MZ_INTEGRAL, PATH_LENGTH };
+const double VACUUM_PERMEABILITY = 1.25663706144e-6; /* kg m / A^2 s^2   */
+const double PLANCKS_H          = 6.62606896e-34;   /* kg m^2 / s */
+const double PLANCKS_HBAR       = 1.05457162825e-34; /* kg m^2 / s */
+const double CHARGE_ELECTRON    = 1.602176487e-19;   /* C */
+
+enum class ExportType { CONTRAST=0, MZ_INTEGRAL, PATH_LENGTH, HOLO_PHASE };
 
 struct Node2d
     {
 	Eigen::Vector2d p;  /**< Physical position p=(x,y)  of the node in the z plane*/
+	/** the flag_inside attribute is set to 1 if the node is inside the projected geometry
+            of the 3D micromagnetic system in the Oxy plane; otherwise 0 */
 	int flag_inside;
+        /** path length through the magnetic materials */ 
 	double path_length;
+	/** magnetization components integrated along beam */
 	double Mx_integral, My_integral, Mz_integral;
+	/** STXM contrast */
 	double contrast;
+	double Mx, My; // for holography phase calculations
+	/** Magnetic part of the Holography phase */
+    double sol;
     };
 
-class Tri
-    {
-    public:
-	static const int NBN = 3;
+namespace Triangle {
+	static const int NBN = 3, NPI = 3;
+	static constexpr double u[NPI] {1/6., 2/3., 1/6.};
+	static constexpr double v[NPI] {1/6., 1/6., 2/3.};
+	static constexpr double pds[NPI]   {1/6., 1/6., 1/6.};
 
-	/** Constructor */
-	Tri(std::initializer_list<int> _i)
-	    {
-		if (_i.size() != NBN)
-		    { throw std::invalid_argument("Initializer list must contain exactly 3 elements."); }
-		ind.assign(_i.begin(), _i.end());
-		zeroBasing(); // Passage de la convention Matlab/msh à C++
-	    }
+    /** Interpolation polynomials */
+    static constexpr double a[NBN][NPI] = {
+        		{1. - u[0] - v[0], 1. - u[1] - v[1], 1. - u[2] - v[2]},
+        		{u[0], u[1], u[2]},
+        		{v[0], v[1], v[2]}};
+	class Tri
+		{
+		public:
+        
+		/** Constructor */
+		Tri(std::initializer_list<int> _i): surf(0), detJ(0), overlap(false)
+			{
+			if (_i.size() != NBN)
+				{ throw std::invalid_argument("Initializer list must contain exactly 3 elements."); }
+			ind.assign(_i.begin(), _i.end());
+			zeroBasing(); // Passage de la convention Matlab/msh à C++
+			}
 
-	/** Getter for indices */
-	const std::vector<int>& getIndices() const { return ind; }
+		/** Getter for indices */
+		const std::vector<int>& getIndices() const { return ind; }
 
-    private:
-	    std::vector<int> ind;
+		int getIndice(int i) const { 
+			if (i < 0 || i >= NBN) {
+			   throw std::out_of_range("Index out of bounds in getIndice");
+		       }
+		    return ind[i]; 
+		    }
 
-	/** zeroBasing: index convention Matlab/msh (one-based) -> C++ (zero-based) */
-	    inline void zeroBasing() { for (int& index : ind) { --index; } }
-    };
+        /** surface of the element */
+        double surf;
+
+        /** determinant(J) */
+        double detJ;
+		    
+		/** points de gauss */
+		double x[NPI], y[NPI];
+
+		/** poids de gauss x detJ */
+		double weight[NPI];
+
+		void chapeaux(std::vector<Node2d> &node);
+
+        /** initialize surf to the surface of the triangle, re-orientate if needed */
+        void calc_surf(std::vector<Node2d> &node);
+
+        /** The overlap attribute is set to true if the triangle overlaps the projected geometry 
+        of the 3D micromagnetic system in the Oxy plane; otherwise false */
+        bool overlap;
+
+		private:
+			std::vector<int> ind;
+
+		/** zeroBasing: index convention Matlab/msh (one-based) -> C++ (zero-based) */
+			inline void zeroBasing() { for (int& index : ind) { --index; } }
+		};
+    }
 
 class Fem2d
 {
@@ -66,6 +123,10 @@ public:
 		l = Eigen::Vector2d(xymax-xymin, xymax-xymin);
 		c = Eigen::Vector2d(0.5 * (xymax + xymin), 0.5 * (xymax + xymin));
 		grid_generator(xymin, xymax, meshSize);
+		chapeaux();
+		
+		CE=0; /* A REVOIR */
+		V=0;
 	    }
 
     inline void infos(void) const
@@ -76,16 +137,20 @@ public:
 	    std::cout << "-- zoom     : " << zoomFactor << std::endl;
         }
 
-    inline int getNbNode(void) const { return node.size(); }
-
+    inline int getNbNodes(void) const { return node.size(); }
+    inline int getNbTriangles(void) const { return tri.size(); }
+    
 	int exportRatioGrayScaleImage(const Settings &settings, ExportType eType);
+	int exportRatioRGBscaleImage(const Settings &settings, ExportType eType);
+	
     int exportMagIntegrals(const std::string &simName);
+    int exportHoloPhase(const std::string &simName);
 
 	/** getter : return node.p */
 	inline const Eigen::Vector2d getNode_p(const int i) const { return node[i].p; }
 
 	// Getter for the entire vector of nodes
-	inline const std::vector<Node2d>& getNodes() const { return node; }
+	inline std::vector<Node2d>& getNodes() { return node; }
 
 	// Getter to get a non constant reference 
 	inline Node2d& getNode(const int i) {
@@ -94,6 +159,26 @@ public:
 		}
 		return node[i];
 	}
+
+	// Getter to get a non constant reference 
+	inline Triangle::Tri& getTri(const int t) {
+		if (t < 0 || t >= static_cast<int>(tri.size())) {
+			throw std::out_of_range("Index out of bounds in getTri");
+		}
+		return tri[t];
+	}
+	
+    /** fix member sol to zero for all nodes in vector node */
+    void zero_node_sol(void);
+
+    /** Calculation of the number of active sources */
+    int calc_nb_active_sources(void);
+
+    /** initialize many data structures in both Fem2d struct but also triangles */
+    void util(void);
+    
+    /** call chapeaux member function for all triangles */
+    void chapeaux(void);
 
 	/** isobarycenter */
 	Eigen::Vector2d c;
@@ -106,13 +191,21 @@ public:
 	
 	/** triangular mesh size */
 	double meshSize;
+	
+	double surf;
+	
+    /** electric constant */
+    double CE;
+
+    /** applied potential */
+    double V;
 
 private:
 	/** 2d nodes */
 	std::vector<Node2d> node;
 
 	/** 2d triangles */
-	std::vector<Tri> tri;
+	std::vector<Triangle::Tri> tri;
 
 	/**
 	using gmsh geo, rectangle method buids a triangular mesh of a rectangle ((xmin,ymin),(xmax,ymax)) in 3D space,
@@ -191,7 +284,7 @@ private:
 			int i0 = elemNodeTags[0][i+0];
 			int i1 = elemNodeTags[0][i+1];
 			int i2 = elemNodeTags[0][i+2];
-			Tri tri_({i0, i1, i2});
+			Triangle::Tri tri_({i0, i1, i2});
 			tri.push_back(tri_);
 		    }
 		gmsh::finalize();
@@ -205,5 +298,30 @@ private:
       specifies how to extract the desired data from a Node2d object.
 	*/
 	int handleExport(const Settings &settings, ExportType eType, const std::function<double(const Node2d&)>& valueExtractor);
+	int handleRGBexport(const Settings &settings, ExportType eType, const std::function<double(const Node2d&)>& valueExtractor);
 };
+
+/** return square */
+inline constexpr double sq(const double x) {return x*x;}
+
+namespace pot2D {
+    const int NB_PTS_INTEGRATION = 4;// ATTENTION 4 points d'integration != Tri::NPI
+    constexpr double ksi = 1.0/sqrt(3.0);
+    constexpr double u[] {0.50*(1.0-ksi), 0.50*(1.0-ksi), 0.50*(1.0+ksi), 0.50*(1.0+ksi)};
+    constexpr double v[] {0.25*sq(1.0-ksi), 0.25*(1.0-sq(ksi)), 0.25*(1.0-sq(ksi)), 0.25*sq(1.0+ksi) };
+    constexpr double w[] {0.125*(1.0-ksi), 0.125*(1.0-ksi), 0.125*(1.0+ksi), 0.125*(1.0+ksi)};
+    const int perm[][Triangle::NBN]={{0, 1, 2}, {1, 2, 0}, {2, 0, 1}}; // toutes les permutations circulaires
+
+    /** probably some tree depth that defines the precision */
+    const int IPREC = 4;
+
+    /** computation using fmm in 2D */ 
+    int fmm2d_sum(Fem2d &fem);
+
+    /** correction function for triangle number t */
+    void correction(Fem2d &fem,Triangle::Tri &t,double xk,double yk,double Mxk,double Myk,double wk_detJk);
+
+    /** compute the whole correction */
+    void integre_correction(Fem2d &fem,Triangle::Tri &t);
+    }
 #endif

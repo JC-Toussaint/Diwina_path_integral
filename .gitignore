@@ -9,10 +9,13 @@ config.h
 default-settings.o
 pathIntegral
 install_manifest.txt
+glue.mod
 
 # Smoke test
 detector.msh
 smoke-test.msh
+smoke-test_HOLO_PHASE.png
+smoke-test_Holo.out
 smoke-test_MZ.png
 smoke-test_M_integrals.out
 smoke-test_PATH_LENGTH.png

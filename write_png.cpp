@@ -15,6 +15,36 @@
 
 #include "write_png.h"
 
+using Palette = std::array<png_color, 256>;
+
+static png_color interpolate_colormap(const Colormap& colormap, double value) {
+    size_t i;
+    for (i = 1; i < colormap.size(); ++i) {
+        if (value <= colormap[i].first)
+            break;
+    }
+    ColormapEntry left = colormap[i - 1];
+    ColormapEntry dummy = ColormapEntry{2, left.second};  // for the case value==1
+    ColormapEntry right = (i == colormap.size()) ? dummy : colormap[i];
+    const auto& [val0, color0] = left;
+    const auto& [val1, color1] = right;
+    double t = (value - val0) / (val1 - val0);
+
+    return {
+        static_cast<uint8_t>((color0[0] + t * (color1[0] - color0[0])) * 255 + 0.5),
+        static_cast<uint8_t>((color0[1] + t * (color1[1] - color0[1])) * 255 + 0.5),
+        static_cast<uint8_t>((color0[2] + t * (color1[2] - color0[2])) * 255 + 0.5)
+    };
+}
+
+static Palette build_palette(const Colormap &colormap)
+{
+    Palette palette;
+    for (int i = 0; i < 256; ++i)
+        palette[i] = interpolate_colormap(colormap, i / 255.0);
+    return palette;
+}
+
 static std::string number_to_string(double x, int precision = 6) {
     std::ostringstream stream;
     stream << std::setprecision(precision) << x;
@@ -35,11 +65,36 @@ std::pair<double, double> find_min_max(const std::vector<std::vector<double>>& m
     return {min, max};
 }
 
-void write_png_image(std::ofstream& f, const Image& image) {
+// Add the image data and actually write the image file. The template parameter should be either:
+//  - uint8_t for an 8-bit palette-based image
+//  - uint16_t for a 16-bit grayscale image
+template <typename T>
+static void write_image_data(png_structp png_ptr, png_infop info_ptr,
+        const Image& image, double min, double max) {
+    std::vector<std::vector<T>> png_pixels(image.height, std::vector<T>(image.width));
+    const T type_max = std::numeric_limits<T>::max();
+    for (int i = 0; i < image.height; ++i) {
+        for (int j = 0; j < image.width; ++j) {
+            double value = (image.pixels[i][j] - min) / (max - min);
+            png_pixels[i][j] = static_cast<T>(value * type_max + 0.5);  // round to nearest
+        }
+    }
+    std::vector<png_bytep> row_pointers(image.height);
+    for (int i = 0; i < image.height; ++i) {
+        row_pointers[i] = reinterpret_cast<png_bytep>(png_pixels[i].data());
+    }
+    // The two calls below have to be kept inside this template in order for row_pointers to remain
+    // valid until the file is fully written.
+    png_set_rows(png_ptr, info_ptr, row_pointers.data());
+    png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_SWAP_ENDIAN, nullptr);
+}
+
+void write_png_image(std::ofstream& f, const Image& image, const Colormap &colormap) {
     // Convenience variables.
     int width = image.width;
     int height = image.height;
     const std::vector<std::vector<double>>& pixels = image.pixels;
+    bool use_palette = !colormap.empty();
 
     // Grab current time.
     std::time_t now = std::time(nullptr);
@@ -132,17 +187,21 @@ void write_png_image(std::ofstream& f, const Image& image) {
         stream->write(reinterpret_cast<const char*>(data), length);
     }, nullptr);
 
-    png_set_IHDR(png_ptr, info_ptr, width, height, 16, PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE,
+    int bit_depth = use_palette ? 8 : 16;
+    int color_type = use_palette ? PNG_COLOR_TYPE_PALETTE : PNG_COLOR_TYPE_GRAY;
+    png_set_IHDR(png_ptr, info_ptr, width, height, bit_depth, color_type, PNG_INTERLACE_NONE,
                  PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
     // Add physical scale.
     png_set_sCAL(png_ptr, info_ptr, PNG_SCALE_METER, image.pixel_size, image.pixel_size);
 
-    // Add pixel calibration data.
-    const int pCAL_nparams = 2;
-    char* pCAL_params[2] = { const_cast<char*>(str_min.c_str()), const_cast<char*>(str_range.c_str()) };
-    png_set_pCAL(png_ptr, info_ptr, "Physical", 0, UINT16_MAX, PNG_EQUATION_LINEAR, pCAL_nparams,
-                 image.unit.c_str(), pCAL_params);
+    // Add pixel calibration data on 16-bit images.
+    if (!use_palette) {
+        const int pCAL_nparams = 2;
+        char* pCAL_params[2] = { const_cast<char*>(str_min.c_str()), const_cast<char*>(str_range.c_str()) };
+        png_set_pCAL(png_ptr, info_ptr, "Physical", 0, UINT16_MAX, PNG_EQUATION_LINEAR, pCAL_nparams,
+                     image.unit.c_str(), pCAL_params);
+    }
 
     // Add creation time as tIME (image last-modification time).
     png_time creation_time;
@@ -184,22 +243,14 @@ void write_png_image(std::ofstream& f, const Image& image) {
     }
     png_set_text(png_ptr, info_ptr, comments.data(), comments.size());
 
-    // Prepare image data.
-    std::vector<std::vector<uint16_t>> png_pixels(height, std::vector<uint16_t>(width));
-    for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < width; ++j) {
-            png_pixels[i][j] = static_cast<uint16_t>(((pixels[i][j] - min) / (max - min) * UINT16_MAX) + 0.5);
-        }
+    // Write the image pixels.
+    if (use_palette) {
+        Palette palette = build_palette(colormap);
+        png_set_PLTE(png_ptr, info_ptr, palette.data(), 256);
+        write_image_data<uint8_t>(png_ptr, info_ptr, image, min, max);
+    } else {
+        write_image_data<uint16_t>(png_ptr, info_ptr, image, min, max);
     }
-
-    std::vector<png_bytep> row_pointers(height);
-    for (int i = 0; i < height; ++i) {
-        row_pointers[i] = reinterpret_cast<png_bytep>(png_pixels[i].data());
-    }
-    png_set_rows(png_ptr, info_ptr, row_pointers.data());
-
-    // Write the file.
-    png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_SWAP_ENDIAN, nullptr);
 
     // Cleanup.
     png_destroy_write_struct(&png_ptr, &info_ptr);
