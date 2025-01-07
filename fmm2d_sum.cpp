@@ -10,10 +10,41 @@ extern "C"{
 void rfmm2d(int *ierr, int *iprec, int *nsource, double *source, double* dipstr, double *dipvec, int *ntarget, double *target, double *pottarg);
 }
 
-static void processTriangles(FEM &fem, std::vector<double> &source, std::vector<double> &dipstr, std::vector<double> &dipvec) {
-    const int NPI = Triangle::NPI; // Nombre de points d'intégration
-    const int NDIM = 2; // Dimension spatiale
-    constexpr double VACUUM_PERMEABILITY = 1.2566370614e-6; // Exemple de perméabilité du vide
+    
+int pot2D::fmm2d_sum(Fem2d &fem)
+{
+	std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
+	std::chrono::duration<double,std::milli> micros;
+
+	const int NDIM = 2;
+	//const int NOD = fem.node.size();
+	const int NOD = fem.getNbNodes();
+	//const int TRI = fem.tri.size();
+	const int TRI = fem.getNbTriangles();
+	const int NPI = Triangle::NPI;
+
+	std::cout << "DEBUG " << TRI << " " << NPI << std::endl;
+
+	start = std::chrono::high_resolution_clock::now();
+
+	int nsource = fem.calc_nb_active_sources();
+	std::vector<double> source(NDIM*nsource);
+	std::vector<double> dipstr(nsource);
+	std::vector<double> dipvec(NDIM*nsource);
+
+	int ntarget = NOD;
+	std::vector<double> target(NDIM*ntarget);
+	std::vector<double> pottarg(ntarget); // pottarg[i] is the potential at the ith target
+
+	std::cout << "nb of sources & targets : " << nsource << " " << ntarget << std::endl;
+
+	fem.zero_node_sol();
+
+	for (int i=0; i<NOD; i++)
+	{
+		target[NDIM*i+0] = fem.getNode(i).p[0];
+		target[NDIM*i+1] = fem.getNode(i).p[1];
+	}
 
     // Lambda pour traiter chaque triangle
     auto processTriangle = [&](int t) {
@@ -53,41 +84,6 @@ static void processTriangles(FEM &fem, std::vector<double> &source, std::vector<
         integre_correction(fem, tri);
     };
     
-int pot2D::fmm2d_sum(Fem2d &fem)
-{
-	std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
-	std::chrono::duration<double,std::milli> micros;
-
-	const int NDIM = 2;
-	//const int NOD = fem.node.size();
-	const int NOD = fem.getNbNodes();
-	//const int TRI = fem.tri.size();
-	const int TRI = fem.getNbTriangles();
-	const int NPI = Triangle::NPI;
-
-	std::cout << "DEBUG " << TRI << " " << NPI << std::endl;
-
-	start = std::chrono::high_resolution_clock::now();
-
-	int nsource = fem.calc_nb_active_sources();
-	std::vector<double> source(NDIM*nsource);
-	std::vector<double> dipstr(nsource);
-	std::vector<double> dipvec(NDIM*nsource);
-
-	int ntarget = NOD;
-	std::vector<double> target(NDIM*ntarget);
-	std::vector<double> pottarg(ntarget); // pottarg[i] is the potential at the ith target
-
-	std::cout << "nb of sources & targets : " << nsource << " " << ntarget << std::endl;
-
-	fem.zero_node_sol();
-
-	for (int i=0; i<NOD; i++)
-	{
-		target[NDIM*i+0] = fem.getNode(i).p[0];
-		target[NDIM*i+1] = fem.getNode(i).p[1];
-	}
-
 // Création d'un vecteur des indices des triangles
     int NbTriWithSources = fem.getNbTrianglesWithSources();
     std::vector<int> triangleIndices(NbTriWithSources);
