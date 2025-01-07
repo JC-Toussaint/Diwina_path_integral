@@ -17,16 +17,12 @@ int pot2D::fmm2d_sum(Fem2d &fem)
 	std::chrono::duration<double,std::milli> micros;
 
 	const int NDIM = 2;
-	//const int NOD = fem.node.size();
 	const int NOD = fem.getNbNodes();
-	//const int TRI = fem.tri.size();
-	const int TRI = fem.getNbTriangles();
 	const int NPI = Triangle::NPI;
 
-	std::cout << "DEBUG " << TRI << " " << NPI << std::endl;
-
 	start = std::chrono::high_resolution_clock::now();
-
+	std::cout << "start\n";
+	
 	int nsource = fem.calc_nb_active_sources();
 	std::vector<double> source(NDIM*nsource);
 	std::vector<double> dipstr(nsource);
@@ -92,10 +88,6 @@ int pot2D::fmm2d_sum(Fem2d &fem)
     // Parallélisation avec std::for_each et exécution parallèle
     std::for_each(std::execution::par, triangleIndices.begin(), triangleIndices.end(), processTriangle);
 	
-	int ns = fem.getNbTrianglesWithSources()*NPI;
-	std::cout << "DEBUG ns & nsource : " << ns << " " << nsource << std::endl;
-	assert(ns==nsource);
-
 	end = std::chrono::high_resolution_clock::now();
 	micros = end-start;
 	std::cout << std::endl << boost::format("%5t initialization time %50T. ");
@@ -104,7 +96,7 @@ int pot2D::fmm2d_sum(Fem2d &fem)
 
 	start = std::chrono::high_resolution_clock::now();
 
-	int ierr;
+	int ierr=0;
 	int iprec{pot2D::IPREC};
 	rfmm2d(&ierr, &iprec, &nsource, source.data(), dipstr.data(), dipvec.data(), &ntarget, target.data(), pottarg.data());
 
