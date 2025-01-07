@@ -168,6 +168,14 @@ public:
 		}
 		return tri[t];
 	}
+
+	// Getter to get a non constant reference to the triangle t with sources
+	inline Triangle::Tri& getTriWithSources(const int t) {
+		if (t < 0 || t >= static_cast<int>(triWithSources.size())) {
+			throw std::out_of_range("Index out of bounds in getTri");
+		}
+		return triWithSources[t];
+	}
 	
     /** fix member sol to zero for all nodes in vector node */
     void zero_node_sol(void);
