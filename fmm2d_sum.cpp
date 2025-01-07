@@ -44,6 +44,39 @@ int pot2D::fmm2d_sum(Fem2d &fem)
 	}
 
 	int ns=0;
+	for (const Triangle::Tri &tri : triWithSources)
+	{
+		for (int k=0; k<NPI; k++)
+		{
+			double xk = tri.x[k];
+			double yk = tri.y[k];
+			double wk_detJk = tri.weight[k];
+
+			double Mxk = 0;
+			double Myk = 0;
+			for (int ie=0; ie < Triangle::NBN; ie++){
+				int i=tri.getIndice(ie);
+				Node2d &node=fem.getNode(i);
+				Mxk += Triangle::a[ie][k]*node.Mx;
+				Myk += Triangle::a[ie][k]*node.My;
+			}
+
+			source[NDIM*ns+0] = xk;
+			source[NDIM*ns+1] = yk;
+
+			dipstr[ns] = VACUUM_PERMEABILITY/(2.0*M_PI)*wk_detJk;
+			dipvec[NDIM*ns+0] = Mxk;
+			dipvec[NDIM*ns+1] = Myk;
+			ns++;
+
+			correction(fem, tri, xk, yk, Mxk, Myk, wk_detJk);
+		} // endfor k
+
+		integre_correction(fem, tri);
+	} // endfor triWithSources
+
+/*
+	int ns=0;
 	for (int t=0; t<TRI; t++)
 	{
 		Triangle::Tri &tri = fem.getTri(t);
@@ -77,7 +110,8 @@ int pot2D::fmm2d_sum(Fem2d &fem)
 
 		integre_correction(fem, tri);
 	} // endfor t
-
+	*/
+	
 	std::cout << "DEBUG ns & nsource : " << ns << " " << nsource << std::endl;
 	assert(ns==nsource);
 

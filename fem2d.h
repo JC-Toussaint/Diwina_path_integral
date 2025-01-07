@@ -139,6 +139,7 @@ public:
 
     inline int getNbNodes(void) const { return node.size(); }
     inline int getNbTriangles(void) const { return tri.size(); }
+    inline int getNbTrianglesWithSources(void) const { return triWithSources.size(); }
     
 	int exportRatioGrayScaleImage(const Settings &settings, ExportType eType);
 	int exportRatioRGBscaleImage(const Settings &settings, ExportType eType);

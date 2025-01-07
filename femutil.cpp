@@ -80,6 +80,7 @@ void Fem2d::util(void)
 		}
 		if (inside){
 			tri.overlap = true;
+			triWithSources.push_back(tri);
 		}
 			});
 }
