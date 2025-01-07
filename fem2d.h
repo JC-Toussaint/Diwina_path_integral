@@ -207,6 +207,9 @@ private:
 	/** 2d triangles */
 	std::vector<Triangle::Tri> tri;
 
+	/** 2d triangles in which are located sources */
+	std::vector<Triangle::Tri> triWithSources;
+
 	/**
 	using gmsh geo, rectangle method buids a triangular mesh of a rectangle ((xmin,ymin),(xmax,ymax)) in 3D space,
 	in a xOy plane at altitude z, with meshSize carac length
