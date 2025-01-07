@@ -1,5 +1,7 @@
 #include<cmath>
 #include <chrono>
+#include <execution>
+
 #include "fem2d.h"
 
 using namespace std;
@@ -8,6 +10,49 @@ extern "C"{
 void rfmm2d(int *ierr, int *iprec, int *nsource, double *source, double* dipstr, double *dipvec, int *ntarget, double *target, double *pottarg);
 }
 
+static void processTriangles(FEM &fem, std::vector<double> &source, std::vector<double> &dipstr, std::vector<double> &dipvec) {
+    const int NPI = Triangle::NPI; // Nombre de points d'intégration
+    const int NDIM = 2; // Dimension spatiale
+    constexpr double VACUUM_PERMEABILITY = 1.2566370614e-6; // Exemple de perméabilité du vide
+
+    // Lambda pour traiter chaque triangle
+    auto processTriangle = [&](int t) {
+        Triangle::Tri &tri = fem.getTriWithSources(t);
+
+        for (int k = 0; k < NPI; k++) {
+            double xk = tri.x[k];
+            double yk = tri.y[k];
+            double wk_detJk = tri.weight[k];
+
+            double Mxk = 0;
+            double Myk = 0;
+
+            // Calcul des contributions des nœuds
+            for (int ie = 0; ie < Triangle::NBN; ie++) {
+                int i = tri.getIndice(ie);
+                Node2d &node = fem.getNode(i);
+                Mxk += Triangle::a[ie][k] * node.Mx;
+                Myk += Triangle::a[ie][k] * node.My;
+            }
+
+            // Mise à jour des tableaux partagés
+            int ns = t * NPI + k;
+
+            source[NDIM * ns + 0] = xk;
+            source[NDIM * ns + 1] = yk;
+
+            dipstr[ns] = VACUUM_PERMEABILITY / (2.0 * M_PI) * wk_detJk;
+            dipvec[NDIM * ns + 0] = Mxk;
+            dipvec[NDIM * ns + 1] = Myk;
+
+            // Appel de la correction
+            correction(fem, tri, xk, yk, Mxk, Myk, wk_detJk);
+        }
+
+        // Intégration de la correction pour ce triangle
+        integre_correction(fem, tri);
+    };
+    
 int pot2D::fmm2d_sum(Fem2d &fem)
 {
 	std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
@@ -43,38 +88,13 @@ int pot2D::fmm2d_sum(Fem2d &fem)
 		target[NDIM*i+1] = fem.getNode(i).p[1];
 	}
 
-	for (int t=0; t<fem.getNbTrianglesWithSources(); t++)
-	{
-		Triangle::Tri &tri = fem.getTriWithSources(t);
-		for (int k=0; k<NPI; k++)
-		{
-			double xk = tri.x[k];
-			double yk = tri.y[k];
-			double wk_detJk = tri.weight[k];
+// Création d'un vecteur des indices des triangles
+    int NbTriWithSources = fem.getNbTrianglesWithSources();
+    std::vector<int> triangleIndices(NbTriWithSources);
+    std::iota(triangleIndices.begin(), triangleIndices.end(), 0);
 
-			double Mxk = 0;
-			double Myk = 0;
-			for (int ie=0; ie < Triangle::NBN; ie++){
-				int i=tri.getIndice(ie);
-				Node2d &node=fem.getNode(i);
-				Mxk += Triangle::a[ie][k]*node.Mx;
-				Myk += Triangle::a[ie][k]*node.My;
-			}
-
-			int ns=t*NPI+k;
-			source[NDIM*ns+0] = xk;
-			source[NDIM*ns+1] = yk;
-
-			dipstr[ns] = VACUUM_PERMEABILITY/(2.0*M_PI)*wk_detJk;
-			dipvec[NDIM*ns+0] = Mxk;
-			dipvec[NDIM*ns+1] = Myk;
-			ns++;
-
-			correction(fem, tri, xk, yk, Mxk, Myk, wk_detJk);
-		} // endfor k
-
-		integre_correction(fem, tri);
-	} // endfor t
+    // Parallélisation avec std::for_each et exécution parallèle
+    std::for_each(std::execution::par, triangleIndices.begin(), triangleIndices.end(), processTriangle);
 	
 	int ns = fem.getNbTrianglesWithSources()*NPI;
 	std::cout << "DEBUG ns & nsource : " << ns << " " << nsource << std::endl;
