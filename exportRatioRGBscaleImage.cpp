@@ -7,7 +7,6 @@
 #include <cmath>
 #include <string>
 #include <png.h>
-#include <tinyxml2.h>
 #include <cstring>
 
 #include <stdexcept>
@@ -29,95 +28,25 @@ static Colormap jet_colors = {
     {1,    {1, 0, 0}}   // red
 };
 
-/**
-static Colormap read_colormap(const std::string& filename)
-Description
-
-This function loads a colormap from an XML file and returns it as a Colormap. A colormap is a sequence of points, where:
-
-    Each point consists of a position (x) and its corresponding RGB color values (r, g, b).
-    The XML file is expected to follow a specific structure with <Point> elements nested inside a <ColorMap> element, which is itself part of a <ColorMaps> root element.
-
-The function parses the XML file, extracts the x, r, g, and b attributes of each <Point> element, and constructs the colormap.
-Parameters
-
-    filename: A string representing the path to the XML file containing the colormap definition.
-
-Returns
-
-A Colormap, which is defined as:
-
-using Colormap = std::vector<std::pair<double, std::array<double, 3>>>;
-
-Each element of the colormap contains:
-
-    A double representing the position x in the range [0.0,1.0].
-    A std::array<double, 3> containing the RGB components of the color, each in the range [0.0,1.0].
-
-Behavior
-
-    XML Parsing:
-        The function uses tinyxml2 to parse the provided XML file.
-        It checks for the presence of a <ColorMaps> root element and a <ColorMap> child element.
-    Colormap Extraction:
-        Inside the <ColorMap> element, the function iterates through all <Point> elements.
-        It reads the x, r, g, and b attributes of each <Point> and adds them to the colormap as a key-value pair.
-    Validation:
-        If the XML file cannot be loaded or is malformed, an exception is thrown.
-        If no valid points are found, the function throws an exception indicating an empty colormap.
-
-Exceptions
-
-    std::runtime_error if:
-        The XML file cannot be opened.
-        The file does not contain the required <ColorMaps> or <ColorMap> elements.
-        No <Point> elements are found.
-        Parsing errors occur for the attributes of any <Point>.
-*/
+// Read a colormap from a file.
+// The file format is text, with four values per line: (x, r, g, b).
+// All values should be between 0 and 1.
+// Empty lines and lines starting with '#' are comments and are ignored.
 static Colormap read_colormap(const std::string& filename) {
-    // Vector to store the colormap points (x, [r, g, b]).
+    std::ifstream f(filename);
+    if (!f.is_open())
+        throw std::ios_base::failure(filename);
+    std::string line;
     Colormap colormap;
-
-    // Load the XML document.
-    tinyxml2::XMLDocument doc;
-    if (doc.LoadFile(filename.c_str()) != tinyxml2::XML_SUCCESS) {
-        throw std::runtime_error("Failed to load colormap file: " + filename);
+    while (std::getline(f, line)) {
+        if (line.empty() || line[0] == '#')  // skip comments
+            continue;
+        std::istringstream input(line);
+        double x, r, g, b;
+        input >> x >> r >> g >> b;
+        ColormapEntry entry = {x, {r, g, b}};
+        colormap.push_back(entry);
     }
-
-    // Find the root element.
-    tinyxml2::XMLElement* root = doc.FirstChildElement("ColorMaps");
-    if (!root) {
-        throw std::runtime_error("Invalid colormap file: Missing <ColorMaps> root element.");
-    }
-
-    // Iterate over all <Colormap> elements.
-    tinyxml2::XMLElement* colormapElement = root->FirstChildElement("ColorMap");
-    if (!colormapElement) {
-        throw std::runtime_error("Invalid colormap file: Missing <ColorMap> element.");
-    }
-
-    // Iterate over all <Point> elements inside the <Colormap>.
-    tinyxml2::XMLElement* pointElement = colormapElement->FirstChildElement("Point");
-    while (pointElement) {
-        double x = 0.0, r = 0.0, g = 0.0, b = 0.0;
-
-        // Parse attributes.
-        pointElement->QueryDoubleAttribute("x", &x);
-        pointElement->QueryDoubleAttribute("r", &r);
-        pointElement->QueryDoubleAttribute("g", &g);
-        pointElement->QueryDoubleAttribute("b", &b);
-
-        // Add the point to the colormap.
-        colormap.emplace_back(x, std::array<double, 3>{r, g, b});
-
-        // Move to the next <Point>.
-        pointElement = pointElement->NextSiblingElement("Point");
-    }
-
-    if (colormap.empty()) {
-        throw std::runtime_error("No points found in the colormap.");
-    }
-
     return colormap;
 }
 
@@ -193,7 +122,7 @@ int Fem2d::handleRGBexport(const Settings &settings, ExportType eType, const std
         return 1;
     }
 
-    std::filesystem::path ColormapFile = "HoloScale.xml";
+    std::filesystem::path ColormapFile = "HoloScale.tsv";
 
     Colormap colormap;
     if (std::filesystem::exists(ColormapFile)) {

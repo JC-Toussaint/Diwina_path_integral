@@ -59,30 +59,6 @@ if(NOT ${ENABLE_SEQ})
     endif()
 endif()
 
-#===========================================================================
-# TinyXML2 integration (installed in /usr/local)
-#===========================================================================
-# Add /usr/local to the search paths
-set(CMAKE_PREFIX_PATH "/usr/local" ${CMAKE_PREFIX_PATH})
-set(CMAKE_LIBRARY_PATH "/usr/local/lib" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/usr/local/include" ${CMAKE_INCLUDE_PATH})
-
-# Locate tinyxml2 manually
-find_path(TINYXML2_INCLUDE_DIR tinyxml2.h PATHS /usr/local/include)
-if(NOT TINYXML2_INCLUDE_DIR)
-    message(FATAL_ERROR "Could not find tinyxml2.h in /usr/local/include")
-else()
-    message(STATUS "Found tinyxml2 include directory: ${TINYXML2_INCLUDE_DIR}")
-    include_directories(${TINYXML2_INCLUDE_DIR})
-endif()
-
-find_library(TINYXML2_LIBRARY tinyxml2 PATHS /usr/local/lib)
-if(NOT TINYXML2_LIBRARY)
-    message(FATAL_ERROR "Could not find the tinyxml2 library in /usr/local/lib")
-else()
-    message(STATUS "Found tinyxml2 library: ${TINYXML2_LIBRARY}")
-endif()
-
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 # search for pkg-config
@@ -153,7 +129,7 @@ add_custom_command(
 ADD_EXECUTABLE(pathIntegral main.cpp ${HEADERS} ${SOURCES} ${SOURCES_FORTRAN} default-settings.o)
 target_compile_options( pathIntegral PUBLIC -Wall -Wextra -O3 -march=native )
 target_compile_definitions(pathIntegral PUBLIC -DCGAL_HAS_THREADS -DNDEBUG -DTBB_SUPPRESS_DEPRECATED_MESSAGES )
-target_link_libraries(pathIntegral yaml-cpp duktape ${TBB_LINK} Eigen3::Eigen ${GMSH_LIB} ${TINYXML2_LIBRARY} 
+target_link_libraries(pathIntegral yaml-cpp duktape ${TBB_LINK} Eigen3::Eigen ${GMSH_LIB}
 	-lfmm2d -lgfortran -lm -lblas -llapack)
 
 #===========================================================================

@@ -9,7 +9,6 @@ pathIntegral is a STXM image simulator using feeLLGood simulations inputs. feeLL
 * Fortran 2018 (gfortran)
 * [GMSH][]
 * [TBB][]
-* [tinyxml2][]
 * [libpng][]
 * [yaml-cpp][]
 * [Duktape][] 2.7.0
@@ -33,7 +32,6 @@ The libraries used by pathIntegral are distributed under different licenses, and
 [here]: https://feellgood.neel.cnrs.fr/
 [GMSH]: https://gmsh.info/
 [TBB]: https://www.threadingbuildingblocks.org/
-[tinyxml2]: https://github.com/leethomason/tinyxml2
 [libpng]: http://libpng.org/pub/png/libpng.html
 [yaml-cpp]: https://github.com/jbeder/yaml-cpp
 [Duktape]: https://duktape.org/
