@@ -104,10 +104,11 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fopenmp")
 
 SET(HEADERS config.h node.h  expression_parser.h mesh.h
     termcolor.h settings.h tetra.h facette.h tags.h
-    chronometer.h element.h geo.h fem2d.h write_png.h pathIntegral.h)
+    chronometer.h element.h geo.h fem2d.h write_png.h pathIntegral.h
+    scalfmm_2d.hpp scalfmm3.hpp )
 
 SET(SOURCES settings.cpp read.cpp tetra.cpp expression_parser.cpp chronometer.cpp
-    tags.cpp write_png.cpp exportRatioGrayScaleImage.cpp exportMagIntegrals.cpp chapeaux.cpp fmm2d_sum.cpp femutil.cpp correction.cpp 
+    tags.cpp write_png.cpp exportRatioGrayScaleImage.cpp exportMagIntegrals.cpp chapeaux.cpp fmm2d_sum.cpp scalfmm2d_sum.cc femutil.cpp correction.cpp 
     exportHoloPhase.cpp exportRatioRGBscaleImage.cpp pathIntegral.cpp)
 
 set(SOURCES_FORTRAN rfmm2d.f90)
