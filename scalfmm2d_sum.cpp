@@ -44,6 +44,7 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 
 	fem.zero_node_sol();
 	double scalFMM_scale = 2.0e5/fem.diam; 
+	scalFMM_scale=1.0;
 	point_type S_max(-1.0e5), S_min(+1.0e5);
 
 	std::cout << "Calcul de la boite englobante \n";
@@ -51,8 +52,8 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 	//  positon en espace + indice initiale (avant renumerotation)
 	for (int i = 0; i < ntarget; ++i) {
 		auto &pos = target[i].position();
-		pos[0] = scalFMM_scale*(fem.getNode(i).p[0]-fem.c[0]); // centering and scaling
-		pos[1] = scalFMM_scale*(fem.getNode(i).p[1]-fem.c[1]); 
+		pos[0] = scalFMM_scale*(fem.getNode(i).p[0]-0*fem.c[0]); // centering and scaling
+		pos[1] = scalFMM_scale*(fem.getNode(i).p[1]-0*fem.c[1]); 
 		target[i].variables(i);
 		S_max[0] = std::max(S_max[0], pos[0]);
 		S_max[1] = std::max(S_max[1], pos[1]);
@@ -60,6 +61,8 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 		S_min[1] = std::min(S_min[1], pos[1]);
 	}
 
+	std::cout << S_min << " " << S_max << std::endl;
+	
 	// Construct the Gauss points (sources)
 	int ns = 0;
 	// Boucle sur les triangles
@@ -69,8 +72,8 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 
 		// Boucle sur les points de Gauss du triangle
 		for (int k = 0; k < NPI; k++) {
-			double xk = scalFMM_scale*(tri.x[k]-fem.c[0]);
-			double yk = scalFMM_scale*(tri.y[k]-fem.c[1]);;
+			double xk = scalFMM_scale*(tri.x[k]-0*fem.c[0]);
+			double yk = scalFMM_scale*(tri.y[k]-0*fem.c[1]);;
 			double wk_detJk = tri.weight[k]*pow(scalFMM_scale, 2.0);
 
 			double Mxk = 0;
@@ -97,9 +100,10 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 			auto &inputs = source[ns].inputs();
 			inputs[0] = Mxk * dipstr[ns];
 			inputs[1] = Myk * dipstr[ns];
+			std::cout << Mxk * dipstr[ns] << "\t" << Myk * dipstr[ns] << std::endl;
 
 			++ns;
-		    correction(fem, tri, xk, yk, Mxk, Myk, wk_detJk);
+		        correction(fem, tri, xk, yk, Mxk, Myk, wk_detJk);
 		} // endfor k
 
 		integre_correction(fem, tri);
@@ -136,7 +140,7 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 	tree_source.statistics("tree source" ,std::cout) ;
 	tree_target.statistics("tree trarget" ,std::cout) ;
 	int ierr{0};
-	int iprec(IPREC);
+	int iprec{pot2D::IPREC};
 	scalfmm_execute(ierr, iprec, tree_source, tree_target, pottarg);
 
 	end = std::chrono::high_resolution_clock::now();

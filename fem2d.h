@@ -309,8 +309,8 @@ private:
 inline constexpr double sq(const double x) {return x*x;}
 
 namespace pot2D {
-	const int scalFMM_height= 8;
-	const int scalFMM_order = 7;
+    const int scalFMM_height= 8;
+    const int scalFMM_order = 7;
     const int NB_PTS_INTEGRATION = 4;// ATTENTION 4 points d'integration != Tri::NPI
     constexpr double ksi = 1.0/sqrt(3.0);
     constexpr double u[] {0.50*(1.0-ksi), 0.50*(1.0-ksi), 0.50*(1.0+ksi), 0.50*(1.0+ksi)};

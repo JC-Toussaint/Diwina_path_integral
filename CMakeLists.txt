@@ -13,6 +13,12 @@ ENABLE_LANGUAGE(Fortran)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS OFF) # ON to get a .json with compiler calls for all targets
 
+# Chemins des bibliothèques et des fichiers d'en-tête
+set(SCALFMM_INC "$ENV{HOME}/Devel/Scalfmm3.0_experimental/include")
+set(MKL_INC "/opt/intel/oneapi/2025.0/include" "/opt/intel/oneapi/2025.0/include/fftw")
+set(INCLUDES ".." "../include" "../../include" "/usr/include/eigen3" "${SCALFMM_INC}" "${MKL_INC}")
+set(SCALFMM_DEF  "-DCPP17 -DENABLE_XTL_COMPLEX -DHAVE_CBLAS=1 -DXSIMD_ENABLE_XTL_COMPLEX -DXTENSOR_DISABLE_EXCEPTIONS -DXTENSOR_FFTW_USE_DOUBLE -DXTENSOR_FFTW_USE_FLOAT -DXTENSOR_USE_XSIMD")
+
 find_library(GMSH_LIB gmsh)
 if(GMSH_LIB)
     message(STATUS "Found GMSH")
@@ -108,7 +114,7 @@ SET(HEADERS config.h node.h  expression_parser.h mesh.h
     scalfmm_2d.hpp scalfmm3.hpp )
 
 SET(SOURCES settings.cpp read.cpp tetra.cpp expression_parser.cpp chronometer.cpp
-    tags.cpp write_png.cpp exportRatioGrayScaleImage.cpp exportMagIntegrals.cpp chapeaux.cpp fmm2d_sum.cpp scalfmm2d_sum.cc femutil.cpp correction.cpp 
+    tags.cpp write_png.cpp exportRatioGrayScaleImage.cpp exportMagIntegrals.cpp chapeaux.cpp fmm2d_sum.cpp scalfmm2d_sum.cpp femutil.cpp correction.cpp 
     exportHoloPhase.cpp exportRatioRGBscaleImage.cpp pathIntegral.cpp)
 
 set(SOURCES_FORTRAN rfmm2d.f90)
@@ -128,8 +134,9 @@ add_custom_command(
 #===========================================================================
 
 ADD_EXECUTABLE(pathIntegral main.cpp ${HEADERS} ${SOURCES} ${SOURCES_FORTRAN} default-settings.o)
-target_compile_options( pathIntegral PUBLIC -Wall -Wextra -O3 -march=native )
+target_compile_options( pathIntegral PUBLIC -Wall -Wextra -O3 -march=native ${SCALFMM_DEF})
 target_compile_definitions(pathIntegral PUBLIC -DCGAL_HAS_THREADS -DNDEBUG -DTBB_SUPPRESS_DEPRECATED_MESSAGES )
+target_include_directories(pathIntegral PUBLIC ${INCLUDES})
 target_link_libraries(pathIntegral yaml-cpp duktape ${TBB_LINK} Eigen3::Eigen ${GMSH_LIB}
 	-lfmm2d -lgfortran -lm -lblas -llapack)
 
