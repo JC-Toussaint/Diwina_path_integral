@@ -43,15 +43,16 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 	std::cout << "nb of sources & targets : " << nsource << " " << ntarget << std::endl;
 
 	fem.zero_node_sol();
-	point_type S_max(-100000.0), S_min(100000.0);
+	double scalFMM_scale = 2.0e5/fem.msh.diam; 
+	point_type S_max(-1.0e5), S_min(+1.0e5);
 
 	std::cout << "Calcul de la boite englobante \n";
 	// On remplit la structure cible = noeuds du maillage
 	//  positon en espace + indice initiale (avant renumerotation)
 	for (int i = 0; i < ntarget; ++i) {
 		auto &pos = target[i].position();
-		pos[0] = fem.getNode(i).p[0];
-		pos[1] = fem.getNode(i).p[1];
+		pos[0] = scalFMM_scale*(fem.getNode(i).p[0]-fem.msh.c[0]); // centering and scaling
+		pos[1] = scalFMM_scale*(fem.getNode(i).p[1]-fem.msh.c[1]); 
 		target[i].variables(i);
 		S_max[0] = std::max(S_max[0], pos[0]);
 		S_max[1] = std::max(S_max[1], pos[1]);
@@ -68,9 +69,9 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 
 		// Boucle sur les points de Gauss du triangle
 		for (int k = 0; k < NPI; k++) {
-			double xk = tri.x[k];
-			double yk = tri.y[k];
-			double wk_detJk = tri.weight[k];
+			double xk = scalFMM_scale*(tri.x[k]-fem.msh.c[0]);
+			double yk = scalFMM_scale*(tri.y[k]-fem.msh.c[1]);;
+			double wk_detJk = tri.weight[k]*pow(scalFMM_scale, 2.0);
 
 			double Mxk = 0;
 			double Myk = 0;

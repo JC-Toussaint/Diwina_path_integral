@@ -72,6 +72,7 @@ public:
 
 		l = Eigen::Vector3d(xmax - xmin, ymax - ymin, zmax - zmin);
 		diam = l.maxCoeff();
+		c = Eigen::Vector3d(0.5 * (xmax + xmin), 0.5 * (ymax + ymin), 0.5 * (zmax + zmin));
 	}
 
 	/** return number of nodes  */
