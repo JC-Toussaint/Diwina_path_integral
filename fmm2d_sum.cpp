@@ -14,9 +14,7 @@ int pot2D::fmm2d_sum(Fem2d &fem)
 	std::chrono::duration<double,std::milli> micros;
 
 	const int NDIM = 2;
-	//const int NOD = fem.node.size();
 	const int NOD = fem.getNbNodes();
-	//const int TRI = fem.tri.size();
 	const int TRI = fem.getNbTriangles();
 	const int NPI = Triangle::NPI;
 

@@ -305,6 +305,8 @@ private:
 inline constexpr double sq(const double x) {return x*x;}
 
 namespace pot2D {
+	const int scalFMM_height= 8;
+	const int scalFMM_order = 7;
     const int NB_PTS_INTEGRATION = 4;// ATTENTION 4 points d'integration != Tri::NPI
     constexpr double ksi = 1.0/sqrt(3.0);
     constexpr double u[] {0.50*(1.0-ksi), 0.50*(1.0-ksi), 0.50*(1.0+ksi), 0.50*(1.0+ksi)};
@@ -316,8 +318,9 @@ namespace pot2D {
     const int IPREC = 4;
 
     /** computation using fmm in 2D */ 
-    int fmm2d_sum(Fem2d &fem);
-
+    int fmm2d_sum(Fem2d &fem);     // Greengard's approach
+    int scalfmm2d_sum(Fem2d &fem); // Coulaud's   approach
+    
     /** correction function for triangle number t */
     void correction(Fem2d &fem,Triangle::Tri &t,double xk,double yk,double Mxk,double Myk,double wk_detJk);
 
