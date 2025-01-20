@@ -121,6 +121,7 @@ public:
 	    double xymin = std::min(xmin, ymin);
 	    double xymax = std::min(xmax, ymax);
 		l = Eigen::Vector2d(xymax-xymin, xymax-xymin);
+		diam = l.maxCoeff();
 		c = Eigen::Vector2d(0.5 * (xymax + xymin), 0.5 * (xymax + xymin));
 		grid_generator(xymin, xymax, meshSize);
 		chapeaux();
@@ -185,6 +186,9 @@ public:
 
 	/** lengths along x,y,z axis */
 	Eigen::Vector2d l;
+	
+	/** diameter */
+	double diam;
 
     /** a zoom factor relative to the plane where images are computed */
 	double zoomFactor;
