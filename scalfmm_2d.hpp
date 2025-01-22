@@ -12,6 +12,8 @@
 #include <cpp_tools/colors/colorized.hpp>
 #include <cpp_tools/timers/simple_timer.hpp>
 
+#include <boost/format.hpp>
+
 template<typename Tree, typename Container>
 auto check_output(Container const& part, Tree const& tree)
 {
@@ -122,32 +124,4 @@ void scalfmm_execute(int &ierr, int &iprec, tree_source_type &tree_source,
 
 
 }
-
-template <typename TS, typename TT>
-void scalfmm_compare(std::vector<TS> const &source, std::vector<TT> &target,
-                     tree_target_type &tree_target) 
-
-       {
-    cpp_tools::timers::timer<std::chrono::minutes> time{};
-	 near_matrix_kernel_type mk_near{};
-
-	 std::cout << cpp_tools::colors::green << "full interaction computation  with kernel: " << mk_near.name()
-                  << std::endl
-                  << cpp_tools::colors::reset;
-
-        time.tic();
-
-        scalfmm::algorithms::full_direct(source, target, mk_near);
-        time.tac();
-        std::cout << cpp_tools::colors::green << "... Done.\n" << cpp_tools::colors::reset;
-        std::cout << cpp_tools::colors::yellow << "Computation done in " << time.elapsed() << " min\n"
-                  << cpp_tools::colors::reset;
-        // check the two containers
-        // std::cout << "Final target container\n";
-        // std::cout << container_target << std::endl;
-        // Compare with the FMM computation
-        auto error{check_output(target, tree_target).get_relative_l2_norm()};
-        std::cout << cpp_tools::colors::magenta << "relative L2 error: " << error << '\n' << cpp_tools::colors::reset;
-  
-    }
 

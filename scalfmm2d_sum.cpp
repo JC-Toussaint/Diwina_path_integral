@@ -43,17 +43,15 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 	std::cout << "nb of sources & targets : " << nsource << " " << ntarget << std::endl;
 
 	fem.zero_node_sol();
-	double scalFMM_scale = 2.0e5/fem.diam; 
-	//scalFMM_scale=1.0;
-	point_type S_max(-1.0e5), S_min(+1.0e5);
+	point_type S_max(-HUGE_VAL), S_min(+HUGE_VAL);
 
 	std::cout << "Calcul de la boite englobante \n";
 	// On remplit la structure cible = noeuds du maillage
 	//  positon en espace + indice initiale (avant renumerotation)
 	for (int i = 0; i < ntarget; ++i) {
 		auto &pos = target[i].position();
-		pos[0] = scalFMM_scale*(fem.getNode(i).p[0]-0*fem.c[0]); // centering and scaling
-		pos[1] = scalFMM_scale*(fem.getNode(i).p[1]-0*fem.c[1]); 
+		pos[0] = fem.getNode(i).p[0]-0*fem.c[0]; // centering
+		pos[1] = fem.getNode(i).p[1]-0*fem.c[1]; 
 		target[i].variables(i);
 		S_max[0] = std::max(S_max[0], pos[0]);
 		S_max[1] = std::max(S_max[1], pos[1]);
@@ -72,9 +70,10 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 
 		// Boucle sur les points de Gauss du triangle
 		for (int k = 0; k < NPI; k++) {
-			double xk = scalFMM_scale*(tri.x[k]-0*fem.c[0]);
-			double yk = scalFMM_scale*(tri.y[k]-0*fem.c[1]);;
-			double wk_detJk = tri.weight[k]*pow(scalFMM_scale, 2.0);
+			double xk = tri.x[k]-0*fem.c[0];
+			double yk = tri.y[k]-0*fem.c[1];
+			double theta = atan2(yk, xk);
+			double wk_detJk = tri.weight[k];
 
 			double Mxk = 0;
 			double Myk = 0;
@@ -84,6 +83,10 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 				Mxk += Triangle::a[ie][k]*node.Mx;
 				Myk += Triangle::a[ie][k]*node.My;
 			}
+			double Ms = 1./VACUUM_PERMEABILITY;
+			Mxk = Ms*std::cos(2*theta);
+			Myk = Ms*std::sin(2*theta);
+
 			dipstr[ns] = VACUUM_PERMEABILITY/(2.0*M_PI) * wk_detJk;
 
 			// On met les informations dans le format scalfmm
@@ -108,9 +111,10 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 
 		//integre_correction(fem, tri);
 	} // endfor t
-	
-	S_min -= 0.1 ;
-	S_max += 0.1;
+
+        point_type box_size = S_max - S_min;
+        S_min -= 0.1 * box_size;
+        S_max += 0.1 * box_size;
 
 	assert(ns == nsource);
 	// Nous trions les particules en fonction de leur indice de Morton  !.
