@@ -22,7 +22,7 @@ void Triangle::Tri::chapeaux(std::vector<Node2d> &node)
         x[npi] = _a[0]*xp[0]+_a[1]*xp[1]+_a[2]*xp[2];
         y[npi] = _a[0]*yp[0]+_a[1]*yp[1]+_a[2]*yp[2];
         /* Gauss weights multiplied by detJ */
-		weight[npi] = detJ * pds[npi];
+	weight[npi] = detJ * pds[npi];
 	}
 }
 

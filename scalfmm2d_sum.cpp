@@ -44,7 +44,7 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 
 	fem.zero_node_sol();
 	double scalFMM_scale = 2.0e5/fem.diam; 
-	scalFMM_scale=1.0;
+	//scalFMM_scale=1.0;
 	point_type S_max(-1.0e5), S_min(+1.0e5);
 
 	std::cout << "Calcul de la boite englobante \n";
@@ -103,10 +103,10 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 			std::cout << Mxk * dipstr[ns] << "\t" << Myk * dipstr[ns] << std::endl;
 
 			++ns;
-		        correction(fem, tri, xk, yk, Mxk, Myk, wk_detJk);
+		        //correction(fem, tri, xk, yk, Mxk, Myk, wk_detJk);
 		} // endfor k
 
-		integre_correction(fem, tri);
+		//integre_correction(fem, tri);
 	} // endfor t
 	
 	S_min -= 0.1 ;
