@@ -50,8 +50,8 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 	//  positon en espace + indice initiale (avant renumerotation)
 	for (int i = 0; i < ntarget; ++i) {
 		auto &pos = target[i].position();
-		pos[0] = fem.getNode(i).p[0]-0*fem.c[0]; // centering
-		pos[1] = fem.getNode(i).p[1]-0*fem.c[1]; 
+		pos[0] = fem.getNode(i).p[0]; 
+		pos[1] = fem.getNode(i).p[1]; 
 		target[i].variables(i);
 		S_max[0] = std::max(S_max[0], pos[0]);
 		S_max[1] = std::max(S_max[1], pos[1]);
@@ -70,9 +70,8 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 
 		// Boucle sur les points de Gauss du triangle
 		for (int k = 0; k < NPI; k++) {
-			double xk = tri.x[k]-0*fem.c[0];
-			double yk = tri.y[k]-0*fem.c[1];
-			double theta = atan2(yk, xk);
+			double xk = tri.x[k];
+			double yk = tri.y[k];
 			double wk_detJk = tri.weight[k];
 
 			double Mxk = 0;
@@ -83,9 +82,6 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 				Mxk += Triangle::a[ie][k]*node.Mx;
 				Myk += Triangle::a[ie][k]*node.My;
 			}
-			double Ms = 1./VACUUM_PERMEABILITY;
-			Mxk = Ms*std::cos(2*theta);
-			Myk = Ms*std::sin(2*theta);
 
 			dipstr[ns] = VACUUM_PERMEABILITY/(2.0*M_PI) * wk_detJk;
 
@@ -103,7 +99,7 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 			auto &inputs = source[ns].inputs();
 			inputs[0] = Mxk * dipstr[ns];
 			inputs[1] = Myk * dipstr[ns];
-			std::cout << Mxk * dipstr[ns] << "\t" << Myk * dipstr[ns] << std::endl;
+			//std::cout << Mxk * dipstr[ns] << "\t" << Myk * dipstr[ns] << std::endl;
 
 			++ns;
 		        //correction(fem, tri, xk, yk, Mxk, Myk, wk_detJk);
@@ -136,6 +132,7 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 
 	tree_target_type tree_target(height, order, box, group_size, group_size,
 			target, sorted);
+			
 	end = std::chrono::high_resolution_clock::now();
 	micros = end - start;
 	std::cout << std::endl << boost::format("%5t initialization time %50T. ");

@@ -14,7 +14,7 @@ ENABLE_LANGUAGE(Fortran)
 set(CMAKE_EXPORT_COMPILE_COMMANDS OFF) # ON to get a .json with compiler calls for all targets
 
 # Chemins des bibliothèques et des fichiers d'en-tête
-set(SCALFMM_INC "$ENV{HOME}/Devel/Scalfmm3.0_experimental/include")
+set(SCALFMM_INC "$ENV{HOME}/Devel/ScalFMM/include")
 set(MKL_INC "/opt/intel/oneapi/2025.0/include" "/opt/intel/oneapi/2025.0/include/fftw")
 set(INCLUDES ".." "../include" "../../include" "/usr/include/eigen3" "${SCALFMM_INC}" "${MKL_INC}")
 set(SCALFMM_DEF  "-DCPP17 -DENABLE_XTL_COMPLEX -DHAVE_CBLAS=1 -DXSIMD_ENABLE_XTL_COMPLEX -DXTENSOR_DISABLE_EXCEPTIONS -DXTENSOR_FFTW_USE_DOUBLE -DXTENSOR_FFTW_USE_FLOAT -DXTENSOR_USE_XSIMD")
