@@ -294,9 +294,6 @@ int main(int argc, char *argv[])
         }
 	fem2d.util();
 
-	// calculate Gauss weights multiplied by detJ 
-        fem2d.chapeaux();
-
 	std::cout << "Fast Multipole Calculation\n";
     //int ierr = pot2D::fmm2d_sum(fem2d);
     int ierr = pot2D::scalfmm2d_sum(fem2d);
