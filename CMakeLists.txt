@@ -107,7 +107,8 @@ SET(HEADERS config.h node.h  expression_parser.h mesh.h
     chronometer.h element.h geo.h fem2d.h write_png.h pathIntegral.h)
 
 SET(SOURCES settings.cpp read.cpp tetra.cpp expression_parser.cpp chronometer.cpp
-    tags.cpp write_png.cpp exportRatioGrayScaleImage.cpp exportMagIntegrals.cpp chapeaux.cpp fmm2d_sum.cpp femutil.cpp correction.cpp 
+    tags.cpp write_png.cpp exportRatioGrayScaleImage.cpp exportMagIntegrals.cpp chapeaux.cpp 
+    fmm2d_sum.cpp direct2d_sum.cpp femutil.cpp correction.cpp 
     exportHoloPhase.cpp exportRatioRGBscaleImage.cpp pathIntegral.cpp)
 
 set(SOURCES_FORTRAN rfmm2d.f90)

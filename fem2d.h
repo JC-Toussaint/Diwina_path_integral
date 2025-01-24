@@ -169,6 +169,9 @@ public:
 		return tri[t];
 	}
 
+	// Getter for the entire vector of triangles
+	inline std::vector<Triangle::Tri>& getTriangles() { return tri; }
+
 	// Getter to get a non constant reference to the triangle t with sources
 	inline Triangle::Tri& getTriWithSources(const int t) {
 		if (t < 0 || t >= static_cast<int>(triWithSources.size())) {
@@ -329,6 +332,9 @@ namespace pot2D {
 
     /** computation using fmm in 2D */ 
     int fmm2d_sum(Fem2d &fem);
+
+    /** computation using direct in 2D */
+    int direct2d_sum(Fem2d &fem);
 
     /** correction function for triangle number t */
     void correction(Fem2d &fem,const Triangle::Tri &t,double xk,double yk,double Mxk,double Myk,double wk_detJk);
