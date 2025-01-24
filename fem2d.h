@@ -161,6 +161,9 @@ public:
 		return node[i];
 	}
 
+	// Getter for the entire vector of triangles
+	inline std::vector<Triangle::Tri>& getTriangles() { return tri; }
+	
 	// Getter to get a non constant reference 
 	inline Triangle::Tri& getTri(const int t) {
 		if (t < 0 || t >= static_cast<int>(tri.size())) {
@@ -324,11 +327,12 @@ namespace pot2D {
     /** computation using fmm in 2D */ 
     int fmm2d_sum(Fem2d &fem);     // Greengard's approach
     int scalfmm2d_sum(Fem2d &fem); // Coulaud's   approach
+    int direct2d_sum(Fem2d &fem);  // direct   approach
     
     /** correction function for triangle number t */
-    void correction(Fem2d &fem,Triangle::Tri &t,double xk,double yk,double Mxk,double Myk,double wk_detJk);
+    void correction(Fem2d &fem,const Triangle::Tri &t,double xk,double yk,double Mxk,double Myk,double wk_detJk);
 
     /** compute the whole correction */
-    void integre_correction(Fem2d &fem,Triangle::Tri &t);
+    void integre_correction(Fem2d &fem,const Triangle::Tri &t);
     }
 #endif

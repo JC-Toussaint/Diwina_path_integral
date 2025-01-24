@@ -44,7 +44,7 @@ int pot2D::fmm2d_sum(Fem2d &fem)
 	int ns=0;
 	for (int t=0; t<TRI; t++)
 	{
-		Triangle::Tri &tri = fem.getTri(t);
+		const Triangle::Tri &tri = fem.getTri(t);
 		if (!tri.overlap) continue;
 
 		for (int k=0; k<NPI; k++)
@@ -99,8 +99,8 @@ int pot2D::fmm2d_sum(Fem2d &fem)
 	cputime += micros.count();
 
 	start = std::chrono::high_resolution_clock::now();
-	for (int i=0; i<NOD; i++)
-	{ fem.getNode(i).sol -= pottarg[i];
+	for (int i=0; i<NOD; i++){
+	    fem.getNode(i).sol -= pottarg[i];
 	} // minus sign see potential definition given by Gimbutas-Greengard
 	end = std::chrono::high_resolution_clock::now();
 	micros = end-start;

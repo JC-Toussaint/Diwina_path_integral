@@ -1,6 +1,6 @@
 #include "fem2d.h"
 
-void pot2D::correction(Fem2d &fem,Triangle::Tri &t,double xk,double yk,double Mxk,double Myk,double wk_detJk)
+void pot2D::correction(Fem2d &fem,const Triangle::Tri &t,double xk,double yk,double Mxk,double Myk,double wk_detJk)
     {
     for (int ie=0; ie<Triangle::NBN; ie++)
 	    {
@@ -25,7 +25,7 @@ void pot2D::correction(Fem2d &fem,Triangle::Tri &t,double xk,double yk,double Mx
      0       1
 */
 
-void pot2D::integre_correction(Fem2d &fem,Triangle::Tri &tri)
+void pot2D::integre_correction(Fem2d &fem,const Triangle::Tri &tri)
     {
     for (int k=0; k<NB_PTS_INTEGRATION; k++)
         {

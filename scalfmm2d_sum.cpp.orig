@@ -65,7 +65,7 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 	int ns = 0;
 	// Boucle sur les triangles
 	for (int t = 0; t < TRI; t++) {
-		const Triangle::Tri &tri = fem.getTri(t);
+		Triangle::Tri &tri = fem.getTri(t);
 		if (!tri.overlap) continue;
 
 		// Boucle sur les points de Gauss du triangle
