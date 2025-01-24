@@ -295,8 +295,8 @@ int main(int argc, char *argv[])
 	fem2d.util();
 
 	std::cout << "Fast Multipole Calculation\n";
-    int ierr = pot2D::fmm2d_sum(fem2d);
-    std::cout << "fmm2D returned " << ierr << std::endl;
+        int ierr = pot2D::fmm2d_sum(fem2d);
+        std::cout << "fmm2D returned " << ierr << std::endl;
 
  	fem2d.exportHoloPhase(mySettings.getSimName());
  	fem2d.exportRatioRGBscaleImage(mySettings, ExportType::HOLO_PHASE);
