@@ -19,11 +19,7 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec) {
 int pot2D::direct2d_sum(Fem2d &fem) {
 	std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
 	std::chrono::duration<double, std::milli> micros;
-	std::cout << " direct2d_sum start\n "; const int NDIM = 2;
-	const int NOD = fem.getNbNodes();
-	const int TRI = fem.getNbTriangles();
-	const int NBN = Triangle::NBN;
-	const int NPI = Triangle::NPI;
+	std::cout << " direct2d_sum start\n "; 
 
 	start = std::chrono::high_resolution_clock::now();
 

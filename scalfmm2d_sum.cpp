@@ -23,11 +23,9 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec) {
 int pot2D::scalfmm2d_sum(Fem2d &fem) {
 	std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
 	std::chrono::duration<double, std::milli> micros;
-	std::cout << " scalfmm2d_sum start\n "; const int NDIM = 2;
+	std::cout << " scalfmm2d_sum start\n "; 
 	const int NOD = fem.getNbNodes();
 	const int TRI = fem.getNbTriangles();
-	const int NBN = Triangle::NBN;
-	const int NPI = Triangle::NPI;
 
 	start = std::chrono::high_resolution_clock::now();
 
@@ -68,7 +66,7 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 		if (!tri.overlap) continue;
 
 		// Boucle sur les points de Gauss du triangle
-		for (int k = 0; k < NPI; k++) {
+		for (int k = 0; k < Triangle::NPI; k++) {
 			double xk = tri.x[k];
 			double yk = tri.y[k];
 			double wk_detJk = tri.weight[k];
