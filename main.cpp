@@ -296,8 +296,8 @@ int main(int argc, char *argv[])
 
 	std::cout << "Fast Multipole Calculation\n";
     //int ierr = pot2D::fmm2d_sum(fem2d);
-    // int ierr = pot2D::scalfmm2d_sum(fem2d);
-    int ierr = pot2D::direct2d_sum(fem2d);
+    int ierr = pot2D::scalfmm2d_sum(fem2d);
+    //int ierr = pot2D::direct2d_sum(fem2d);
     std::cout << "fmm2D returned " << ierr << std::endl;
 
  	fem2d.exportHoloPhase(mySettings.getSimName());

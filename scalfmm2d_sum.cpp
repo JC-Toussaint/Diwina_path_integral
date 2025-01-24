@@ -33,8 +33,7 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 
 	int nsource = fem.calc_nb_active_sources();
 	std::vector<particle_source_type> source(nsource);
-	// poids
-	std::vector<double> dipstr(nsource);
+	std::vector<double> dipstr(nsource); 	// poids
 
 	int ntarget = fem.getNbNodes();
 	std::vector<particle_target_type> target(ntarget);
@@ -137,9 +136,11 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 	micros = end - start;
 	std::cout << std::endl << boost::format("%5t initialization time %50T. ");
 	std::cout << micros.count() << " [ms]\n";
+	
 	start = std::chrono::high_resolution_clock::now();
 	tree_source.statistics("tree source" ,std::cout) ;
 	tree_target.statistics("tree trarget" ,std::cout) ;
+	
 	int ierr{0};
 	int iprec{pot2D::IPREC};
 	scalfmm_execute(ierr, iprec, tree_source, tree_target, pottarg);
