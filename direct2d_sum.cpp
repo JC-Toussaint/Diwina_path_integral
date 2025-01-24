@@ -29,7 +29,6 @@ int pot2D::direct2d_sum(Fem2d &fem) {
 
 	fem.zero_node_sol();
 	
-// direct calculation
     std::for_each(fem.getTriangles().begin(),fem.getTriangles().end(),[&fem](const Triangle::Tri &tri)
         {
         if (!tri.overlap) return;//continue;
@@ -39,14 +38,14 @@ int pot2D::direct2d_sum(Fem2d &fem) {
             double xk = tri.x[k];
             double yk = tri.y[k];
             double wk_detJk = tri.weight[k];
-				double Mxk = 0;
-				double Myk = 0;
-				for (int ie=0; ie<Triangle::NBN; ie++){
-					int i=tri.getIndice(ie);
-					Node2d &node = fem.getNode(i);
-					Mxk += Triangle::a[ie][k]*node.Mx;
-					Myk += Triangle::a[ie][k]*node.My;
-				}
+			double Mxk = 0;
+			double Myk = 0;
+			for (int ie=0; ie<Triangle::NBN; ie++){
+				int i=tri.getIndice(ie);
+				Node2d &node = fem.getNode(i);
+				Mxk += Triangle::a[ie][k]*node.Mx;
+				Myk += Triangle::a[ie][k]*node.My;
+			}
 
             std::for_each(fem.getNodes().begin(),fem.getNodes().end(),
                           [&xk,&yk,&Mxk,&Myk,&wk_detJk](Node2d &node)
