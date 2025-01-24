@@ -71,6 +71,7 @@ public:
 		double zmax = maxNodes(Nodes::IDX_Z);
 
 		l = Eigen::Vector3d(xmax - xmin, ymax - ymin, zmax - zmin);
+		diam = l.maxCoeff();
 	}
 
 	/** return number of nodes  */
