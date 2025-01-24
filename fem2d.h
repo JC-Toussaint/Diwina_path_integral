@@ -331,9 +331,9 @@ namespace pot2D {
     int fmm2d_sum(Fem2d &fem);
 
     /** correction function for triangle number t */
-    void correction(Fem2d &fem,Triangle::Tri &t,double xk,double yk,double Mxk,double Myk,double wk_detJk);
+    void correction(Fem2d &fem,const Triangle::Tri &t,double xk,double yk,double Mxk,double Myk,double wk_detJk);
 
     /** compute the whole correction */
-    void integre_correction(Fem2d &fem,Triangle::Tri &t);
+    void integre_correction(Fem2d &fem,const Triangle::Tri &t);
     }
 #endif
