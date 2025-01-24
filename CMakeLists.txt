@@ -15,7 +15,7 @@ ENABLE_LANGUAGE(Fortran)
 set(CMAKE_EXPORT_COMPILE_COMMANDS OFF) # ON to get a .json with compiler calls for all targets
 
 # find_package(scalfmm CONFIG REQUIRED)
-set(SCALFMM_DIR "$ENV{HOME}/Devel/ScalFMM" CACHE PATH "Path to the ScalFMM directory")
+set(SCALFMM_DIR "../ScalFMM" CACHE PATH "Path to the ScalFMM directory")
 message(STATUS "Path to ScalFMM: SCALFMM_DIR = " ${SCALFMM_DIR} )
 add_library(scalfmm INTERFACE)
 
