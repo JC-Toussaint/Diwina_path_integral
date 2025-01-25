@@ -24,7 +24,7 @@ set(SCALFMM_INC "${SCALFMM}/include" "${SCALFMM}/modules/internal/inria_tools"  
 "${SCALFMM}/modules/internal/xtl/include"
 )
 #set(MKL_INC "/opt/intel/oneapi/2025.0/include" "/opt/intel/oneapi/2025.0/include/fftw")
-set(INCLUDES ".." "../include" "../../include" "/usr/include/eigen3" "${SCALFMM_INC}" )
+set(INCLUDES ".." "/usr/include/eigen3" "${SCALFMM_INC}" )
 
 set(SCALFMM_DEF  -DCPP17 -DENABLE_XTL_COMPLEX -DHAVE_CBLAS=1 -DXSIMD_ENABLE_XTL_COMPLEX -DXTENSOR_DISABLE_EXCEPTIONS -DXTENSOR_FFTW_USE_DOUBLE -DXTENSOR_FFTW_USE_FLOAT -DXTENSOR_USE_XSIMD)
 
@@ -145,8 +145,8 @@ add_custom_command(
 #===========================================================================
 
 ADD_EXECUTABLE(pathIntegral main.cpp ${HEADERS} ${SOURCES} ${SOURCES_FORTRAN} default-settings.o)
-target_compile_options( pathIntegral PUBLIC -Wall -Wextra -O3 -march=native ${SCALFMM_DEF})
-target_compile_definitions(pathIntegral PUBLIC -DCGAL_HAS_THREADS -DNDEBUG -DTBB_SUPPRESS_DEPRECATED_MESSAGES )
+target_compile_options( pathIntegral PUBLIC -Wall -Wextra -O3 -march=native )
+target_compile_definitions(pathIntegral PUBLIC -DCGAL_HAS_THREADS -DNDEBUG -DTBB_SUPPRESS_DEPRECATED_MESSAGES ${SCALFMM_DEF})
 target_include_directories(pathIntegral PUBLIC ${INCLUDES})
 target_link_libraries(pathIntegral yaml-cpp duktape ${TBB_LINK} Eigen3::Eigen ${GMSH_LIB}
 	-lfmm2d -lgfortran -lm -lopenblas -llapack -lboost_program_options)
