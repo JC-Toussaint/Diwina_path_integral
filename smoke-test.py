@@ -3,6 +3,8 @@
 import os
 import sys
 import subprocess
+
+# sys.path.append('~/Devel/FeeLLGood/src/FeeLLGood/python-modules')
 from feellgood import meshMaker # you have to install this module with sudo make install from feellgood public directory
 
 r = 100 

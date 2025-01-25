@@ -5,6 +5,7 @@ PROJECT(pathIntegral CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
 # settings for fortran
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -std=f2018")
@@ -22,7 +23,7 @@ set(SCALFMM_INC "${SCALFMM}/include" "${SCALFMM}/modules/internal/inria_tools"  
 "${SCALFMM}/modules/internal/xtensor/include" "${SCALFMM}/modules/internal/xtensor-blas/include"
 "${SCALFMM}/modules/internal/xtl/include"
 )
-set(MKL_INC "/opt/intel/oneapi/2025.0/include" "/opt/intel/oneapi/2025.0/include/fftw")
+#set(MKL_INC "/opt/intel/oneapi/2025.0/include" "/opt/intel/oneapi/2025.0/include/fftw")
 set(INCLUDES ".." "../include" "../../include" "/usr/include/eigen3" "${SCALFMM_INC}" )
 
 set(SCALFMM_DEF  -DCPP17 -DENABLE_XTL_COMPLEX -DHAVE_CBLAS=1 -DXSIMD_ENABLE_XTL_COMPLEX -DXTENSOR_DISABLE_EXCEPTIONS -DXTENSOR_FFTW_USE_DOUBLE -DXTENSOR_FFTW_USE_FLOAT -DXTENSOR_USE_XSIMD)

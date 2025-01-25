@@ -96,13 +96,12 @@ int pot2D::scalfmm2d_sum(Fem2d &fem) {
 			auto &inputs = source[ns].inputs();
 			inputs[0] = Mxk * dipstr[ns];
 			inputs[1] = Myk * dipstr[ns];
-			//std::cout << Mxk * dipstr[ns] << "\t" << Myk * dipstr[ns] << std::endl;
 
 			++ns;
-		        //correction(fem, tri, xk, yk, Mxk, Myk, wk_detJk);
+		        correction(fem, tri, xk, yk, Mxk, Myk, wk_detJk);
 		} // endfor k
 
-		//integre_correction(fem, tri);
+		integre_correction(fem, tri);
 	} // endfor t
 
         point_type box_size = S_max - S_min;
