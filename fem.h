@@ -19,7 +19,6 @@ It does also contains the definition of many constants for the solver, and for s
 #include <utility>
 #include <vector>
 
-#include <sys/times.h>
 #include <time.h>
 #include <unistd.h>
 
