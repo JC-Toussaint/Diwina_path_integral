@@ -118,8 +118,10 @@ public:
 	    double xmax = _c[0] + _l[0]/(2.0*zoomFactor);
 	    double ymin = _c[1] - _l[1]/(2.0*zoomFactor);
 	    double ymax = _c[1] + _l[1]/(2.0*zoomFactor);
+
 	    double xymin = std::min(xmin, ymin);
-	    double xymax = std::min(xmax, ymax);
+	    double xymax = std::max(xmax, ymax);
+
 		l = Eigen::Vector2d(xymax-xymin, xymax-xymin);
 		diam = l.maxCoeff();
 		c = Eigen::Vector2d(0.5 * (xymax + xymin), 0.5 * (xymax + xymin));
