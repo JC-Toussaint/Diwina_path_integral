@@ -85,12 +85,15 @@ rotations:
   angle2: 0
   axe2: [0, 0, 1]
 
-# hollow part filled with metal = true(yes) or false(no)
+# hollow part filled with metal 
 filled: false
 
+# electrostatic parameters depending on microscope and material
 electrostatics:
   CE: 6.5262e6
   V : 22
+
+# detector zoom and resolution
 detector:
   zoom: 1
   meshSize: 1e-9
