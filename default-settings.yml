@@ -89,8 +89,8 @@ rotations:
 filled: false
 
 electrostatics:
-  CE: 0
-  V : 0
+  CE: 6.5262e6
+  V : 22
 detector:
   zoom: 1
   meshSize: 1e-9
