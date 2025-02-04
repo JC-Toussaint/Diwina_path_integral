@@ -86,8 +86,8 @@ Finally, the holographic phase image is calculated at any point on a grid called
 
  The program generates the following ASCII files:
 
-    sim_M_integrals.out – Columns represent the node number, its x and y coordinates, a boolean value indicating whether the beam propagates through a material, the length of material traversed, the integrals of Mx, My, and Mz over the beam path, and the STXM intensity contrast.
-    sim_Holo.out – Columns represent the node number, its x and y coordinates, a boolean value indicating whether the beam propagates through a material, the length of material traversed, and the holographic phase in radians, taking into account both electrostatic and magnetic contributions.
+    sim_M_integrals.out – Columns represent the node number, its x and y coordinates, a boolean value indicating whether the beam propagates through materials, the length of material traversed, the integrals of Mx, My, and Mz over the beam path, and the STXM intensity contrast.
+    sim_Holo.out – Columns represent the node number, its x and y coordinates, a boolean value indicating whether the beam propagates through materials, the length of material traversed, and the holographic phase in radians, taking into account both electrostatic and magnetic contributions.
 
 The program also generates the following image files:
 
