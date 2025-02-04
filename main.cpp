@@ -268,7 +268,8 @@ int main(int argc, char *argv[])
 
     PathInt::pathIntegral myStuff(fem.msh,mySettings.filled);
 
-	Fem2d fem2d(fem.msh.c, fem.msh.l, mySettings.p_detector.zoomFactor, mySettings.p_detector.meshSize);
+	Fem2d fem2d(fem.msh.c, fem.msh.l, mySettings.p_electrostatics.CE,   mySettings.p_electrostatics.V, 
+					  mySettings.p_detector.zoomFactor, mySettings.p_detector.meshSize);
 	fem2d.infos();
 
 	std::vector<int> nodeIndices(fem2d.getNbNodes());
@@ -295,7 +296,7 @@ int main(int argc, char *argv[])
 	fem2d.util();
 
 	std::cout << "Fast Multipole Calculation\n";
-	{int ierr = pot2D::fmm2d_sum(fem2d);}
+	// int ierr = pot2D::fmm2d_sum(fem2d);
     int ierr = pot2D::scalfmm2d_sum(fem2d);
     //int ierr = pot2D::direct2d_sum(fem2d);
     std::cout << "fmm2D returned " << ierr << std::endl;

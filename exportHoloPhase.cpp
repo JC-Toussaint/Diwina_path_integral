@@ -20,8 +20,6 @@ int Fem2d::exportHoloPhase(const std::string &simName)
 	std::ofstream fout(filename);
 	if (fout.fail()) exit(1);
 
-	std::cerr << "to fix recuperer CE et V" << std::endl;
-	
 	for (unsigned int nod=0; nod<node.size(); nod++)
 	    {
 		Node2d& node = getNode(nod);

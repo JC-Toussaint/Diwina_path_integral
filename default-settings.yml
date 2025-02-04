@@ -85,8 +85,12 @@ rotations:
   angle2: 0
   axe2: [0, 0, 1]
 
+# hollow part filled with metal = true(yes) or false(no)
 filled: false
 
+electrostatics:
+  CE: 0
+  V : 0
 detector:
   zoom: 1
   meshSize: 1e-9

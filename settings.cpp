@@ -128,6 +128,9 @@ void Settings::infos()
     std::cout << "  axe2: [" << p_rot.axe2[0] << ", " << p_rot.axe2[1] << ", "
               << p_rot.axe2[2] << "]\n";
     std::cout << "filled: " << (filled ? "true" : "false") << "\n";
+    std::cout << "electrostatics:\n";
+    std::cout << "  CE: " << p_electrostatics.CE << "\n";
+    std::cout << "  V: "  << p_electrostatics.V  << "\n";
     std::cout << "detector:\n";
     std::cout << "  zoom: " << p_detector.zoomFactor << "\n";
     std::cout << "  meshSize: " << p_detector.meshSize << "\n";
@@ -248,6 +251,13 @@ void Settings::read(YAML::Node yaml)
        }
       
     assign(filled, yaml["filled"]);
+
+    YAML::Node electrostatics = yaml["electrostatics"];
+    if (electrostatics)
+       {
+       assign(p_electrostatics.CE, electrostatics["CE"]);
+       assign(p_electrostatics.V,  electrostatics["V"]);
+       }
  
     YAML::Node detector = yaml["detector"];
     if (detector)

@@ -17,6 +17,7 @@ output file format wanted by the user. This is done mainly with the class Settin
 #include "expression_parser.h"
 #include "facette.h"
 #include "rotation.h"
+#include "electrostatics.h"
 #include "detector.h"
 #include "tetra.h"
 
@@ -93,6 +94,9 @@ public:
     
     /** whether a hollow system is filled by Cu or empty */
     bool filled;
+
+    /** electrostatics parameters */
+    ELECTROSTATICS p_electrostatics;
 
     /** detector parameters */
     DETECTOR p_detector;

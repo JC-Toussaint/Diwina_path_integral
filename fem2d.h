@@ -111,8 +111,8 @@ public:
 	const int SIZE_TRIANGLE = 3;
 
 	/** constructor */
-	//Fem2d(double xymin, double xymax, double meshSize_):meshSize(meshSize_)
-	Fem2d(Eigen::Vector3d &_c, Eigen::Vector3d &_l, double _zoomFactor, double meshSize_):zoomFactor(_zoomFactor), meshSize(meshSize_)
+	Fem2d(Eigen::Vector3d &_c, Eigen::Vector3d &_l, double _CE, double _V, double _zoomFactor, double _meshSize):
+		CE(_CE), V(_V), zoomFactor(_zoomFactor), meshSize(_meshSize)
 	    {
 	    double xmin = _c[0] - _l[0]/(2.0*zoomFactor);
 	    double xmax = _c[0] + _l[0]/(2.0*zoomFactor);
@@ -127,9 +127,6 @@ public:
 		c = Eigen::Vector2d(0.5 * (xymax + xymin), 0.5 * (xymax + xymin));
 		grid_generator(xymin, xymax, meshSize);
 		chapeaux();
-		
-		CE=0; /* A REVOIR */
-		V=0;
 	    }
 
     inline void infos(void) const
@@ -203,10 +200,10 @@ public:
 	
 	double surf;
 	
-    /** electric constant */
+    /** electrostatic constant */
     double CE;
 
-    /** applied potential */
+    /** inner potential */
     double V;
 
 private:
