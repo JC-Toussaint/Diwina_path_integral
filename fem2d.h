@@ -112,7 +112,7 @@ public:
 
 	/** constructor */
 	Fem2d(Eigen::Vector3d &_c, Eigen::Vector3d &_l, double _CE, double _V, double _zoomFactor, double _meshSize):
-		CE(_CE), V(_V), zoomFactor(_zoomFactor), meshSize(_meshSize)
+		zoomFactor(_zoomFactor), meshSize(_meshSize), CE(_CE), V(_V)
 	    {
 	    double xmin = _c[0] - _l[0]/(2.0*zoomFactor);
 	    double xmax = _c[0] + _l[0]/(2.0*zoomFactor);
