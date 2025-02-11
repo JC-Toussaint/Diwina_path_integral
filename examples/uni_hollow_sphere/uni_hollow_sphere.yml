@@ -1,0 +1,31 @@
+# Simulation settings for test.py.
+
+outputs:
+  directory: .
+  file_basename: sim
+mesh:
+  filename: hollow_sphere.msh
+  length_unit: 1e-9
+  volume_regions:
+    hollow_volume:
+      Js: 1
+      lbp: 0.01
+      lbm: 0.018
+  surface_regions:
+    hollow_surface:
+initial_magnetization: 
+  - 1
+  - 0
+  - 0
+rotations:
+  angle1: 0
+  axe1: [1, 0, 0]
+  angle2: 0
+  axe2: [0, 0, 1]
+filled: false
+electrostatics:
+  CE: 0
+  V : 0
+detector:
+  zoom: 0.5
+  meshSize: 5e-9

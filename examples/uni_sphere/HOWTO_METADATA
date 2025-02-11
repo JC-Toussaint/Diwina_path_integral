@@ -1,0 +1,4 @@
+sudo apt-get install imagemagick
+
+identify -verbose sim_HOLO_PHASE.png 
+
