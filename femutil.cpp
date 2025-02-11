@@ -20,7 +20,6 @@ int Fem2d::calc_nb_active_sources(void)
                      nsource += Triangle::NPI; 
                      }
                   });
-//    std::cout << "DEBUG femutil nsource : " << nsource << std::endl;
     return nsource;
     }
 

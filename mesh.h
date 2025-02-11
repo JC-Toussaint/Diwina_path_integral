@@ -71,10 +71,8 @@ public:
 		double zmax = maxNodes(Nodes::IDX_Z);
 
 		l = Eigen::Vector3d(xmax - xmin, ymax - ymin, zmax - zmin);
-		std::cout << "DEBUG l :" << l << std::endl;
 		diam = l.maxCoeff();
 		c = Eigen::Vector3d(0.5 * (xmax + xmin), 0.5 * (ymax + ymin), 0.5 * (zmax + zmin));
-		std::cout << "DEBUG c :" << c << std::endl;
 	}
 
 	/** return number of nodes  */

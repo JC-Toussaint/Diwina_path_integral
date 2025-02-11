@@ -18,8 +18,6 @@ int pot2D::fmm2d_sum(Fem2d &fem)
 	const int TRI = fem.getNbTriangles();
 	const int NPI = Triangle::NPI;
 
-	std::cout << "DEBUG " << TRI << " " << NPI << std::endl;
-
 	start = std::chrono::high_resolution_clock::now();
 
 	int nsource = fem.calc_nb_active_sources();
@@ -76,7 +74,6 @@ int pot2D::fmm2d_sum(Fem2d &fem)
 		integre_correction(fem, tri);
 	} // endfor t
 
-	std::cout << "DEBUG ns & nsource : " << ns << " " << nsource << std::endl;
 	assert(ns==nsource);
 
 	end = std::chrono::high_resolution_clock::now();
