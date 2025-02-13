@@ -26,7 +26,7 @@ else:
     normal = ""
 
 num_ref_line = 70000
-values = [num_ref_line, -2.8001436037e-08, -2.8001436037e-08, 1, 1.8363100675e-07, 0, 0, 1.4612891207e-01, 6.2582530362e-01]
+values = [num_ref_line, -2.80e-08, -2.80e-08, 1, 1.836e-07, 0, 0, 0.14613901, 0.6258561806]
 okVals = False
 tol = 1e-8
 if(val.returncode == 0):
