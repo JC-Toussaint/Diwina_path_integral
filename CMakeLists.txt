@@ -53,7 +53,7 @@ find_package(LAPACK REQUIRED)
 set_source_files_properties(scalfmm2d_sum.cpp PROPERTIES COMPILE_FLAGS -w)
 
 #set(MKL_INC "/opt/intel/oneapi/2025.0/include" "/opt/intel/oneapi/2025.0/include/fftw")
-set(INCLUDES ".." "/usr/include/eigen3")
+set(INCLUDES "/usr/include/eigen3")
 
 find_library(GMSH_LIB gmsh)
 if(GMSH_LIB)
