@@ -56,17 +56,25 @@ set_source_files_properties(scalfmm2d_sum.cpp PROPERTIES COMPILE_FLAGS -w)
 #set(MKL_INC "/opt/intel/oneapi/2025.0/include" "/opt/intel/oneapi/2025.0/include/fftw")
 set(INCLUDES "/usr/include/eigen3")
 
-find_library(GMSH_LIB gmsh)
+# Recherche de GMSH - méthode améliorée
+find_library(GMSH_LIB NAMES gmsh libgmsh)
 if(GMSH_LIB)
-    message(STATUS "Found GMSH")
+    message(STATUS "Found GMSH library: ${GMSH_LIB}")
 else()
     message(FATAL_ERROR "Could not find libgmsh")
 endif()
 
-find_path(GMSH_INC gmsh.h)
+find_path(GMSH_INC NAMES gmsh.h)
 if(NOT GMSH_INC)
-  message(FATAL_ERROR "Could not find gmsh.h")
+    message(FATAL_ERROR "Could not find gmsh.h")
+else()
+    message(STATUS "Found GMSH headers: ${GMSH_INC}")
 endif()
+
+# Créer une cible GMSH pour une meilleure organisation
+add_library(gmsh_target INTERFACE)
+target_include_directories(gmsh_target INTERFACE ${GMSH_INC})
+target_link_libraries(gmsh_target INTERFACE ${GMSH_LIB})
 
 #===========================================================================
 # Option to enable AddressSanitizer
@@ -103,12 +111,6 @@ if(NOT ${ENABLE_SEQ})
 endif()
 
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-
-# search for pkg-config
-include (FindPkgConfig)
-if (NOT PKG_CONFIG_FOUND)
-    message (FATAL_ERROR "pkg-config not found")
-endif ()
 
 # check for libpng
 pkg_check_modules (LIBPNG libpng16 REQUIRED)
@@ -172,14 +174,30 @@ add_custom_command(
 # -fsanitize=address leak null undefined # both compiler and linker
 #===========================================================================
 
+include_directories (${CMAKE_SOURCE_DIR})
 ADD_EXECUTABLE(pathIntegral main.cpp ${HEADERS} ${SOURCES} ${SOURCES_FORTRAN} default-settings.o)
 target_compile_options( pathIntegral PUBLIC -Wall -Wextra -O3 -march=native )
 target_compile_definitions(pathIntegral PUBLIC CGAL_HAS_THREADS NDEBUG TBB_SUPPRESS_DEPRECATED_MESSAGES)
 target_include_directories(pathIntegral PRIVATE ${PROJECT_SOURCE_DIR})
-target_link_libraries(pathIntegral yaml-cpp duktape ${TBB_LINK} Eigen3::Eigen ${GMSH_LIB}
-	scalfmm LAPACK::LAPACK BLAS::BLAS ${FFTW_TARGET} OpenMP::OpenMP_CXX -lfmm2d -lgfortran -lm -lboost_program_options)
+
+# Liaison des bibliothèques - ordre important pour les dépendances
+target_link_libraries(pathIntegral 
+    yaml-cpp 
+    duktape 
+    ${TBB_LINK} 
+    Eigen3::Eigen 
+    gmsh_target  # Utilisation de la cible GMSH créée
+    scalfmm 
+    LAPACK::LAPACK 
+    BLAS::BLAS 
+    ${FFTW_TARGET} 
+    OpenMP::OpenMP_CXX 
+    -lfmm2d 
+    -lgfortran 
+    -lm 
+    -lboost_program_options
+)
 
 #===========================================================================
 
 install(TARGETS pathIntegral RUNTIME DESTINATION bin)
-
