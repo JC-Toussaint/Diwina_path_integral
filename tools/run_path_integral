@@ -1,6 +1,9 @@
 #!/bin/bash
-
+ 
 export DIWINA_PATH="$HOME/Devel/Diwina_path_integral"
+
+# copie de la colormap pour l'holographie
+cp "$DIWINA_PATH/tools/HoloScale.tsv" .
 
 # Vérifie que l'argument est fourni
 if [ -z "$1" ]; then
