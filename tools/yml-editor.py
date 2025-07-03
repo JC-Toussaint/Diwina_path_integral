@@ -25,16 +25,13 @@ def print_tree(data: Any, prefix: str = "", is_last: bool = True, level: int = 0
         items = list(data.items())
         for i, (key, value) in enumerate(items):
             is_last_item = (i == len(items) - 1)
-            
-            # Tree symbols
             if is_last_item:
                 current_prefix = prefix + "└── "
                 next_prefix = prefix + "    "
             else:
                 current_prefix = prefix + "├── "
                 next_prefix = prefix + "│   "
-            
-            # Display key with icon according to type
+
             if isinstance(value, dict):
                 print(f"{current_prefix}📂 {key}/")
                 print_tree(value, next_prefix, is_last_item, level + 1)
@@ -44,18 +41,17 @@ def print_tree(data: Any, prefix: str = "", is_last: bool = True, level: int = 0
             else:
                 type_icon = "🔢" if isinstance(value, (int, float)) else "📝"
                 print(f"{current_prefix}{type_icon} {key}: {repr(value)}")
-    
+
     elif isinstance(data, list):
         for i, item in enumerate(data):
             is_last_item = (i == len(data) - 1)
-            
             if is_last_item:
                 current_prefix = prefix + "└── "
                 next_prefix = prefix + "    "
             else:
                 current_prefix = prefix + "├── "
                 next_prefix = prefix + "│   "
-            
+
             if isinstance(item, (dict, list)):
                 print(f"{current_prefix}[{i}]")
                 print_tree(item, next_prefix, is_last_item, level + 1)
@@ -77,21 +73,13 @@ def analyze_initial_magnetization(config: Dict[str, Any]) -> None:
     
     initial_mag = config['initial_magnetization']
     print(initial_mag)
-				        
 
 def clean_yaml_content(content: str) -> str:
     """
     Cleans YAML content by replacing tabs with spaces
     """
-    # Replace tabs with spaces (2 spaces per tab)
     lines = content.split('\n')
-    cleaned_lines = []
-    
-    for line in lines:
-        # Replace tabs with 2 spaces
-        cleaned_line = line.replace('\t', '  ')
-        cleaned_lines.append(cleaned_line)
-    
+    cleaned_lines = [line.replace('\t', '  ') for line in lines]
     return '\n'.join(cleaned_lines)
 
 def load_yaml_from_file(filename: str = "paste.txt") -> Dict[str, Any]:
@@ -99,17 +87,11 @@ def load_yaml_from_file(filename: str = "paste.txt") -> Dict[str, Any]:
     Loads the YAML file from the uploaded file
     """
     try:
-        # Read file content
         with open(filename, 'r', encoding='utf-8') as file:
             content = file.read()
-        
-        # Clean content (replace tabs)
         cleaned_content = clean_yaml_content(content)
-        
-        # Parse YAML
         config = yaml.safe_load(cleaned_content)
         return config
-        
     except FileNotFoundError:
         print(f"❌ File '{filename}' not found")
         return None
@@ -119,10 +101,9 @@ def load_yaml_from_file(filename: str = "paste.txt") -> Dict[str, Any]:
 
 def analyze():
     """
-    analyze function
+    Analyze function
     """            
     try:
-        # Loading YAML file
         print(f"📂 Loading file {filename}...")
         config = load_yaml_from_file(filename)
         
@@ -137,10 +118,7 @@ def analyze():
         print(f"🏷️  Sections: {', '.join(config.keys())}")
         print("\n")
         
-        # Display complete tree structure
         print_tree(config)
-        
-        # Specific analysis of initial_magnetization field
         analyze_initial_magnetization(config)
         
         print("\n" + "="*80)
@@ -152,50 +130,46 @@ def analyze():
         print("💡 Check YAML file indentation (use spaces, not tabs)")
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
-        
+
 class SolSelector(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Sélection .sol et paramètres")
+        self.setWindowTitle("Select .sol and parameters")
         self.file_path = None
 
-        # Définir la police par défaut pour toute la fenêtre
-        font = QFont("Arial", 12)  # Police Arial, taille 12
+        font = QFont("Arial", 12)
         self.setFont(font)
 
         layout = QVBoxLayout()
 
-        # Fichier .sol
-        self.file_label = QLabel("Aucun fichier sélectionné")
-        self.select_file_btn = QPushButton("Sélectionner un fichier .sol")
+        self.file_label = QLabel("No file selected")
+        self.select_file_btn = QPushButton("Select a .sol file")
         self.select_file_btn.clicked.connect(self.select_file)
         layout.addWidget(self.select_file_btn)
         layout.addWidget(self.file_label)
 
-        # Paramètres existants
-        layout.addWidget(QLabel("Angle 1 (degré)"))
+        layout.addWidget(QLabel("Angle 1 (degree)"))
         self.angle1_input = QLineEdit("90")
         layout.addWidget(self.angle1_input)
 
-        layout.addWidget(QLabel("Axe 1 (x y z)"))
+        layout.addWidget(QLabel("Axis 1 (x y z)"))
         axe1_layout = QHBoxLayout()
         self.axe1_inputs = [QLineEdit(str(val)) for val in [1, 0, 0]]
         for inp in self.axe1_inputs:
             axe1_layout.addWidget(inp)
         layout.addLayout(axe1_layout)
 
-        layout.addWidget(QLabel("Angle 2 (degré)"))
+        layout.addWidget(QLabel("Angle 2 (degree)"))
         self.angle2_input = QLineEdit("0")
         layout.addWidget(self.angle2_input)
 
-        layout.addWidget(QLabel("Axe 2 (x y z)"))
+        layout.addWidget(QLabel("Axis 2 (x y z)"))
         axe2_layout = QHBoxLayout()
         self.axe2_inputs = [QLineEdit(str(val)) for val in [0, 1, 0]]
         for inp in self.axe2_inputs:
             axe2_layout.addWidget(inp)
         layout.addLayout(axe2_layout)
 
-        # Nouveaux paramètres
         self.filled_checkbox = QCheckBox("filled")
         self.filled_checkbox.setChecked(True)
         layout.addWidget(self.filled_checkbox)
@@ -216,8 +190,7 @@ class SolSelector(QWidget):
         self.meshsize_input = QLineEdit("1e-9")
         layout.addWidget(self.meshsize_input)
 
-        # Validation
-        self.ok_btn = QPushButton("Valider")
+        self.ok_btn = QPushButton("OK")
         self.ok_btn.clicked.connect(self.validate)
         layout.addWidget(self.ok_btn)
 
@@ -225,7 +198,7 @@ class SolSelector(QWidget):
         self.parameters = None
 
     def select_file(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Sélectionner un fichier .sol", "", "Fichiers .sol (*.sol)")
+        path, _ = QFileDialog.getOpenFileName(self, "Select a .sol file", "", "SOL files (*.sol)")
         if path:
             self.file_path = path
             self.file_label.setText(path)
@@ -233,7 +206,7 @@ class SolSelector(QWidget):
     def validate(self):
         try:
             if not self.file_path:
-                raise ValueError("Aucun fichier .sol sélectionné")
+                raise ValueError("No .sol file selected")
 
             angle1 = float(self.angle1_input.text())
             axe1 = [float(inp.text()) for inp in self.axe1_inputs]
@@ -252,15 +225,13 @@ class SolSelector(QWidget):
             )
             self.close()
         except Exception as e:
-            QMessageBox.critical(self, "Erreur", f"Erreur de saisie : {e}")
+            QMessageBox.critical(self, "Error", f"Input error: {e}")
 
 def get_sol_and_angles():
     app = QApplication(sys.argv)
-    
-    # MÉTHODE ALTERNATIVE : Définir la police pour toute l'application
     font = QFont("Arial", 12)
     app.setFont(font)
-    
+
     window = SolSelector()
     window.show()
     app.exec_()
@@ -275,24 +246,19 @@ def update_settings(settings, parameters):
     settings['rotations']['axe2']   = parameters[4]
 
     settings['filled'] = str(parameters[5]).lower()
-             
     settings['electrostatics']['CE'] =  parameters[6]
     settings['electrostatics']['V']  =  parameters[7]
-          
     settings['detector']['zoom']     =  parameters[8]
     settings['detector']['meshSize'] =  parameters[9]
-    
+
 def save_yaml_file(data: dict, filename: str):
     """
-    Sauvegarde une hiérarchie YAML (dictionnaire Python) dans un fichier.
-
-    :param data: Dictionnaire représentant le contenu YAML
-    :param filename: Chemin du fichier de sortie (.yml ou .yaml)
+    Saves a YAML hierarchy (Python dictionary) to a file.
     """
     with open(filename, 'w') as f:
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
-        
-# --- Programme principal ---
+
+# --- Main program ---
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python dialog.py <setting.yml>")
@@ -326,9 +292,9 @@ if __name__ == "__main__":
             filename = f"{base}_ray{ext}"  
             save_yaml_file(settings, filename)
                  
-            print("Fichier mis à jour avec succès.")
+            print("update succeeded")
         else:
-            print("Opération annulée.")
+            print("update canceled")
     except Exception as e:
-        print(f"Erreur : {e}")
+        print(f"Error : {e}")
         sys.exit(1)

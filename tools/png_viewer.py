@@ -151,7 +151,7 @@ class ImageViewer(QGraphicsView):
         if self._sync_updating:
             return
             
-        zoom_in_factor = 1.02
+        zoom_in_factor = 1.005
         zoom_out_factor = 1 / zoom_in_factor
         factor = zoom_in_factor if event.angleDelta().y() > 0 else zoom_out_factor
         
@@ -421,8 +421,9 @@ class MainWindow(QMainWindow):
             self.tab_widget.addTab(tab, tab_name)
 
         # Redimensionner la fenêtre
-        self.resize(1200, 800)
-
+#        self.resize(1200, 900)
+        self.resize(1000, 900)
+        
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
@@ -430,7 +431,6 @@ if __name__ == "__main__":
         "sim_HOLO_PHASE.png",
         "sim_MZ.png",
         "sim_PATH_LENGTH.png",
-        "sim_STXM_XMCD.png",
         "sim_STXM_XMCD.png"
     ]
 
