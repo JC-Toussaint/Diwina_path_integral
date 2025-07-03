@@ -11,6 +11,12 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
+# Vérifie que le fichier indiqué existe
+if [ ! -f "$1" ]; then
+    echo "Error : file '$1' does not exist."
+    exit 1
+fi
+
 "$DIWINA_PATH/tools/yml-editor.py" "$1"
 
 # Extraire le nom sans l'extension
