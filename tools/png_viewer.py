@@ -151,7 +151,7 @@ class ImageViewer(QGraphicsView):
         if self._sync_updating:
             return
             
-        zoom_in_factor = 1.005
+        zoom_in_factor = 1.01
         zoom_out_factor = 1 / zoom_in_factor
         factor = zoom_in_factor if event.angleDelta().y() > 0 else zoom_out_factor
         
@@ -173,7 +173,7 @@ class ImageViewer(QGraphicsView):
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             pos = self.mapToScene(event.pos())
-            print(f"Clicked at scene position: {pos.x():.1f}, {pos.y():.1f}")
+#            print(f"Clicked at scene position: {pos.x():.1f}, {pos.y():.1f}")
         super().mousePressEvent(event)
 
     def scrollContentsBy(self, dx, dy):
@@ -241,9 +241,9 @@ def read_image_metadata(image_path):
                 elif 'unit' in key.lower():
                     unit = value
                         
-            print(f"Métadonnées pour {image_path}:")
-            for key, value in metadata.items():
-                print(f"  {key}: {value}")
+#            print(f"Métadonnées pour {image_path}:")
+#            for key, value in metadata.items():
+#                print(f"  {key}: {value}")
                 
             return vmin, vmax, unit
             
@@ -421,8 +421,9 @@ class MainWindow(QMainWindow):
             self.tab_widget.addTab(tab, tab_name)
 
         # Redimensionner la fenêtre
-#        self.resize(1200, 900)
+        # Redimensionner la fenêtre et empêcher le redimensionnement
         self.resize(1000, 900)
+        self.setFixedSize(1000, 900)
         
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -454,7 +455,7 @@ if __name__ == "__main__":
     for image_path in image_list:
         vmin, vmax, unit = read_image_metadata(image_path)
         metadata_list.append((vmin, vmax, unit))
-        print(f"{image_path} - Min: {vmin}, Max: {vmax}, Unit: {unit}")
+#        print(f"{image_path} - Min: {vmin}, Max: {vmax}, Unit: {unit}")
 
     window = MainWindow(image_list, colorbar_cmap_list, metadata_list)
     window.show()

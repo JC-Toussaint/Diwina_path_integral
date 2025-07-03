@@ -1,0 +1,24 @@
+#!/bin/bash
+
+export DIWINA_PATH="$HOME/Devel/Diwina_path_integral"
+
+# Vérifie que l'argument est fourni
+if [ -z "$1" ]; then
+    echo "Usage: $0 settings.yml"
+    exit 1
+fi
+
+"$DIWINA_PATH/tools/yml-editor.py" "$1"
+
+# Extraire le nom sans l'extension
+basename="${1%.yml}"
+
+# Construire le nouveau nom
+filename="${basename}_ray.yml"
+
+# Exécute path_integral
+"$DIWINA_PATH/pathIntegral" "$filename"
+
+# Exécute png_viewer pour visualiser les images
+"$DIWINA_PATH/tools/png_viewer.py"
+
