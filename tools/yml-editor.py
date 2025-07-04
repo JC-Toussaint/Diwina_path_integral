@@ -281,7 +281,7 @@ if __name__ == "__main__":
             filename = sys.argv[1]
             settings = load_yaml_from_file(filename)
         # Display complete tree structure
-            print_tree(settings)
+#            print_tree(settings)
 
             update_settings(settings, parameters)
         # Display complete tree structure
