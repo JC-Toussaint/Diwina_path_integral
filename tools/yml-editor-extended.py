@@ -427,7 +427,11 @@ class CombinedInterface(QMainWindow):
             # Detector
             if 'detector' not in self.yaml_config:
                 self.yaml_config['detector'] = {}
-            self.yaml_config['detector']['zoom'] = float(self.zoom_input.text())
+            zoom = float(self.zoom_input.text())
+            if zoom>1.0: 
+                zoom=1.0
+                self.zoom_input.setText(str(zoom))
+            self.yaml_config['detector']['zoom'] = zoom
             self.yaml_config['detector']['meshSize'] = float(self.meshsize_input.text())
 
             self.update_yaml_display()
