@@ -327,6 +327,7 @@ class CombinedInterface(QMainWindow):
     def select_sol_file(self):
         path, _ = QFileDialog.getOpenFileName(self, "Select a .sol file", "", "SOL files (*.sol)")
         if path:
+            self.sol_file_path = path
             self.sol_input.setText(path)
 
     def load_yaml_file(self):
@@ -353,7 +354,8 @@ class CombinedInterface(QMainWindow):
         # Fill fields from YAML
         if 'initial_magnetization' in self.yaml_config:
             self.sol_input.setText(str(self.yaml_config['initial_magnetization']))
-
+            self.sol_input.setText('No sol file selected')
+			
         if 'rotations' in self.yaml_config:
             rot = self.yaml_config['rotations']
             if 'angle1' in rot:
@@ -398,9 +400,12 @@ class CombinedInterface(QMainWindow):
                 self.yaml_config = {}
 
             # Initial magnetization
-            if self.sol_input.text():
-                self.yaml_config['initial_magnetization'] = os.path.basename(self.sol_input.text())
+ #           if self.sol_input.text():
+ #               self.yaml_config['initial_magnetization'] = os.path.basename(self.sol_input.text())
 
+            if not self.sol_file_path:
+                raise ValueError("No .sol file selected")
+                
             # Rotations
             if 'rotations' not in self.yaml_config:
                 self.yaml_config['rotations'] = {}
