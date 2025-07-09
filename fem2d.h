@@ -259,7 +259,7 @@ private:
 	 */
 	void grid_generator(double xymin, double xymax, double meshSize)
 	    {
-		const bool OUTPUT_FILE = true;
+		const bool OUTPUT_FILE = false;
     	const bool STRUCTURED = true;
 
 		gmsh::initialize();

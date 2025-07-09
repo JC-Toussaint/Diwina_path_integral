@@ -139,13 +139,19 @@ class ImageViewer(QGraphicsView):
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.setSceneRect(QRectF(self.pixmap.rect()))
-        self.fitInView(self.sceneRect(), Qt.KeepAspectRatio)
+#        self.fitInView(self.sceneRect(), Qt.KeepAspectRatio)
         
         # Variables pour la synchronisation
         self._sync_updating = False
         
         # Émettre le signal initial
         self.emit_view_changed()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.fitInView(self.sceneRect(), Qt.KeepAspectRatio)
+        self.emit_view_changed()
+
 
     def wheelEvent(self, event):
         if self._sync_updating:

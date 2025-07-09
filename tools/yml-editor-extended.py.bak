@@ -148,7 +148,7 @@ class YAMLSyntaxHighlighter(QSyntaxHighlighter):
             index = value_pattern.indexIn(text, index + value_pattern.matchedLength())
 
 class CombinedInterface(QMainWindow):
-    def __init__(self, yaml_file="settings.yml"):
+    def __init__(self):
         super().__init__()
         self.setWindowTitle("YAML Editor + 3D Visualization")
         
@@ -156,12 +156,11 @@ class CombinedInterface(QMainWindow):
         self.showMaximized()
 
         # Variables
-        self.file_path = yaml_file
+        self.file_path = None
         self.yaml_config = {}
         self.mesh_filename = None
 
         self.setup_ui()
-        self.load_yaml_file()
 
     def setup_ui(self):
         central_widget = QWidget()
@@ -178,7 +177,18 @@ class CombinedInterface(QMainWindow):
         left_panel.setMinimumWidth(500)
         left_layout = QVBoxLayout(left_panel)
 
-                
+        # File selection
+        file_group = QGroupBox("YAML File")
+        file_layout = QVBoxLayout(file_group)
+
+        self.file_label = QLabel("No file selected")
+        self.select_file_btn = QPushButton("Select a YAML file")
+        self.select_file_btn.clicked.connect(self.select_yaml_file)
+
+        file_layout.addWidget(self.select_file_btn)
+        file_layout.addWidget(self.file_label)
+
+        # .sol file selection
         sol_layout = QVBoxLayout()
         self.sol_label = QLabel(".sol File:")
         self.sol_input = QLineEdit()
@@ -188,7 +198,9 @@ class CombinedInterface(QMainWindow):
         sol_layout.addWidget(self.sol_label)
         sol_layout.addWidget(self.sol_input)
         sol_layout.addWidget(self.sol_btn)
-        left_layout.addLayout(sol_layout)
+        file_layout.addLayout(sol_layout)
+
+        left_layout.addWidget(file_group)
 
         # Rotation parameters
         rotation_group = QGroupBox("Rotation Parameters")
@@ -496,9 +508,7 @@ if __name__ == "__main__":
     else:
         print("No NVIDIA GPU detected.")
 
-    yaml_file = sys.argv[1] if len(sys.argv) > 1 else "settings.yml"
-
     app = QApplication(sys.argv)
-    window = CombinedInterface(yaml_file)
+    window = CombinedInterface()
     window.show()
     sys.exit(app.exec_())

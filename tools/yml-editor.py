@@ -261,7 +261,7 @@ def save_yaml_file(data: dict, filename: str):
 # --- Main program ---
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python dialog.py <setting.yml>")
+        print("Usage: python yml-editor.py <setting.yml>")
         sys.exit(1)
 
     try:
