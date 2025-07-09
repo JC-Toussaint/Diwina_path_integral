@@ -151,8 +151,7 @@ class ImageViewer(QGraphicsView):
         super().showEvent(event)
         self.fitInView(self.sceneRect(), Qt.KeepAspectRatio)
         self.emit_view_changed()
-
-
+    
     def wheelEvent(self, event):
         if self._sync_updating:
             return
