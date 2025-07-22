@@ -20,9 +20,12 @@ int Fem2d::exportHoloPhase(const std::string &simName)
 	std::ofstream fout(filename);
 	if (fout.fail()) exit(1);
 
-        fout << "## col number:   1    2   3   4            5            6    " << std::endl;
-        fout << "## columns:      idx  x   y   flag_inside  path_length  phase" << std::endl;
-
+	fout << "## columns" << std::endl;
+	fout << boost::format("## %3s %20s %20s %2s %20s %20s")
+     	% "1" % "2" % "3" % "4" % "5" % "6" << std::endl;
+	fout << boost::format("## %3s %20s %20s %2s %20s %20s")
+     	% "idx" % "x" % "y" % "in" % "path_length" % "phase" << std::endl;
+     	
 	for (unsigned int nod=0; nod<node.size(); nod++)
 	    {
 		Node2d& node = getNode(nod);
