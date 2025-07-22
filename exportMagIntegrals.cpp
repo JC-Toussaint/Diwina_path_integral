@@ -20,7 +20,7 @@ int Fem2d::exportMagIntegrals(const std::string &simName)
 	std::ofstream fout(filename);
 	if (fout.fail()) exit(1);
 
-    fout << "## col number:   1    2   3   4            5            6            7            8            9" << std::endl;
+    fout << "## col number:   1    2   3   4            5            6            7            8            9       " << std::endl;
     fout << "## columns:      idx  x   y   flag_inside  path_length  Mx_integral  My_integral  Mz_integral  contrast" << std::endl;  
 
 	for (unsigned int nod=0; nod<node.size(); nod++)
