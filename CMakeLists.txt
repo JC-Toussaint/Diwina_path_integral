@@ -7,11 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
-# settings for fortran
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -std=f2018")
-SET (CMAKE_Fortran_COMPILER  gfortran)
-ENABLE_LANGUAGE(Fortran)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS OFF) # ON to get a .json with compiler calls for all targets
 
 # find_package(scalfmm CONFIG REQUIRED)
@@ -154,11 +149,9 @@ SET(HEADERS config.h node.h  expression_parser.h mesh.h
 
 SET(SOURCES settings.cpp read.cpp tetra.cpp expression_parser.cpp chronometer.cpp
     tags.cpp write_png.cpp exportRatioGrayScaleImage.cpp exportMagIntegrals.cpp chapeaux.cpp 
-    fmm2d_sum.cpp scalfmm2d_sum.cpp direct2d_sum.cpp
+    scalfmm2d_sum.cpp direct2d_sum.cpp
     femutil.cpp correction.cpp 
     exportHoloPhase.cpp exportRatioRGBscaleImage.cpp pathIntegral.cpp)
-
-set(SOURCES_FORTRAN rfmm2d.f90)
 
 configure_file(config.h.in ./config.h)
 
