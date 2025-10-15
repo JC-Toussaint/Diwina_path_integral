@@ -35,13 +35,21 @@ def load_mesh(filename):
     try:
         mesh = meshio.read(filename)
         points = mesh.points[:, :3]
+        print(mesh.cells)
+
+        triangles = []
         for cell_block in mesh.cells:
             if cell_block.type == "triangle":
-                triangles = cell_block.data
-                break
-        else:
+                triangles.append(cell_block.data)
+
+        if not triangles:
             raise ValueError("No triangle cells found in the mesh.")
+
+        # Concaténer tous les blocs en un seul tableau
+        triangles = np.vstack(triangles)
+
         return points, triangles
+
     except:
         # If the file does not exist, create a simple cylinder
         theta = np.linspace(0, 2*np.pi, 20)
