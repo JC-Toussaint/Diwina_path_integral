@@ -33,6 +33,22 @@ def load_mesh(filename):
         print(f"[ERREUR] Échec de la lecture du fichier '{filename}': {e}", file=sys.stderr)
         sys.exit(1)
 
+def vol_tetra(points, tet):
+	
+	# Définition des points
+    A = points[tet[0], :]
+    B = points[tet[1], :]
+    C = points[tet[2], :]
+    D = points[tet[3], :]
+
+	# Calcul des vecteurs
+    AB = B - A
+    AC = C - A
+    AD = D - A
+
+	# Calcul du volume via le produit mixte
+    return abs(np.dot(AB, np.cross(AC, AD))) / 6
+
 # Exemple d’utilisation
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -49,21 +65,21 @@ if __name__ == "__main__":
     for i, p in enumerate(points):
     	print(f"noeud {i} : {p}")
     	
-    # 1-based gmsh 3895 3963 4018 4047 
-	# Définition des points
-    A = points[3894, :]
-    B = points[3962, :]
-    C = points[4017, :]
-    D = points[4046, :]
+    tet_id = 0
+    tet_min = tetrahedra[0]
+    vol_min	= vol_tetra(points, tet_min)
 
-	# Calcul des vecteurs
-    AB = B - A
-    AC = C - A
-    AD = D - A
+    for i, t in enumerate(tetrahedra):
+        vol = vol_tetra(points, t)
+        print(f"tet {i} : {t} -> vol {vol}")
 
-	# Calcul du volume via le produit mixte
-    volume = abs(np.dot(AB, np.cross(AC, AD))) / 6
+        # Mise à jour du plus petit volume
+        if vol < vol_min:
+           vol_min = vol
+           tet_min = t  
+           tet_id  = i
 
-    print(f"Le volume du tétraèdre est : {volume:.6f} unités cubiques")
-
+	# Affichage final du plus petit volume
+    print(f"\ntet {tet_id} avec le + petit volume {tet_min} -> vol {vol_min}")
+     	   	
 

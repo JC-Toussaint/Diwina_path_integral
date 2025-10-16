@@ -35,7 +35,6 @@ def load_mesh(filename):
     try:
         mesh = meshio.read(filename)
         points = mesh.points[:, :3]
-        print(mesh.cells)
 
         triangles = []
         for cell_block in mesh.cells:
