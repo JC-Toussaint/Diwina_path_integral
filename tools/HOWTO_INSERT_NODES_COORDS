@@ -1,0 +1,4 @@
+    fg-merge-sol machin.msh machin.sol -o machin.tsv
+
+et tu obtiens un fichier qui ressemble à un .sol, mais avec les
+coordonnées des nœuds à la place de leur indice.
