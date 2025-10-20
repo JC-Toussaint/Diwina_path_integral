@@ -31,7 +31,19 @@ def has_nvidia_gpu():
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
 
+import os
+import numpy as np
+import meshio
+
 def load_mesh(filename):
+    """
+    Load a mesh from a file using meshio.
+    Returns the point coordinates and the triangular connectivity.
+    Raises an error if the file does not exist or contains no triangles.
+    """
+    if not os.path.isfile(filename):
+        raise FileNotFoundError(f"The file '{filename}' does not exist.")
+
     try:
         mesh = meshio.read(filename)
         points = mesh.points[:, :3]
@@ -42,32 +54,15 @@ def load_mesh(filename):
                 triangles.append(cell_block.data)
 
         if not triangles:
-            raise ValueError("No triangle cells found in the mesh.")
+            raise ValueError(f"No triangular cells found in mesh '{filename}'.")
 
-        # Concaténer tous les blocs en un seul tableau
+        # Concatenate all triangle blocks into a single array
         triangles = np.vstack(triangles)
 
         return points, triangles
 
-    except:
-        # If the file does not exist, create a simple cylinder
-        theta = np.linspace(0, 2*np.pi, 20)
-        z = np.linspace(0, 1, 10)
-        theta_grid, z_grid = np.meshgrid(theta, z)
-        x = np.cos(theta_grid).flatten()
-        y = np.sin(theta_grid).flatten()
-        z = z_grid.flatten()
-        points = np.column_stack([x, y, z])
-
-        # Create simple triangles
-        triangles = []
-        for i in range(len(theta)-1):
-            for j in range(len(z)-1):
-                idx = i * len(z) + j
-                triangles.append([idx, idx+1, idx+len(z)])
-                triangles.append([idx+1, idx+len(z)+1, idx+len(z)])
-
-        return points, np.array(triangles)
+    except Exception as e:
+        raise RuntimeError(f"Error while loading mesh '{filename}': {e}")
 
 def normalize(v):
     norm = np.linalg.norm(v)
