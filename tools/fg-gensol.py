@@ -11,6 +11,8 @@ import re
 
 from typing import Any, Dict, List, Union
 
+import warnings
+
 def has_nvidia_gpu():
     try:
         subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
@@ -212,6 +214,9 @@ if __name__ == "__main__":
     mesh_file = sys.argv[1]
     points, triangles, tetrahedrons, regions = load_mesh(mesh_file)
 
+    print(type(points), points.shape)
+    print("-"*40)
+
     # Display regions and their elements
     for region_name, elems in regions.items():
         print(f"\nRegion '{region_name}' — {len(elems)} elements:")
@@ -221,4 +226,34 @@ if __name__ == "__main__":
     # afficher le nombre d'éléments par région
     for region_name, elems in regions.items():
         print(f"\nRegion '{region_name}' — {len(elems)} elements:")
+
+    # Initialisation du tableau nodal
+    m = np.full((len(points), 3), np.nan, dtype=np.float64)
+
+    # Dictionnaire des fonctions vectorielles par région
+    region_functions = {
+        'V1': lambda x, y, z: np.array([0, 0, 1]),
+        'V2': lambda x, y, z: np.array([x, y, 0]),
+        'V3': lambda x, y, z: np.array([np.sin(x), np.cos(y), z])
+    }
+
+    # Pour chaque région
+    for region_name, elems in regions.items():
+        print(f"\nRegion '{region_name}' — {len(elems)} elements:")
+        # Vérifier si la fonction existe pour cette région
+        if region_name not in region_functions:
+            warnings.warn(f"No function defined for region '{region_name}'. Region ignored.")
+            continue
+
+        func = region_functions[region_name]
+
+        for elem in elems:
+            for node_id in elem['nodes']:
+                idx = node_id-1
+                xyz = points[idx, :]
+                m[idx] = func(xyz[0], xyz[1], xyz[2])
+
+    if np.isnan(m).any():
+        warnings.warn("m contains no initialized values")
+
 
