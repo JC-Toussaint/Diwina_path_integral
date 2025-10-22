@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 
+def define_region_functions():
+    """Define vector field for each region."""
+    return {
+        'V1': lambda x, y, z: np.array([0, 0, 1]),
+        'V2': lambda x, y, z: np.array([x, y, 0]),
+        'V3': lambda x, y, z: np.array([np.sin(x), np.cos(y), z]),
+        'V4': lambda x, y, z: np.array([np.sin(x), np.cos(y), z]),
+        'V5': lambda x, y, z: np.array([np.sin(x), np.cos(y), z])
+    }
+    
 import os
-import yaml
-import json
 import sys
-import subprocess
 import numpy as np
 import meshio
-import re
 
-from typing import Any, Dict, List, Union
+from datetime import datetime
 
 import warnings
 
-def has_nvidia_gpu():
-    try:
-        subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-        return True
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return False
+warnings.simplefilter("always")  # pour forcer l'affichage
+warnings.formatwarning = lambda message, category, filename, lineno, line=None: f"{message}\n"
 
 def get_region_elements(mesh):
     """
@@ -197,63 +199,63 @@ def load_mesh(filename):
         raise RuntimeError(f"Error while loading mesh '{filename}': {e}")
 
 
-if __name__ == "__main__":
-    # if has_nvidia_gpu():
-    #     os.environ["__NV_PRIME_RENDER_OFFLOAD"] = "1"
-    #     os.environ["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia"
-    #     print("NVIDIA detected, environment variables set.")
-    # else:
-    #     print("No NVIDIA GPU detected.")
+def apply_region_functions(points, regions, region_functions):
+    """Apply region defined functions."""
+    m = np.full((len(points), 3), np.nan, dtype=np.float64)
+    for region_name, elems in regions.items():
+        if region_name not in region_functions:
+            warnings.warn(f"⚠️ No function defined for region '{region_name}'. Region ignored.")
+            continue
 
+        func = region_functions[region_name]
+        for elem in elems:
+            for node_id in elem['nodes']:
+                idx = node_id - 1
+                xyz = points[idx, :]
+                m[idx] = func(*xyz)
+
+    if np.isnan(m).any():
+        warnings.warn("m contains non-initialized values")
+        sys.exit("❌ abort")
+
+    return m
+
+
+def write_solution_file(m, filename="sol.in"):
+    """Écrit le champ m et les métadonnées dans le fichier sol.in."""
+    now = datetime.now().isoformat()
+    header_lines = [
+        "## feeLLGood version: 0.10.3-24-g3103a8d",
+        "## hostname: jc-Precision-5570",
+        f"## real-world time: {now}",
+        "## settings file: settings.yml",
+        "## time: 0.000000e+00",
+        "## columns: idx\tmx\tmy\tmz\tphi"
+    ]
+
+    idx = np.arange(m.shape[0])[:, np.newaxis]
+    phi = np.zeros((m.shape[0], 1))
+    tab = np.hstack((idx, m, phi))
+
+    with open(filename, "w") as f:
+        for line in header_lines:
+            f.write(line + "\n")
+        np.savetxt(f, tab, fmt=["%d", "%.7e", "%.7e", "%.7e", "%.7e"], delimiter="\t")
+
+    print(f"✅ File '{filename}' successfully written ({m.shape[0]} lines).")
+
+def main(mesh_file):
+    """Routine principale."""
+    points, triangles, tetrahedrons, regions = load_mesh(mesh_file)
+    region_functions = define_region_functions()
+    m = apply_region_functions(points, regions, region_functions)
+    write_solution_file(m)
+    
+if __name__ == "__main__":
     # Check for required argument
     if len(sys.argv) < 2:
         print("Usage: python fg-gensol.py mesh_file.msh")
         sys.exit(1)
 
-    # Load the mesh file
     mesh_file = sys.argv[1]
-    points, triangles, tetrahedrons, regions = load_mesh(mesh_file)
-
-    print(type(points), points.shape)
-    print("-"*40)
-
-    # Display regions and their elements
-    for region_name, elems in regions.items():
-        print(f"\nRegion '{region_name}' — {len(elems)} elements:")
-        for elem in elems:
-            print(f"  Element {elem['global_element_index']:4d} ({elem['cell_type']}): nodes {elem['nodes']}")
-
-    # afficher le nombre d'éléments par région
-    for region_name, elems in regions.items():
-        print(f"\nRegion '{region_name}' — {len(elems)} elements:")
-
-    # Initialisation du tableau nodal
-    m = np.full((len(points), 3), np.nan, dtype=np.float64)
-
-    # Dictionnaire des fonctions vectorielles par région
-    region_functions = {
-        'V1': lambda x, y, z: np.array([0, 0, 1]),
-        'V2': lambda x, y, z: np.array([x, y, 0]),
-        'V3': lambda x, y, z: np.array([np.sin(x), np.cos(y), z])
-    }
-
-    # Pour chaque région
-    for region_name, elems in regions.items():
-        print(f"\nRegion '{region_name}' — {len(elems)} elements:")
-        # Vérifier si la fonction existe pour cette région
-        if region_name not in region_functions:
-            warnings.warn(f"No function defined for region '{region_name}'. Region ignored.")
-            continue
-
-        func = region_functions[region_name]
-
-        for elem in elems:
-            for node_id in elem['nodes']:
-                idx = node_id-1
-                xyz = points[idx, :]
-                m[idx] = func(xyz[0], xyz[1], xyz[2])
-
-    if np.isnan(m).any():
-        warnings.warn("m contains no initialized values")
-
-
+    main(mesh_file)
