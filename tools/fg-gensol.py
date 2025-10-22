@@ -9,7 +9,8 @@ def define_region_functions():
         'V4': lambda x, y, z: np.array([np.sin(x), np.cos(y), z]),
         'V5': lambda x, y, z: np.array([np.sin(x), np.cos(y), z])
     }
-    
+   
+import socket 
 import os
 import sys
 import numpy as np
@@ -224,9 +225,11 @@ def apply_region_functions(points, regions, region_functions):
 def write_solution_file(m, filename="sol.in"):
     """Écrit le champ m et les métadonnées dans le fichier sol.in."""
     now = datetime.now().isoformat()
+    hostname = socket.gethostname() 
+    
     header_lines = [
         "## feeLLGood version: 0.10.3-24-g3103a8d",
-        "## hostname: jc-Precision-5570",
+        f"## hostname: {hostname}",
         f"## real-world time: {now}",
         "## settings file: settings.yml",
         "## time: 0.000000e+00",
@@ -240,7 +243,7 @@ def write_solution_file(m, filename="sol.in"):
     with open(filename, "w") as f:
         for line in header_lines:
             f.write(line + "\n")
-        np.savetxt(f, tab, fmt=["%d", "%.7e", "%.7e", "%.7e", "%.7e"], delimiter="\t")
+        np.savetxt(f, tab, fmt=["%d", "%+.7e", "%+.7e", "%+.7e", "%.7e"], delimiter="\t")
 
     print(f"✅ File '{filename}' successfully written ({m.shape[0]} lines).")
 
