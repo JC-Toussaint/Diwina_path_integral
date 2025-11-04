@@ -12,6 +12,7 @@ import warnings
 warnings.simplefilter("always")
 warnings.formatwarning = lambda message, category, filename, lineno, line=None: f"{message}\n"
 
+DEBUG = 1
 
 def autogenerate_init_cfg(regions):
     """
@@ -130,29 +131,49 @@ def load_mesh(filename):
         mesh = meshio.read(filename)
         
         # Display regions info
-        for cell_block, cell_data in zip(mesh.cells, mesh.cell_data["gmsh:physical"]):
-            cell_type = cell_block.type
-            print(f"\nCell type: {cell_type}")
-            for region_name, (region_id, dim) in mesh.field_data.items():
-                element_indices = np.where(cell_data == region_id)[0]
-                if len(element_indices) > 0:
-                    print(f"  Region '{region_name}' (ID={region_id}, dim={dim}): {len(element_indices)} elements")
+        #for cell_block, cell_data in zip(mesh.cells, mesh.cell_data["gmsh:physical"]):
+        #    cell_type = cell_block.type
+        #    print(f"\nCell type: {cell_type}")
+        #    for region_name, (region_id, dim) in mesh.field_data.items():
+        #        element_indices = np.where(cell_data == region_id)[0]
+        #        if len(element_indices) > 0:
+        #            print(f"  Region '{region_name}' (ID={region_id}, dim={dim}): {len(element_indices)} elements")
 
         regions = get_region_elements(mesh)
+        
+        if DEBUG: # assumption DEBUG set to 1
+        # Display all element node indices for each region
+            print('DEBUG')
+            for region_name, elems in regions.items():
+                print(f"\nRegion '{region_name}' — {len(elems)} elements:")
+                for elem in elems:
+                    print(f"  Element {elem['global_element_index']:4d} ({elem['cell_type']}): nodes {elem['nodes']}")
+        
         points = mesh.points[:, :3]
+        print('Number of nodes : ', len(points))
 
         triangles = []
         tetrahedrons = []
         unsupported_types = []
 
-        for cell_block in mesh.cells:
-            if cell_block.type == "triangle":
-                triangles.append(cell_block.data)
-            elif cell_block.type == "tetra":
-                tetrahedrons.append(cell_block.data)
-            else:
-                unsupported_types.append(cell_block.type)
+        # for cell_block in mesh.cells:
+        #     if cell_block.type == "triangle":
+        #        triangles.append(cell_block.data)
+        #    elif cell_block.type == "tetra":
+        #        tetrahedrons.append(cell_block.data)
+        #    else:
+        #        unsupported_types.append(cell_block.type)
 
+        for region_name, elems in regions.items():
+            for elem in elems:
+                match elem['cell_type']:
+                    case 'triangle':
+                        triangles.append(elem['nodes'])
+                    case 'tetra':
+                        tetrahedrons.append(elem['nodes'])
+                    case _:
+                        unsupported_types.append(elem['nodes'])
+                	                   	
         if unsupported_types:
             unique_types = ", ".join(sorted(set(unsupported_types)))
             raise ValueError(f"Unsupported element types: {unique_types}")
@@ -183,9 +204,16 @@ def apply_region_functions(points, regions, region_functions):
         func = region_functions[region_name]
         for elem in elems:
             for node_id in elem['nodes']:
-                idx = node_id - 1
+                idx = node_id # Meshio uses zero-based indexing
                 xyz = points[idx, :]
                 m[idx] = func(*xyz)
+
+    norms = np.linalg.norm(m, axis=1)
+    nonzero = norms > 0    
+    m[nonzero] /= norms[nonzero][:, np.newaxis]
+    
+    if (np.linalg.norm(m, axis=1) == 0).any():
+         warnings.warn(f"⚠️  m contains zero-norm vectors")
 
     if np.isnan(m).any():
         warnings.warn("m contains non-initialized values")
@@ -217,7 +245,7 @@ def write_solution_file(m, filename="sol.in"):
             f.write(line + "\n")
         np.savetxt(f, tab, fmt=["%d", "%+.7e", "%+.7e", "%+.7e", "%.7e"], delimiter="\t")
 
-    print(f"✅ File '{filename}' successfully written ({m.shape[0]} lines).")
+    print(f"✅ File '{filename}' successfully written ({len(header_lines)} header lines and {m.shape[0]} data lines).")
 
 
 def main(mesh_file):
