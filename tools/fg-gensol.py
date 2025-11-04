@@ -53,27 +53,30 @@ def autogenerate_init_cfg(regions):
 def get_region_elements(mesh):
     """
     Return a dictionary mapping region name -> list of element descriptions.
-    Each element description is a dict:
-      {
-        "cell_type": "triangle" / "tetra" / ...,
-        "block_index": i,
-        "local_element_index": j,
-        "global_element_index": g,
-        "nodes": array([...], dtype=int)
-      }
+    Only includes volume elements (tetrahedra).
     """
     if not hasattr(mesh, "cells"):
         raise ValueError("mesh has no attribute 'cells'")
 
-    # 1) build mapping physical_id -> region_name
+    # 1) build mapping physical_id -> (region_name, dimension)
     id_to_name = {}
     for name, arr in mesh.field_data.items():
         try:
-            phys_id = int(np.asarray(arr).flatten()[0])
+            arr_flat = np.asarray(arr).flatten()
+            phys_id = int(arr_flat[0])
+            dimension = int(arr_flat[1]) if len(arr_flat) > 1 else None
+            # Only keep 3D regions (volume)
+            if dimension == 3:
+                id_to_name[phys_id] = name
+                print(f"  Volume region: {name} (ID={phys_id}, dim={dimension})")
         except Exception:
             continue
-        id_to_name[phys_id] = name
-
+    
+    if not id_to_name:
+        raise ValueError("No volume regions (dimension=3) found in mesh")
+    
+    print("Volume regions only:", id_to_name)
+    
     # 2) find physical tags key
     phys_key = None
     if hasattr(mesh, "cell_data") and mesh.cell_data:
@@ -90,7 +93,7 @@ def get_region_elements(mesh):
     if phys_key is None:
         raise ValueError("No physical tags found in mesh.cell_data.")
 
-    # 3) iterate cell blocks
+    # 3) iterate cell blocks - only process volume elements
     regions = {}
     global_idx = 0
     phys_tags_list = mesh.cell_data[phys_key]
@@ -108,7 +111,11 @@ def get_region_elements(mesh):
 
         for local_idx in range(connectivity.shape[0]):
             phys_id = int(phys_tags[local_idx])
-            region_name = id_to_name.get(phys_id, f"phys_{phys_id}")
+            # Only process if this physical ID is in our volume regions
+            if phys_id not in id_to_name:
+                continue
+                
+            region_name = id_to_name[phys_id]
             elem = {
                 "cell_type": cell_type,
                 "block_index": block_index,
@@ -129,15 +136,16 @@ def load_mesh(filename):
 
     try:
         mesh = meshio.read(filename)
+        print(mesh)
         
         # Display regions info
-        #for cell_block, cell_data in zip(mesh.cells, mesh.cell_data["gmsh:physical"]):
-        #    cell_type = cell_block.type
-        #    print(f"\nCell type: {cell_type}")
-        #    for region_name, (region_id, dim) in mesh.field_data.items():
-        #        element_indices = np.where(cell_data == region_id)[0]
-        #        if len(element_indices) > 0:
-        #            print(f"  Region '{region_name}' (ID={region_id}, dim={dim}): {len(element_indices)} elements")
+        for cell_block, cell_data in zip(mesh.cells, mesh.cell_data["gmsh:physical"]):
+            cell_type = cell_block.type
+            print(f"\nCell type: {cell_type}")
+            for region_name, (region_id, dim) in mesh.field_data.items():
+                element_indices = np.where(cell_data == region_id)[0]
+                if len(element_indices) > 0:
+                    print(f"  Region '{region_name}' (ID={region_id}, dim={dim}): {len(element_indices)} elements")
 
         regions = get_region_elements(mesh)
         
@@ -152,41 +160,7 @@ def load_mesh(filename):
         points = mesh.points[:, :3]
         print('Number of nodes : ', len(points))
 
-        triangles = []
-        tetrahedrons = []
-        unsupported_types = []
-
-        # for cell_block in mesh.cells:
-        #     if cell_block.type == "triangle":
-        #        triangles.append(cell_block.data)
-        #    elif cell_block.type == "tetra":
-        #        tetrahedrons.append(cell_block.data)
-        #    else:
-        #        unsupported_types.append(cell_block.type)
-
-        for region_name, elems in regions.items():
-            for elem in elems:
-                match elem['cell_type']:
-                    case 'triangle':
-                        triangles.append(elem['nodes'])
-                    case 'tetra':
-                        tetrahedrons.append(elem['nodes'])
-                    case _:
-                        unsupported_types.append(elem['nodes'])
-                	                   	
-        if unsupported_types:
-            unique_types = ", ".join(sorted(set(unsupported_types)))
-            raise ValueError(f"Unsupported element types: {unique_types}")
-
-        if not triangles:
-            raise ValueError(f"No triangular cells found in '{filename}'")
-        if not tetrahedrons:
-            raise ValueError(f"No tetrahedron cells found in '{filename}'")
-
-        triangles = np.vstack(triangles)
-        tetrahedrons = np.vstack(tetrahedrons)
-
-        return points, triangles, tetrahedrons, regions
+        return points, regions
 
     except Exception as e:
         raise RuntimeError(f"Error loading mesh '{filename}': {e}")
@@ -250,7 +224,7 @@ def write_solution_file(m, filename="sol.in"):
 
 def main(mesh_file):
     """Main routine."""
-    points, triangles, tetrahedrons, regions = load_mesh(mesh_file)
+    points, regions = load_mesh(mesh_file)
     
     # Check if init_cfg.py exists in current directory
     init_cfg_path = os.path.abspath("init_cfg.py")
