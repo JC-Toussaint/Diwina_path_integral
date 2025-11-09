@@ -216,7 +216,7 @@ private:
 	/**
 	using gmsh geo, rectangle method buids a triangular mesh of a rectangle ((xmin,ymin),(xmax,ymax)) in 3D space,
 	in a xOy plane at altitude z, with meshSize carac length
-	if outputFile is true a file named rectangle.msh is written (text format 2.2)
+	if outputFile is true a file named detector.msh is written (text format 2.2)
 	if structured is true output mesh file is structured, meaning that nodes are on a regular grid
 	 */
 	int rectangle(bool outputFile,bool structured,double xmin,double xmax,double ymin,double ymax,double z,double meshSize)
