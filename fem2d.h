@@ -60,7 +60,7 @@ namespace Triangle {
 			if (_i.size() != NBN)
 				{ throw std::invalid_argument("Initializer list must contain exactly 3 elements."); }
 			ind.assign(_i.begin(), _i.end());
-			zeroBasing(); // Passage de la convention Matlab/msh à C++
+			//zeroBasing(); // Passage de la convention Matlab/msh à C++
 			}
 
 		/** Getter for indices */
@@ -218,12 +218,12 @@ private:
 	    {
 		int Nx = static_cast<int>((xymax - xymin) / meshSize + 0.5) + 1;
 		int Ny = static_cast<int>((xymax - xymin) / meshSize + 0.5) + 1;		
-		auto index = [&Nx](int i, int j) -> int { return j * Nx + i; };
+		auto index = [&Nx](int i, int j) -> int { return j * Nx + i; };  // zero based numbering
 		
 		// Creation de nodes
 		for (int ix = 0; ix < Nx; ++ix) {
 			for (int iy = 0; iy < Ny; ++iy) {
-				Node2d node_;
+				Node2d node_{};
 				node_.p[0] = xymin + meshSize * ix;
 				node_.p[1] = xymin + meshSize * iy;
 				node_.p[2] = 0.0;
