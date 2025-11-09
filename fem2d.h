@@ -105,11 +105,6 @@ namespace Triangle {
 class Fem2d
 {
 public:
-	const int DIM_OBJ_1D = 1;
-	const int DIM_OBJ_2D = 2;
-	const int DIM_OBJ_3D = 3;
-	const int SIZE_TRIANGLE = 3;
-
 	/** constructor */
 	Fem2d(Eigen::Vector3d &_c, Eigen::Vector3d &_l, double _CE, double _V, double _zoomFactor, double _meshSize):
 		zoomFactor(_zoomFactor), meshSize(_meshSize), CE(_CE), V(_V)
@@ -214,87 +209,48 @@ private:
 	std::vector<Triangle::Tri> tri;
 
 	/**
-	using gmsh geo, rectangle method buids a triangular mesh of a rectangle ((xmin,ymin),(xmax,ymax)) in 3D space,
-	in a xOy plane at altitude z, with meshSize carac length
-	if outputFile is true a file named detector.msh is written (text format 2.2)
-	if structured is true output mesh file is structured, meaning that nodes are on a regular grid
-	 */
-	int rectangle(bool outputFile,bool structured,double xmin,double xmax,double ymin,double ymax,double z,double meshSize)
-	    {
-		using namespace gmsh::model;
-		const int idx_rectangle = 1;
-
-		geo::addPoint(xmin,ymin,z,meshSize,1);
-		geo::addPoint(xmax,ymin,z,meshSize,2);
-		geo::addPoint(xmax,ymax,z,meshSize,3);
-		geo::addPoint(xmin,ymax,z,meshSize,4);
-        geo::addLine(1,2,1);
-		geo::addLine(2,3,2);
-		geo::addLine(3,4,3);
-		geo::addLine(4,1,4);
-        geo::addCurveLoop({1,2,3,4},1);
-		geo::addPlaneSurface({1},idx_rectangle);
-
-		if(structured)
-		    { geo::mesh::setTransfiniteSurface(idx_rectangle,"Left",{1,2,3,4}); }
-
-		geo::synchronize();
-        addPhysicalGroup(DIM_OBJ_1D,{1,2,3,4},5);
-		setPhysicalName(DIM_OBJ_1D,5,"frontier");
-		addPhysicalGroup(DIM_OBJ_2D,{1},10);
-		setPhysicalName(DIM_OBJ_2D,10,"Rectangle");
-        mesh::generate(DIM_OBJ_3D);
-
-		if(outputFile)
-		    {
-			gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
-			gmsh::write("detector.msh");
-		    }
-		return idx_rectangle;
-	    }
-
-	/**
-	build a mesh of a rectangle in 3D space(calling above rectangle function),
-	 and print back to terminal nodes and triangle indices of the rectangle mesh
+	 * Generate a structured square mesh in 3D space.
+	 * The mesh consists of nodes placed on a regular grid in the XY-plane (Z=0),
+	 * and triangles connecting the nodes to form a plane.
+	 * Nodes and triangle indices are stored in the corresponding containers.
 	 */
 	void grid_generator(double xymin, double xymax, double meshSize)
 	    {
-		const bool OUTPUT_FILE = false;
-    	const bool STRUCTURED = true;
+		int Nx = static_cast<int>((xymax - xymin) / meshSize + 0.5) + 1;
+		int Ny = static_cast<int>((xymax - xymin) / meshSize + 0.5) + 1;		
+		auto index = [&Nx](int i, int j) -> int { return j * Nx + i; };
+		
+		// Creation de nodes
+		for (int ix = 0; ix < Nx; ++ix) {
+			for (int iy = 0; iy < Ny; ++iy) {
+				Node2d node_;
+				node_.p[0] = xymin + meshSize * ix;
+				node_.p[1] = xymin + meshSize * iy;
+				node_.p[2] = 0.0;
+				node.push_back(node_);
+			}
+		}
 
-		gmsh::initialize();
-		gmsh::option::setNumber("General.ExpertMode", 1);
-		gmsh::model::add("Rectangle");
+		// Creation of triangles
+		for (int ix = 0; ix < Nx - 1; ++ix) {       
+			for (int iy = 0; iy < Ny - 1; ++iy) {   
+				tri.push_back(Triangle::Tri{ { 
+				    index(ix    , iy    ), 
+				    index(ix + 1, iy    ), 
+				    index(ix + 1, iy + 1) 
+				} });
 
-		int idx_mesh = rectangle(OUTPUT_FILE,STRUCTURED,xymin,xymax,xymin,xymax,0.0,meshSize);
-		std::vector<std::size_t> nodeT;
-		std::vector<double> coord;
-		gmsh::model::mesh::getNodesForPhysicalGroup(DIM_OBJ_2D,10,nodeT,coord);
+				tri.push_back(Triangle::Tri{ { 
+				    index(ix    , iy    ), 
+				    index(ix + 1, iy + 1), 
+				    index(ix    , iy + 1) 
+				} });
+			}
+		}
+		assert (node.size() == Nx*Ny);
+		assert (tri.size() == 2*(Nx-1)*(Ny-1));
+		}
 
-		std::for_each(nodeT.begin(),nodeT.end(),[this, &coord](std::size_t &idx)
-			{
-			long j=idx-1;
-			Node2d node_;
-			node_.p[0] = coord[3*j+0];
-			node_.p[1] = coord[3*j+1];
-			node_.p[2] = coord[3*j+2];
-			node.push_back(node_);
-			});
-
-		std::vector<int> elemTypes;
-		std::vector<std::vector<std::size_t> > elemTags, elemNodeTags;
-		gmsh::model::mesh::getElements(elemTypes,elemTags,elemNodeTags,DIM_OBJ_2D,idx_mesh);
-
-		for(unsigned int i=0;i<elemNodeTags[0].size();i+=SIZE_TRIANGLE)
-		    {
-			int i0 = elemNodeTags[0][i+0];
-			int i1 = elemNodeTags[0][i+1];
-			int i2 = elemNodeTags[0][i+2];
-			Triangle::Tri tri_({i0, i1, i2});
-			tri.push_back(tri_);
-		    }
-		gmsh::finalize();
-	    }
 
 	/**
 	The function handleExport is designed to handle the export of a grayscale image based on a specific export type.
