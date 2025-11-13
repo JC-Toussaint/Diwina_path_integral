@@ -1,0 +1,95 @@
+outputs:
+  directory: .
+  file_basename: sim
+  evol_time_step: 5e-13
+  final_time: 1e-9
+  evol_columns:
+  - t
+  - <Mx>
+  - <My>
+  - <Mz>
+  - E_ex
+  - E_demag
+  - E_zeeman
+  - E_tot
+  mag_config_every: 100
+  metadata: null
+mesh:
+  filename: one_sphere16891.msh
+  length_unit: 1e-9
+  volume_regions:
+    dot:
+      Ae: 1.0e-11
+      Js: 1.0
+      K: 0
+      uk:
+      - 0
+      - 0
+      - 1
+      K3: 0
+      ex:
+      - 1
+      - 0
+      - 0
+      ey:
+      - 0
+      - 1
+      - 0
+      ez:
+      - 0
+      - 0
+      - 1
+      alpha_LLG: 0.5
+  surface_regions:
+    dot_surface:
+      suppress_charges: false
+      Ks: 0
+      uk:
+      - 0
+      - 0
+      - 1
+initial_magnetization: sol.in
+initial_time: null
+recentering:
+  enable: false
+  direction: Z
+  threshold: 0.1
+Bext:
+- 0
+- 0
+- 0
+spin_transfer_torque:
+  enable: false
+  sigma: 1.0
+  dens_state: 1.0
+  beta: 0
+  l_J: 1.0
+  l_sf: 1.0
+  V_file: false
+demagnetizing_field_solver:
+  nb_threads: 0
+finite_element_solver:
+  max(iter): 700
+  tolerance: 1e-6
+time_integration:
+  max(du): 0.02
+  min(dt): 1e-16
+  max(dt): 5e-13
+rotations:
+  angle1: 90.0
+  axe1:
+  - 1.0
+  - 0.0
+  - 0.0
+  angle2: 0.0
+  axe2:
+  - 1.0
+  - 0.0
+  - 0.0
+filled: 'true'
+electrostatics:
+  CE: 0
+  V: 0.0
+detector:
+  zoom: 1.0
+  meshSize: 1.0e-09
