@@ -434,6 +434,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     image_list = [
+        "sim_HOLO_PHASE_RGB.png",
         "sim_HOLO_PHASE.png",
         "sim_MZ.png",
         "sim_PATH_LENGTH.png",

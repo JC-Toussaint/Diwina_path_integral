@@ -62,6 +62,10 @@ int Fem2d::handleExport(const Settings &settings, ExportType eType, const std::f
 		filename=settings.getSimName()+"_PATH_LENGTH.png";
 		unit = "m";
 		break;
+	case ExportType::HOLO_PHASE:
+		filename=settings.getSimName()+"_HOLO_PHASE.png";
+		unit = "rad";
+		break;
 	default:
 		std::cout << termcolor::bright_red << termcolor::blink << "Error export type unknown" << termcolor::reset << std::endl;
 		exit(1);
@@ -100,7 +104,10 @@ int Fem2d::exportRatioGrayScaleImage(const Settings &settings, ExportType eType)
     static const std::unordered_map<ExportType, std::function<double(const Node2d&)>> valueExtractors = {
         {ExportType::CONTRAST,    [](const Node2d& node) { return node.contrast; }},
         {ExportType::MZ_INTEGRAL, [](const Node2d& node) { return node.Mz_integral; }},
-        {ExportType::PATH_LENGTH, [](const Node2d& node) { return node.path_length; }}
+        {ExportType::PATH_LENGTH, [](const Node2d& node) { return node.path_length; }},
+        {ExportType::HOLO_PHASE, [this](const Node2d& node) { 
+        	double phase = this->CE * this->V*node.path_length-CHARGE_ELECTRON/PLANCKS_HBAR*node.sol;
+        return phase; }}
     };
 
     // Check if the type is supported

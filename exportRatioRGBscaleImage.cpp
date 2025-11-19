@@ -81,19 +81,19 @@ int Fem2d::handleRGBexport(const Settings &settings, ExportType eType, const std
 
     switch (eType) {
    	case ExportType::CONTRAST:
-		filename=settings.getSimName()+"_STXM_XMCD.png";
+		filename=settings.getSimName()+"_STXM_XMCD_RGB.png";
 		unit = "dimless";
 		break;
 	case ExportType::MZ_INTEGRAL:
-		filename=settings.getSimName()+"_MZ.png";
+		filename=settings.getSimName()+"_MZ_RGB.png";
 		unit = "A";
 		break;
 	case ExportType::PATH_LENGTH:
-		filename=settings.getSimName()+"_PATH_LENGTH.png";
+		filename=settings.getSimName()+"_PATH_LENGTH_RGB.png";
 		unit = "m";
 		break;
 	case ExportType::HOLO_PHASE:
-		filename=settings.getSimName()+"_HOLO_PHASE.png";
+		filename=settings.getSimName()+"_HOLO_PHASE_RGB.png";
 		unit = "rad";
 		break;
 	default:
