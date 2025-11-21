@@ -92,6 +92,121 @@ def load_phase_png_with_metadata(path_png):
 
     return phase, dx, dy
 
+def apply_window(phase, window_type='hann', width_fraction=0.1):
+    """Applique une fenêtre sur les bords de l'image"""
+    Ny, Nx = phase.shape
+    
+    # Largeur de la zone de transition
+    wx = int(Nx * width_fraction)
+    wy = int(Ny * width_fraction)
+    
+    # Création des fenêtres 1D
+    win_x = np.ones(Nx)
+    win_y = np.ones(Ny)
+    
+    if window_type == 'hann':
+        win_x[:wx] = np.sin(np.linspace(0, np.pi/2, wx))**2
+        win_x[-wx:] = np.sin(np.linspace(np.pi/2, 0, wx))**2
+        win_y[:wy] = np.sin(np.linspace(0, np.pi/2, wy))**2
+        win_y[-wy:] = np.sin(np.linspace(np.pi/2, 0, wy))**2
+    
+    # Fenêtre 2D
+    window = np.outer(win_y, win_x)
+    
+    return phase * window
+
+# Zero-padding
+# Augmenter la taille du tableau en ajoutant des zéros autour 
+def simulate_fresnel_padded(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, pad_factor=2):
+    Ny, Nx = phase.shape
+    lam = relativistic_wavelength(E0_eV)
+    
+    # Dimensions avec padding
+    Ny_pad = Ny * pad_factor
+    Nx_pad = Nx * pad_factor
+    
+    # Créer psi0 avec padding
+    psi0 = np.exp(1j * phase)
+    psi0_padded = np.zeros((Ny_pad, Nx_pad), dtype=complex)
+    
+    # Centrer l'image originale
+    y_start = (Ny_pad - Ny) // 2
+    x_start = (Nx_pad - Nx) // 2
+    psi0_padded[y_start:y_start+Ny, x_start:x_start+Nx] = psi0
+    
+    # FFT sur le tableau paddé
+    kx = np.fft.fftfreq(Nx_pad, d=dx)
+    ky = np.fft.fftfreq(Ny_pad, d=dy)
+    KX, KY = np.meshgrid(kx, ky)
+    k2 = KX**2 + KY**2
+    
+    chi = np.pi*lam*defocus*k2 + 0.5*np.pi*Cs*(lam**3)*(k2**2)
+    H = np.exp(-1j * chi)
+    
+    Psi0 = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psi0_padded)))
+    Psi_def = Psi0 * H
+    psi_def = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(Psi_def)))
+    
+    # Extraire la région centrale
+    psi_def_crop = psi_def[y_start:y_start+Ny, x_start:x_start+Nx]
+    
+    return np.abs(psi_def_crop)**2
+
+# Soustraction de tendance (Detrending)
+# Retirer la pente moyenne de la phase avant FFT 
+def detrend_phase(phase):
+    """Retire les tendances linéaires de la phase"""
+    Ny, Nx = phase.shape
+    y, x = np.mgrid[0:Ny, 0:Nx]
+    
+    # Ajustement d'un plan
+    A = np.c_[x.ravel(), y.ravel(), np.ones(Nx*Ny)]
+    coef, _, _, _ = np.linalg.lstsq(A, phase.ravel(), rcond=None)
+    
+    plane = coef[0]*x + coef[1]*y + coef[2]
+    return phase - plane
+
+# Approche combinée (recommandée)
+def simulate_fresnel_improved(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, 
+                              use_window=True, pad_factor=1.5):
+    Ny, Nx = phase.shape
+    lam = relativistic_wavelength(E0_eV)
+    
+    # 1. Fenêtrage optionnel
+    if use_window:
+        phase_proc = apply_window(phase, width_fraction=0.05)
+    else:
+        phase_proc = phase
+    
+    psi0 = np.exp(1j * phase_proc)
+    
+    # 2. Zero-padding
+    Ny_pad = int(Ny * pad_factor)
+    Nx_pad = int(Nx * pad_factor)
+    psi0_padded = np.zeros((Ny_pad, Nx_pad), dtype=complex)
+    
+    y_start = (Ny_pad - Ny) // 2
+    x_start = (Nx_pad - Nx) // 2
+    psi0_padded[y_start:y_start+Ny, x_start:x_start+Nx] = psi0
+    
+    # 3. FFT et propagation
+    kx = np.fft.fftfreq(Nx_pad, d=dx)
+    ky = np.fft.fftfreq(Ny_pad, d=dy)
+    KX, KY = np.meshgrid(kx, ky)
+    k2 = KX**2 + KY**2
+    
+    chi = np.pi*lam*defocus*k2 + 0.5*np.pi*Cs*(lam**3)*(k2**2)
+    H = np.exp(-1j * chi)
+    
+    Psi0 = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psi0_padded)))
+    Psi_def = Psi0 * H
+    psi_def = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(Psi_def)))
+    
+    # 4. Extraction de la région d'intérêt
+    psi_def_crop = psi_def[y_start:y_start+Ny, x_start:x_start+Nx]
+    
+    return np.abs(psi_def_crop)**2
+
 def simulate_fresnel(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
     Ny, Nx = phase.shape
     lam = relativistic_wavelength(E0_eV)
@@ -109,6 +224,148 @@ def simulate_fresnel(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
     Psi_def = Psi0 * H
     psi_def = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(Psi_def)))
 
+    return np.abs(psi_def)**2
+
+def make_periodic(phase):
+    """Force la phase à être périodique en soustrayant une surface bilinéaire"""
+    Ny, Nx = phase.shape
+    
+    # Valeurs moyennes sur chaque bord
+    top = np.mean(phase[0, :])
+    bottom = np.mean(phase[-1, :])
+    left = np.mean(phase[:, 0])
+    right = np.mean(phase[:, -1])
+    
+    # Créer une grille de correction
+    y, x = np.mgrid[0:Ny, 0:Nx]
+    
+    # Interpolation bilinéaire des bords
+    correction = (top * (Ny-1-y) + bottom * y) / (Ny-1)
+    correction += (left * (Nx-1-x) + right * x) / (Nx-1)
+    correction -= (top + bottom + left + right) / 4  # normalisation
+    
+    return phase - correction
+
+def cosine_edge_apodization(phase, edge_width=0.15):
+    """Applique une apodisation cosinus uniquement sur les bords"""
+    Ny, Nx = phase.shape
+    
+    # Largeur de transition en pixels
+    wx = int(Nx * edge_width)
+    wy = int(Ny * edge_width)
+    
+    # Fonction de transition cosinus
+    def cosine_window(n, w):
+        win = np.ones(n)
+        if w > 0:
+            # Bord gauche/haut
+            win[:w] = 0.5 * (1 - np.cos(np.pi * np.arange(w) / w))
+            # Bord droit/bas
+            win[-w:] = 0.5 * (1 - np.cos(np.pi * np.arange(w-1, -1, -1) / w))
+        return win
+    
+    win_x = cosine_window(Nx, wx)
+    win_y = cosine_window(Ny, wy)
+    window = np.outer(win_y, win_x)
+    
+    # Ramener progressivement vers la moyenne sur les bords
+    phase_mean = np.mean(phase)
+    return phase_mean + (phase - phase_mean) * window
+
+def simulate_fresnel_mirrored(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
+    Ny, Nx = phase.shape
+    lam = relativistic_wavelength(E0_eV)
+    
+    # Padding par symétrie miroir
+    # Haut-bas
+    phase_pad = np.vstack([
+        np.flipud(phase),
+        phase,
+        np.flipud(phase)
+    ])
+    
+    # Gauche-droite
+    phase_pad = np.hstack([
+        np.fliplr(phase_pad),
+        phase_pad,
+        np.fliplr(phase_pad)
+    ])
+    
+    Ny_pad, Nx_pad = phase_pad.shape
+    psi0 = np.exp(1j * phase_pad)
+    
+    # FFT sur l'image étendue
+    kx = np.fft.fftfreq(Nx_pad, d=dx)
+    ky = np.fft.fftfreq(Ny_pad, d=dy)
+    KX, KY = np.meshgrid(kx, ky)
+    k2 = KX**2 + KY**2
+    
+    chi = np.pi*lam*defocus*k2 + 0.5*np.pi*Cs*(lam**3)*(k2**2)
+    H = np.exp(-1j * chi)
+    
+    Psi0 = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psi0)))
+    Psi_def = Psi0 * H
+    psi_def = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(Psi_def)))
+    
+    # Extraire la région centrale originale
+    psi_def_crop = psi_def[Ny:2*Ny, Nx:2*Nx]
+    
+    return np.abs(psi_def_crop)**2
+
+def remove_edge_discontinuity(phase):
+    """Retire les discontinuités de bord par résolution de Poisson"""
+    from scipy.ndimage import laplace
+    from scipy.sparse import diags, csr_matrix
+    from scipy.sparse.linalg import spsolve
+    
+    Ny, Nx = phase.shape
+    
+    # Calculer le Laplacien de la phase
+    lap = laplace(phase)
+    
+    # Résoudre l'équation de Poisson avec conditions aux limites périodiques
+    # Pour simplification, on utilise une approximation
+    phase_corrected = np.copy(phase)
+    
+    # Alternative simple : soustraire un plan qui minimise les sauts aux bords
+    edges = np.concatenate([
+        phase[0, :],   # haut
+        phase[-1, :],  # bas
+        phase[:, 0],   # gauche
+        phase[:, -1]   # droite
+    ])
+    edge_mean = np.mean(edges)
+    
+    phase_corrected -= edge_mean
+    
+    return phase_corrected
+
+def simulate_fresnel_robust(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
+    """Version robuste avec gestion des discontinuités de bord"""
+    Ny, Nx = phase.shape
+    lam = relativistic_wavelength(E0_eV)
+    
+    # Étape 1 : Forcer la périodicité
+    phase_periodic = make_periodic(phase)
+    
+    # Étape 2 : Apodisation douce des bords restants
+    phase_apo = cosine_edge_apodization(phase_periodic, edge_width=0.1)
+    
+    psi0 = np.exp(1j * phase_apo)
+    
+    # Propagation de Fresnel
+    kx = np.fft.fftfreq(Nx, d=dx)
+    ky = np.fft.fftfreq(Ny, d=dy)
+    KX, KY = np.meshgrid(kx, ky)
+    k2 = KX**2 + KY**2
+    
+    chi = np.pi*lam*defocus*k2 + 0.5*np.pi*Cs*(lam**3)*(k2**2)
+    H = np.exp(-1j * chi)
+    
+    Psi0 = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psi0)))
+    Psi_def = Psi0 * H
+    psi_def = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(Psi_def)))
+    
     return np.abs(psi_def)**2
 
 def parse_args():
@@ -137,7 +394,7 @@ def main():
     print(f"   Constante Cs = {args.Cs} m\n")
 
     # Simulation Fresnel
-    I = simulate_fresnel(phase, dx, dy, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs)
+    I = simulate_fresnel_robust(phase, dx, dy, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs)
 
     Ny, Nx = I.shape
     extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
