@@ -275,15 +275,26 @@ int main(int argc, char *argv[])
 	std::vector<int> nodeIndices(fem2d.getNbNodes());
 	std::iota(nodeIndices.begin(), nodeIndices.end(), 0);
 
+/*
 	std::for_each(std::execution::par, nodeIndices.begin(), nodeIndices.end(),
 	              [&](int nod) { myStuff.processNode(nod, fem2d, mySettings); });
+*/
 
+	std::cout << "Start Ray Tracing" << std::endl;
+	#pragma omp parallel for
+	for (size_t i = 0; i < nodeIndices.size(); i++) {
+		myStuff.processNode(nodeIndices[i], fem2d, mySettings);
+	}
+	std::cout << "End Ray Tracing" << std::endl;
+	
+	std::cout << "Start Export" << std::endl;
 	// exporting Magnetization integrals along the beam
  	fem2d.exportMagIntegrals(mySettings.getSimName());
 
     fem2d.exportRatioGrayScaleImage(mySettings, ExportType::CONTRAST);
 	fem2d.exportRatioGrayScaleImage(mySettings, ExportType::MZ_INTEGRAL);
 	fem2d.exportRatioGrayScaleImage(mySettings, ExportType::PATH_LENGTH);
+	std::cout << "End Export" << std::endl;
 
 	double total_time = counter.fp_elapsed();
 	std::cout << "\nComputing time: " << counter.convertSeconds(total_time);

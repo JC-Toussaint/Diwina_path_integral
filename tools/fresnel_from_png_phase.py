@@ -341,7 +341,7 @@ def remove_edge_discontinuity(phase):
     return phase_corrected
 
 def simulate_fresnel_robust(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
-    """Version robuste avec gestion des discontinuités de bord"""
+    """Version robuste avec gestion des discontinuités de bord + padding par symétrie miroir"""
     Ny, Nx = phase.shape
     lam = relativistic_wavelength(E0_eV)
     
@@ -351,11 +351,28 @@ def simulate_fresnel_robust(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3)
     # Étape 2 : Apodisation douce des bords restants
     phase_apo = cosine_edge_apodization(phase_periodic, edge_width=0.1)
     
-    psi0 = np.exp(1j * phase_apo)
+    # Étape 3 : Padding par symétrie miroir pour assurer la continuité
+    # Haut-bas
+    phase_pad = np.vstack([
+        np.flipud(phase_apo),
+        phase_apo,
+        np.flipud(phase_apo)
+    ])
     
-    # Propagation de Fresnel
-    kx = np.fft.fftfreq(Nx, d=dx)
-    ky = np.fft.fftfreq(Ny, d=dy)
+    # Gauche-droite
+    phase_pad = np.hstack([
+        np.fliplr(phase_pad),
+        phase_pad,
+        np.fliplr(phase_pad)
+    ])
+    
+    # Étape 4 : Créer psi0 sur l'image étendue
+    Ny_pad, Nx_pad = phase_pad.shape
+    psi0 = np.exp(1j * phase_pad)
+    
+    # Étape 5 : Propagation de Fresnel
+    kx = np.fft.fftfreq(Nx_pad, d=dx)
+    ky = np.fft.fftfreq(Ny_pad, d=dy)
     KX, KY = np.meshgrid(kx, ky)
     k2 = KX**2 + KY**2
     
@@ -366,8 +383,11 @@ def simulate_fresnel_robust(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3)
     Psi_def = Psi0 * H
     psi_def = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(Psi_def)))
     
-    return np.abs(psi_def)**2
-
+    # Étape 6 : Extraire la région centrale originale
+    psi_def_crop = psi_def[Ny:2*Ny, Nx:2*Nx]
+    
+    return np.abs(psi_def_crop)**2
+    
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--png", required=True, help="PNG 16-bit contenant la phase")

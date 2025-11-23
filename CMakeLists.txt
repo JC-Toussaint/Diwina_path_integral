@@ -185,6 +185,7 @@ target_link_libraries(pathIntegral
     BLAS::BLAS 
     ${FFTW_TARGET} 
     OpenMP::OpenMP_CXX 
+    -ltbb
     -lm 
     -lboost_program_options
 )
