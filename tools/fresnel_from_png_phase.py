@@ -414,7 +414,7 @@ def main():
     print(f"   Constante Cs = {args.Cs} m\n")
 
     # Simulation Fresnel
-    I = simulate_fresnel_robust(phase, dx, dy, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs)
+    I = simulate_fresnel_mirrored(phase, dx, dy, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs)
 
     Ny, Nx = I.shape
     extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
