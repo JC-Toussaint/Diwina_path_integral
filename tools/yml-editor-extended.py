@@ -382,15 +382,6 @@ class CombinedInterface(QMainWindow):
 
         left_layout.addWidget(other_group)
 
-        # Action buttons
-        button_layout = QHBoxLayout()
-
-        self.save_yaml_btn = QPushButton("Save YAML")
-        self.save_yaml_btn.clicked.connect(self.save_yaml_config)
-
-        button_layout.addWidget(self.save_yaml_btn)
-        left_layout.addLayout(button_layout)
-
         # Text area to display YAML - prend toute la hauteur restante
         yaml_label = QLabel("YAML Configuration:")
         left_layout.addWidget(yaml_label)
@@ -408,6 +399,20 @@ class CombinedInterface(QMainWindow):
         right_panel = QFrame()
         right_panel.setFrameShape(QFrame.StyledPanel)
         right_layout = QVBoxLayout(right_panel)
+
+        # Action buttons at the top of right panel
+        button_layout = QHBoxLayout()
+
+        self.save_yaml_btn = QPushButton("Save YAML")
+        self.save_yaml_btn.clicked.connect(self.save_yaml_config)
+        
+        self.quit_btn = QPushButton("Quit")
+        self.quit_btn.clicked.connect(self.quit_and_save)
+
+        button_layout.addWidget(self.save_yaml_btn)
+        button_layout.addWidget(self.quit_btn)
+        button_layout.addStretch()  # Push buttons to the left
+        right_layout.addLayout(button_layout)
 
         # Title
         title_label = QLabel("3D Visualization - Rotations")
@@ -511,7 +516,7 @@ class CombinedInterface(QMainWindow):
  #           if self.sol_input.text():
  #               self.yaml_config['initial_magnetization'] = os.path.basename(self.sol_input.text())
 
-            if not self.sol_file_path:
+            if not hasattr(self, 'sol_file_path') or not self.sol_file_path:
                 raise ValueError("No .sol file selected")
                 
             # Rotations
@@ -592,6 +597,10 @@ class CombinedInterface(QMainWindow):
 
             self.plotter.clear()
             self.plotter.add_mesh(mesh, color="lightblue", show_edges=False)
+            
+            # Add bounding box (calculated from original points, then rotated)
+            self.add_bounding_box(self.original_points, axes_angles)
+            
             self.plotter.add_axes()
             self.plotter.show_grid()
 
@@ -603,6 +612,77 @@ class CombinedInterface(QMainWindow):
             self.plotter.reset_camera()
         except Exception as e:
             print(f"Error updating mesh: {e}")
+
+    def add_bounding_box(self, original_points, axes_angles):
+        """
+        Add a bounding box around the mesh using 8 corner nodes and 12 edges.
+        The box is calculated from original points and then rotated.
+        Edges are colored: red for X-axis, green for Y-axis, blue for Z-axis.
+        """
+        # Calculate bounding box corners from original (non-rotated) points
+        xmin, ymin, zmin = np.min(original_points, axis=0)
+        xmax, ymax, zmax = np.max(original_points, axis=0)
+        
+        # Define 8 corner points of the bounding box
+        corners = np.array([
+            [xmin, ymin, zmin],  # 0
+            [xmax, ymin, zmin],  # 1
+            [xmax, ymax, zmin],  # 2
+            [xmin, ymax, zmin],  # 3
+            [xmin, ymin, zmax],  # 4
+            [xmax, ymin, zmax],  # 5
+            [xmax, ymax, zmax],  # 6
+            [xmin, ymax, zmax],  # 7
+        ])
+        
+        # Apply the same rotations to the bounding box corners
+        rotated_corners = apply_sequential_quaternion_rotations(corners, axes_angles)
+        
+        # Define 12 edges connecting the corners with their colors
+        # Edges parallel to X-axis (red)
+        edges_x = [[0, 1], [3, 2], [4, 5], [7, 6]]
+        # Edges parallel to Y-axis (green)
+        edges_y = [[1, 2], [0, 3], [5, 6], [4, 7]]
+        # Edges parallel to Z-axis (blue)
+        edges_z = [[0, 4], [1, 5], [2, 6], [3, 7]]
+        
+        # Create line segments for X-axis edges (red)
+        for edge in edges_x:
+            line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
+            line = pv.Line(line_points[0], line_points[1])
+            self.plotter.add_mesh(line, color="red", line_width=2)
+        
+        # Create line segments for Y-axis edges (green)
+        for edge in edges_y:
+            line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
+            line = pv.Line(line_points[0], line_points[1])
+            self.plotter.add_mesh(line, color="green", line_width=2)
+        
+        # Create line segments for Z-axis edges (blue)
+        for edge in edges_z:
+            line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
+            line = pv.Line(line_points[0], line_points[1])
+            self.plotter.add_mesh(line, color="blue", line_width=2)
+
+    def quit_and_save(self):
+        """Save YAML configuration before quitting"""
+        try:
+            # Call save_yaml_config to update and save the configuration
+            self.save_yaml_config()
+        except Exception as e:
+            # If there's an error saving, ask user if they still want to quit
+            reply = QMessageBox.question(
+                self, 
+                'Error Saving', 
+                f"Error saving configuration: {e}\n\nDo you still want to quit?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            if reply == QMessageBox.No:
+                return
+        
+        # Close the application
+        self.close()
 
 
 if __name__ == "__main__":
