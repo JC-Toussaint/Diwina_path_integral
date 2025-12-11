@@ -35,9 +35,6 @@ import os
 import numpy as np
 import meshio
 
-import numpy as np
-import meshio
-
 def get_region_elements(mesh):
     """
     Return a dictionary mapping region name -> list of element descriptions.
@@ -624,6 +621,7 @@ class CombinedInterface(QMainWindow):
         xmax, ymax, zmax = np.max(original_points, axis=0)
         
         # Define 8 corner points of the bounding box
+        xc, yc, zc = 0.5*(xmin+xmax), 0.5*(ymin+ymax), 0.5*(zmin+zmax)
         corners = np.array([
             [xmin, ymin, zmin],  # 0
             [xmax, ymin, zmin],  # 1
@@ -640,29 +638,36 @@ class CombinedInterface(QMainWindow):
         
         # Define 12 edges connecting the corners with their colors
         # Edges parallel to X-axis (red)
-        edges_x = [[0, 1], [3, 2], [4, 5], [7, 6]]
+        edges_x = [[0, 1], [3, 2], [4, 5]]
         # Edges parallel to Y-axis (green)
-        edges_y = [[1, 2], [0, 3], [5, 6], [4, 7]]
+        edges_y = [[1, 2], [0, 3], [4, 7]]
         # Edges parallel to Z-axis (blue)
-        edges_z = [[0, 4], [1, 5], [2, 6], [3, 7]]
+        edges_z = [[0, 4], [1, 5], [3, 7]]
+
+        edges   = [[7, 6], [5, 6], [2, 6]]
         
         # Create line segments for X-axis edges (red)
         for edge in edges_x:
             line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
             line = pv.Line(line_points[0], line_points[1])
-            self.plotter.add_mesh(line, color="red", line_width=2)
+            self.plotter.add_mesh(line, color="red", line_width=4)
         
         # Create line segments for Y-axis edges (green)
         for edge in edges_y:
             line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
             line = pv.Line(line_points[0], line_points[1])
-            self.plotter.add_mesh(line, color="green", line_width=2)
+            self.plotter.add_mesh(line, color="green", line_width=4)
         
         # Create line segments for Z-axis edges (blue)
         for edge in edges_z:
             line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
             line = pv.Line(line_points[0], line_points[1])
-            self.plotter.add_mesh(line, color="blue", line_width=2)
+            self.plotter.add_mesh(line, color="blue", line_width=4)
+
+        for edge in edges:
+            line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
+            line = pv.Line(line_points[0], line_points[1])
+            self.plotter.add_mesh(line, color="black", line_width=4)
 
     def quit_and_save(self):
         """Save YAML configuration before quitting"""
