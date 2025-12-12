@@ -14,7 +14,7 @@ from scipy.spatial.transform import Rotation as R
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFileDialog, QLineEdit, QMessageBox, QCheckBox, QMainWindow, QFrame,
-    QSplitter, QTextEdit, QGroupBox
+    QSplitter, QTextEdit, QGroupBox, QDoubleSpinBox
 )
 from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter
 from PyQt5.QtCore import Qt, QRegExp
@@ -31,9 +31,51 @@ def has_nvidia_gpu():
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
 
-import os
-import numpy as np
-import meshio
+def load_sol_file(filename):
+    """
+    Load magnetization vectors from a .sol file.
+    Returns a dictionary: node_index -> (mx, my, mz)
+    """
+    magnetization = {}
+    
+    try:
+        with open(filename, 'r') as f:
+            for line in f:
+                line = line.strip()
+                # Skip comments and empty lines
+                if line.startswith('#') or not line:
+                    continue
+                
+                # Parse data lines
+                parts = line.split()
+                if len(parts) >= 4:
+                    try:
+                        idx = int(parts[0])
+                        mx = float(parts[1])
+                        my = float(parts[2])
+                        mz = float(parts[3])
+                        magnetization[idx] = np.array([mx, my, mz])
+                    except (ValueError, IndexError):
+                        continue
+        
+        return magnetization
+    except Exception as e:
+        raise RuntimeError(f"Error loading .sol file '{filename}': {e}")
+
+def get_surface_nodes(mesh):
+    """
+    Extract surface nodes from the mesh.
+    Returns a set of node indices that are on the surface (triangular elements).
+    """
+    surface_nodes = set()
+    
+    for cell_block in mesh.cells:
+        if cell_block.type == "triangle":
+            # Add all nodes from triangular elements
+            for tri in cell_block.data:
+                surface_nodes.update(tri)
+    
+    return surface_nodes
 
 def get_region_elements(mesh):
     """
@@ -55,7 +97,7 @@ def get_region_elements(mesh):
 
     # 1) build mapping physical_id -> region_name using mesh.field_data
     id_to_name = {}
-    for name, arr in mesh.field_data.items():            # <-- mesh.field_data.items() as requested
+    for name, arr in mesh.field_data.items():
         try:
             phys_id = int(np.asarray(arr).flatten()[0])
         except Exception:
@@ -65,8 +107,6 @@ def get_region_elements(mesh):
     # 2) find the appropriate key in mesh.cell_data that holds physical tags
     phys_key = None
     if hasattr(mesh, "cell_data") and mesh.cell_data:
-        # mesh.cell_data is a dict: key -> list_of_arrays (one per cell block)
-        # prefer the exact "gmsh:physical" key, else any key containing "physical"
         for k in mesh.cell_data.keys():
             if k == "gmsh:physical":
                 phys_key = k
@@ -81,19 +121,17 @@ def get_region_elements(mesh):
         raise ValueError("No physical tags found in mesh.cell_data. Look for key 'gmsh:physical' or similar.")
 
     # 3) iterate cell blocks and attach elements to regions
-    regions = {}     # region_name -> list of element dicts
+    regions = {}
     global_idx = 0
-    # mesh.cell_data[phys_key] should be a list/sequence with same length as mesh.cells
     phys_tags_list = mesh.cell_data[phys_key]
     if len(phys_tags_list) != len(mesh.cells):
-        # sometimes meshio stores cell_data as dict of lists; if shapes mismatch, try to handle gracefully
         raise ValueError("Mismatch between number of cell blocks and number of cell_data arrays for key "
                          f"'{phys_key}' (found {len(phys_tags_list)} vs {len(mesh.cells)}).")
 
     for block_index, (cell_block, phys_tags) in enumerate(zip(mesh.cells, phys_tags_list)):
         cell_type = cell_block.type
-        connectivity = np.asarray(cell_block.data, dtype=int)  # shape (n_elems_block, n_nodes_per_elem)
-        phys_tags = np.asarray(phys_tags, dtype=int).flatten() # length n_elems_block
+        connectivity = np.asarray(cell_block.data, dtype=int)
+        phys_tags = np.asarray(phys_tags, dtype=int).flatten()
 
         if connectivity.shape[0] != phys_tags.shape[0]:
             raise ValueError(f"Number of elements in cell block {block_index} ({connectivity.shape[0]}) "
@@ -101,7 +139,7 @@ def get_region_elements(mesh):
 
         for local_idx in range(connectivity.shape[0]):
             phys_id = int(phys_tags[local_idx])
-            region_name = id_to_name.get(phys_id, f"phys_{phys_id}")  # fallback name if not found in field_data
+            region_name = id_to_name.get(phys_id, f"phys_{phys_id}")
             elem = {
                 "cell_type": cell_type,
                 "block_index": block_index,
@@ -126,7 +164,6 @@ def load_mesh(filename):
 
     try:
         mesh = meshio.read(filename)
-        # For each cell type (triangle, tetra, etc.)
         for cell_block, cell_data in zip(mesh.cells, mesh.cell_data["gmsh:physical"]):
             cell_type = cell_block.type
             print(f"\nCell type: {cell_type}")
@@ -136,19 +173,6 @@ def load_mesh(filename):
                     print(f"  Region '{region_name}' (ID={region_id}, dim={dim}): {len(element_indices)} elements")
 
         regions = get_region_elements(mesh)
-
-        # afficher le nombre d'éléments par région
-        # for region_name, elems in regions.items():
-        #     print(f"Region '{region_name}': {len(elems)} elements")
-        #     # afficher le premier élément (node indices)
-        #     print("  first element nodes:", elems[0]["nodes"])
-
-        # Display all element node indices for each region
-        # for region_name, elems in regions.items():
-        #     print(f"\nRegion '{region_name}' — {len(elems)} elements:")
-        #     for elem in elems:
-        #         print(f"  Element {elem['global_element_index']:4d} ({elem['cell_type']}): nodes {elem['nodes']}")
- 
         points = mesh.points[:, :3]
 
         triangles = []
@@ -159,10 +183,9 @@ def load_mesh(filename):
         if not triangles:
             raise ValueError(f"No triangular cells found in mesh '{filename}'.")
 
-        # Concatenate all triangle blocks into a single array
         triangles = np.vstack(triangles)
 
-        return points, triangles
+        return mesh, points, triangles
 
     except Exception as e:
         raise RuntimeError(f"Error while loading mesh '{filename}': {e}")
@@ -211,21 +234,17 @@ class YAMLSyntaxHighlighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
         super().__init__(parent)
         
-        # Format pour les clés (en noir)
         self.key_format = QTextCharFormat()
         self.key_format.setForeground(QColor("black"))
         self.key_format.setFontWeight(QFont.Bold)
         
-        # Format pour les valeurs (en rouge)
         self.value_format = QTextCharFormat()
         self.value_format.setForeground(QColor("red"))
         
-        # Format pour les commentaires (en vert)
         self.comment_format = QTextCharFormat()
         self.comment_format.setForeground(QColor("green"))
         
     def highlightBlock(self, text):
-        # Commentaires
         comment_pattern = QRegExp(r'#.*')
         index = comment_pattern.indexIn(text)
         while index >= 0:
@@ -233,7 +252,6 @@ class YAMLSyntaxHighlighter(QSyntaxHighlighter):
             self.setFormat(index, length, self.comment_format)
             index = comment_pattern.indexIn(text, index + length)
         
-        # Clés YAML (mot suivi de deux points)
         key_pattern = QRegExp(r'^(\s*)([^:\s]+)(\s*):')
         index = key_pattern.indexIn(text)
         while index >= 0:
@@ -242,28 +260,29 @@ class YAMLSyntaxHighlighter(QSyntaxHighlighter):
             self.setFormat(key_start, key_length, self.key_format)
             index = key_pattern.indexIn(text, index + key_pattern.matchedLength())
         
-        # Valeurs YAML (tout ce qui suit les deux points)
         value_pattern = QRegExp(r':\s*(.+)$')
         index = value_pattern.indexIn(text)
         while index >= 0:
             value_start = value_pattern.pos(1)
             value_length = len(value_pattern.cap(1))
-            if value_start >= 0:  # Vérifier que la valeur existe
+            if value_start >= 0:
                 self.setFormat(value_start, value_length, self.value_format)
             index = value_pattern.indexIn(text, index + value_pattern.matchedLength())
 
 class CombinedInterface(QMainWindow):
     def __init__(self, yaml_file="settings.yml"):
         super().__init__()
-        self.setWindowTitle("YAML Editor + 3D Visualization")
+        self.setWindowTitle("YAML Editor + 3D Visualization with Magnetization")
         
-        # Fenêtre en plein écran
         self.showMaximized()
 
         # Variables
         self.file_path = yaml_file
         self.yaml_config = {}
         self.mesh_filename = None
+        self.sol_file_path = None
+        self.magnetization_data = None
+        self.mesh_object = None
 
         self.setup_ui()
         self.load_yaml_file()
@@ -272,7 +291,6 @@ class CombinedInterface(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
-        # Main splitter
         main_splitter = QSplitter(Qt.Horizontal)
         central_widget.setLayout(QHBoxLayout())
         central_widget.layout().addWidget(main_splitter)
@@ -283,11 +301,11 @@ class CombinedInterface(QMainWindow):
         left_panel.setMinimumWidth(500)
         left_layout = QVBoxLayout(left_panel)
 
-                
+        # Sol file selection
         sol_layout = QVBoxLayout()
         self.sol_label = QLabel(".sol File:")
         self.sol_input = QLineEdit()
-        self.sol_btn = QPushButton("Browse")
+        self.sol_btn = QPushButton("Browse .sol")
         self.sol_btn.clicked.connect(self.select_sol_file)
 
         sol_layout.addWidget(self.sol_label)
@@ -295,11 +313,33 @@ class CombinedInterface(QMainWindow):
         sol_layout.addWidget(self.sol_btn)
         left_layout.addLayout(sol_layout)
 
+        # Vector display controls
+        vector_group = QGroupBox("Magnetization Vector Display")
+        vector_layout = QVBoxLayout(vector_group)
+
+        self.show_vectors_checkbox = QCheckBox("Show Magnetization Vectors")
+        self.show_vectors_checkbox.setChecked(False)
+        self.show_vectors_checkbox.stateChanged.connect(self.update_mesh)
+        vector_layout.addWidget(self.show_vectors_checkbox)
+
+        # Vector scale control
+        scale_layout = QHBoxLayout()
+        scale_layout.addWidget(QLabel("Vector Scale:"))
+        self.vector_scale_spinbox = QDoubleSpinBox()
+        self.vector_scale_spinbox.setRange(0.001, 100.0)
+        self.vector_scale_spinbox.setValue(1.0)
+        self.vector_scale_spinbox.setSingleStep(0.1)
+        self.vector_scale_spinbox.setDecimals(3)
+        self.vector_scale_spinbox.valueChanged.connect(self.update_mesh)
+        scale_layout.addWidget(self.vector_scale_spinbox)
+        vector_layout.addLayout(scale_layout)
+
+        left_layout.addWidget(vector_group)
+
         # Rotation parameters
         rotation_group = QGroupBox("Rotation Parameters")
         rotation_layout = QVBoxLayout(rotation_group)
 
-        # Angle 1 and Axis 1
         angle1_layout = QVBoxLayout()
         angle1_label = QLabel("Angle 1 (°):")
         self.angle1_input = QLineEdit("90")
@@ -308,20 +348,16 @@ class CombinedInterface(QMainWindow):
         angle1_layout.addWidget(self.angle1_input)
         rotation_layout.addLayout(angle1_layout)
 
-        # Axis 1 layout (with horizontal arrangement for x, y, z)
         axe1_layout = QVBoxLayout()
         axe1_layout.addWidget(QLabel("Axis 1 (x y z):"))
-
         axis_input_layout = QHBoxLayout()
         self.axe1_inputs = [QLineEdit("1"), QLineEdit("0"), QLineEdit("0")]
         for inp in self.axe1_inputs:
             inp.textChanged.connect(self.update_mesh)
             axis_input_layout.addWidget(inp)
-
         axe1_layout.addLayout(axis_input_layout)
         rotation_layout.addLayout(axe1_layout)
 
-        # Angle 2 and Axis 2
         angle2_layout = QVBoxLayout()
         angle2_label = QLabel("Angle 2 (°):")
         self.angle2_input = QLineEdit("0")
@@ -330,16 +366,13 @@ class CombinedInterface(QMainWindow):
         angle2_layout.addWidget(self.angle2_input)
         rotation_layout.addLayout(angle2_layout)
 
-        # Axis 2 layout (with horizontal arrangement for x, y, z)
         axe2_layout = QVBoxLayout()
         axe2_layout.addWidget(QLabel("Axis 2 (x y z):"))
-
         axis_input_layout = QHBoxLayout()
         self.axe2_inputs = [QLineEdit("1"), QLineEdit("0"), QLineEdit("0")]
         for inp in self.axe2_inputs:
             inp.textChanged.connect(self.update_mesh)
             axis_input_layout.addWidget(inp)
-
         axe2_layout.addLayout(axis_input_layout)
         rotation_layout.addLayout(axe2_layout)
         
@@ -353,7 +386,6 @@ class CombinedInterface(QMainWindow):
         self.filled_checkbox.setChecked(True)
         other_layout.addWidget(self.filled_checkbox)
 
-        # Electrostatics
         elec_layout = QVBoxLayout()
         ce_label = QLabel("CE:")
         self.ce_input = QLineEdit("0")
@@ -365,7 +397,6 @@ class CombinedInterface(QMainWindow):
         elec_layout.addWidget(self.v_input)
         other_layout.addLayout(elec_layout)
 
-        # Detector
         det_layout = QVBoxLayout()
         zoom_label = QLabel("Zoom:")
         self.zoom_input = QLineEdit("1.0")
@@ -379,66 +410,55 @@ class CombinedInterface(QMainWindow):
 
         left_layout.addWidget(other_group)
 
-        # Text area to display YAML - prend toute la hauteur restante
         yaml_label = QLabel("YAML Configuration:")
         left_layout.addWidget(yaml_label)
         
         self.yaml_display = QTextEdit()
         self.yaml_display.setReadOnly(True)
-        
-        # Appliquer le highlighter pour la coloration syntaxique
         self.highlighter = YAMLSyntaxHighlighter(self.yaml_display.document())
-        
-        # La zone de texte prend toute la hauteur restante
-        left_layout.addWidget(self.yaml_display, 1)  # Le paramètre 1 fait que ce widget s'étend
+        left_layout.addWidget(self.yaml_display, 1)
 
         # === Right Panel: 3D Visualization ===
         right_panel = QFrame()
         right_panel.setFrameShape(QFrame.StyledPanel)
         right_layout = QVBoxLayout(right_panel)
 
-        # Action buttons at the top of right panel
         button_layout = QHBoxLayout()
-
         self.save_yaml_btn = QPushButton("Save YAML")
         self.save_yaml_btn.clicked.connect(self.save_yaml_config)
-        
         self.quit_btn = QPushButton("Quit")
         self.quit_btn.clicked.connect(self.quit_and_save)
-
         button_layout.addWidget(self.save_yaml_btn)
         button_layout.addWidget(self.quit_btn)
-        button_layout.addStretch()  # Push buttons to the left
+        button_layout.addStretch()
         right_layout.addLayout(button_layout)
 
-        # Title
-        title_label = QLabel("3D Visualization - Rotations")
+        title_label = QLabel("3D Visualization - Rotations & Magnetization")
         title_label.setFont(QFont("Arial", 14, QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
         right_layout.addWidget(title_label)
 
-        # 3D Visualizer
         self.plotter = QtInteractor()
         self.plotter.set_background("white")
         right_layout.addWidget(self.plotter.interactor)
 
-        # Add panels to the splitter
         main_splitter.addWidget(left_panel)
         main_splitter.addWidget(right_panel)
         main_splitter.setSizes([500, 900])
-
-    def select_yaml_file(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Select a YAML file", "", "YAML files (*.yml *.yaml)")
-        if path:
-            self.file_path = path
-            self.file_label.setText(os.path.basename(path))
-            self.load_yaml_file()
 
     def select_sol_file(self):
         path, _ = QFileDialog.getOpenFileName(self, "Select a .sol file", "", "SOL files (*.sol)")
         if path:
             self.sol_file_path = path
             self.sol_input.setText(path)
+            try:
+                self.magnetization_data = load_sol_file(path)
+                QMessageBox.information(self, "Success", 
+                    f"Loaded magnetization data for {len(self.magnetization_data)} nodes")
+                self.update_mesh()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Error loading .sol file: {e}")
+                self.magnetization_data = None
 
     def load_yaml_file(self):
         if self.file_path:
@@ -452,7 +472,7 @@ class CombinedInterface(QMainWindow):
         if 'mesh' in self.yaml_config and 'filename' in self.yaml_config['mesh']:
             self.mesh_filename = self.yaml_config['mesh']['filename']
             try:
-                self.original_points, self.triangles = load_mesh(self.mesh_filename)
+                self.mesh_object, self.original_points, self.triangles = load_mesh(self.mesh_filename)
                 self.update_mesh()
             except Exception as e:
                 print(f"Error loading mesh: {e}")
@@ -461,9 +481,7 @@ class CombinedInterface(QMainWindow):
         if not self.yaml_config:
             return
 
-        # Fill fields from YAML
         if 'initial_magnetization' in self.yaml_config:
-            self.sol_input.setText(str(self.yaml_config['initial_magnetization']))
             self.sol_input.setText('No sol file selected')
 			
         if 'rotations' in self.yaml_config:
@@ -504,19 +522,13 @@ class CombinedInterface(QMainWindow):
             self.yaml_display.setPlainText(yaml_text)
 
     def save_yaml_config(self):
-        # Update YAML configuration with field values
         try:
             if not self.yaml_config:
                 self.yaml_config = {}
 
-            # Initial magnetization
- #           if self.sol_input.text():
- #               self.yaml_config['initial_magnetization'] = os.path.basename(self.sol_input.text())
-
             if not hasattr(self, 'sol_file_path') or not self.sol_file_path:
                 raise ValueError("No .sol file selected")
                 
-            # Rotations
             if 'rotations' not in self.yaml_config:
                 self.yaml_config['rotations'] = {}
 
@@ -525,16 +537,13 @@ class CombinedInterface(QMainWindow):
             self.yaml_config['rotations']['angle2'] = float(self.angle2_input.text())
             self.yaml_config['rotations']['axe2'] = [float(inp.text()) for inp in self.axe2_inputs]
 
-            # Filled
             self.yaml_config['filled'] = str(self.filled_checkbox.isChecked()).lower()
 
-            # Electrostatics
             if 'electrostatics' not in self.yaml_config:
                 self.yaml_config['electrostatics'] = {}
             self.yaml_config['electrostatics']['CE'] = int(self.ce_input.text())
             self.yaml_config['electrostatics']['V'] = float(self.v_input.text())
 
-            # Detector
             if 'detector' not in self.yaml_config:
                 self.yaml_config['detector'] = {}
             zoom = float(self.zoom_input.text())
@@ -550,7 +559,6 @@ class CombinedInterface(QMainWindow):
             QMessageBox.critical(self, "Error", f"Error updating: {e}")
             return
 
-        # Save the file
         if self.file_path:
             base, ext = os.path.splitext(self.file_path)
             filename = f"{base}_ray{ext}"
@@ -568,13 +576,10 @@ class CombinedInterface(QMainWindow):
     def get_rotations_from_inputs(self):
         try:
             axes_angles = []
-
-            # First rotation
             angle1 = float(self.angle1_input.text())
             axis1 = [float(inp.text()) for inp in self.axe1_inputs]
             axes_angles.append((axis1, angle1))
 
-            # Second rotation
             angle2 = float(self.angle2_input.text())
             axis2 = [float(inp.text()) for inp in self.axe2_inputs]
             axes_angles.append((axis2, angle2))
@@ -595,8 +600,13 @@ class CombinedInterface(QMainWindow):
             self.plotter.clear()
             self.plotter.add_mesh(mesh, color="lightblue", show_edges=False)
             
-            # Add bounding box (calculated from original points, then rotated)
             self.add_bounding_box(self.original_points, axes_angles)
+            
+            # Add magnetization vectors if available and enabled
+            if (self.show_vectors_checkbox.isChecked() and 
+                self.magnetization_data is not None and 
+                self.mesh_object is not None):
+                self.add_magnetization_vectors(axes_angles)
             
             self.plotter.add_axes()
             self.plotter.show_grid()
@@ -610,18 +620,111 @@ class CombinedInterface(QMainWindow):
         except Exception as e:
             print(f"Error updating mesh: {e}")
 
+    def add_magnetization_vectors(self, axes_angles):
+        """
+        Add magnetization vectors to surface nodes using optimized glyphs.
+        """
+        try:
+            # Get surface nodes
+            surface_nodes = get_surface_nodes(self.mesh_object)
+            print(f"Found {len(surface_nodes)} surface nodes")
+            
+            # Prepare lists for batch processing
+            positions = []
+            vectors = []
+            
+            vector_scale = self.vector_scale_spinbox.value()
+            print(f"Vector scale: {vector_scale}")
+            
+            # Collect all positions and vectors
+            for node_idx in surface_nodes:
+                if node_idx in self.magnetization_data:
+                    node_pos = self.original_points[node_idx]
+                    m_vec = self.magnetization_data[node_idx]
+                    
+                    positions.append(node_pos)
+                    vectors.append(m_vec)
+            
+            if not positions:
+                print("No magnetization data found for surface nodes!")
+                return
+            
+            print(f"Found magnetization data for {len(positions)} nodes")
+            
+            # Convert to numpy arrays for batch rotation
+            positions = np.array(positions)
+            vectors = np.array(vectors)
+            
+            print(f"Position range: {positions.min(axis=0)} to {positions.max(axis=0)}")
+            print(f"Vector magnitude range: {np.linalg.norm(vectors, axis=1).min():.3f} to {np.linalg.norm(vectors, axis=1).max():.3f}")
+            
+            # Apply rotations in batch
+            rotated_positions = apply_sequential_quaternion_rotations(positions, axes_angles)
+            rotated_vectors = apply_sequential_quaternion_rotations(vectors, axes_angles)
+            
+            # Scale vectors for visualization
+            scaled_vectors = rotated_vectors * vector_scale
+            
+            # Calculate colors based on z-component
+            z_components = rotated_vectors[:, 2]
+            
+            # Create scalar values for coloring (0=yellow, 1=red, 2=blue)
+            color_indices = np.zeros(len(z_components))
+            color_indices[z_components > 0.5] = 1  # Red for up
+            color_indices[z_components < -0.5] = 2  # Blue for down
+            # 0 remains for in-plane (yellow)
+            
+            up_count = np.sum(z_components > 0.5)
+            down_count = np.sum(z_components < -0.5)
+            inplane_count = len(z_components) - up_count - down_count
+            
+            print(f"Color distribution - Red (up): {up_count}, Blue (down): {down_count}, Yellow (in-plane): {inplane_count}")
+            
+            # Create a PolyData object with points and vectors
+            vector_poly = pv.PolyData(rotated_positions)
+            vector_poly['vectors'] = scaled_vectors
+            vector_poly['color_index'] = color_indices
+            
+            print(f"Creating glyphs with scale factor {vector_scale}")
+            
+            # Create arrows using glyphs (much faster than individual arrows)
+            arrows = vector_poly.glyph(
+                orient='vectors',
+                scale=False,
+                factor=1.0,
+                geom=pv.Arrow(tip_length=0.25, tip_radius=0.1, shaft_radius=0.05)
+            )
+            
+            print(f"Created {arrows.n_cells} arrow cells, {arrows.n_points} points")
+            
+            # Create a custom colormap: 0->yellow, 1->red, 2->blue
+            from matplotlib.colors import ListedColormap
+            custom_cmap = ListedColormap(['yellow', 'red', 'blue'])
+            
+            # Add to plotter with custom colormap
+            self.plotter.add_mesh(
+                arrows, 
+                scalars='color_index',
+                cmap=custom_cmap,
+                opacity=0.8,
+                show_scalar_bar=False,
+                clim=[0, 2]
+            )
+            
+            print("Magnetization vectors added successfully")
+                    
+        except Exception as e:
+            print(f"Error adding magnetization vectors: {e}")
+            import traceback
+            traceback.print_exc()
+
     def add_bounding_box(self, original_points, axes_angles):
         """
         Add a bounding box around the mesh using 8 corner nodes and 12 edges.
-        The box is calculated from original points and then rotated.
-        Edges are colored: red for X-axis, green for Y-axis, blue for Z-axis.
         """
-        # Calculate bounding box corners from original (non-rotated) points
         xmin, ymin, zmin = np.min(original_points, axis=0)
         xmax, ymax, zmax = np.max(original_points, axis=0)
         
-        # Define 8 corner points of the bounding box
-        xc, yc, zc = 0.5*(xmin+xmax), 0.5*(ymin+ymax), 0.5*(zmin+zmax)
         corners = np.array([
             [xmin, ymin, zmin],  # 0
             [xmax, ymin, zmin],  # 1
@@ -633,32 +736,23 @@ class CombinedInterface(QMainWindow):
             [xmin, ymax, zmax],  # 7
         ])
         
-        # Apply the same rotations to the bounding box corners
         rotated_corners = apply_sequential_quaternion_rotations(corners, axes_angles)
         
-        # Define 12 edges connecting the corners with their colors
-        # Edges parallel to X-axis (red)
         edges_x = [[0, 1], [3, 2], [4, 5]]
-        # Edges parallel to Y-axis (green)
         edges_y = [[1, 2], [0, 3], [4, 7]]
-        # Edges parallel to Z-axis (blue)
         edges_z = [[0, 4], [1, 5], [3, 7]]
-
-        edges   = [[7, 6], [5, 6], [2, 6]]
+        edges = [[7, 6], [5, 6], [2, 6]]
         
-        # Create line segments for X-axis edges (red)
         for edge in edges_x:
             line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
             line = pv.Line(line_points[0], line_points[1])
             self.plotter.add_mesh(line, color="red", line_width=4)
         
-        # Create line segments for Y-axis edges (green)
         for edge in edges_y:
             line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
             line = pv.Line(line_points[0], line_points[1])
             self.plotter.add_mesh(line, color="green", line_width=4)
         
-        # Create line segments for Z-axis edges (blue)
         for edge in edges_z:
             line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
             line = pv.Line(line_points[0], line_points[1])
@@ -672,10 +766,8 @@ class CombinedInterface(QMainWindow):
     def quit_and_save(self):
         """Save YAML configuration before quitting"""
         try:
-            # Call save_yaml_config to update and save the configuration
             self.save_yaml_config()
         except Exception as e:
-            # If there's an error saving, ask user if they still want to quit
             reply = QMessageBox.question(
                 self, 
                 'Error Saving', 
@@ -686,7 +778,6 @@ class CombinedInterface(QMainWindow):
             if reply == QMessageBox.No:
                 return
         
-        # Close the application
         self.close()
 
 
