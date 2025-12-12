@@ -21,13 +21,8 @@ if len(sys.argv) < 2:
 
 settings_file = sys.argv[1]
 
-# Vérifie que le fichier indiqué existe
-if not os.path.isfile(settings_file):
-    print(f"Error: file '{settings_file}' does not exist.")
-    sys.exit(1)
-
 # Lancer l'éditeur YAML
-yml_editor_path = os.path.join(diwina_path, "tools", "yml-editor.py")
+yml_editor_path = os.path.join(diwina_path, "tools", "yml-editor-extended.py")
 subprocess.run([yml_editor_path, settings_file], check=True)
 
 # Extraire le nom sans l'extension
