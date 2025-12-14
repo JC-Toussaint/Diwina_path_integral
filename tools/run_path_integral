@@ -17,7 +17,7 @@ if [ ! -f "$1" ]; then
     exit 1
 fi
 
-"$DIWINA_PATH/tools/yml-editor.py" "$1"
+"$DIWINA_PATH/tools/yml-editor-extended.py" "$1"
 
 # Extraire le nom sans l'extension
 basename="${1%.yml}"
