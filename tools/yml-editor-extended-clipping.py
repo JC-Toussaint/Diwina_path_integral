@@ -277,12 +277,17 @@ class CombinedInterface(QMainWindow):
         # Vector display controls
         vector_group = QGroupBox("Magnetization Vector Display")
         vector_layout = QVBoxLayout(vector_group)
-        
+
         self.show_vectors_checkbox = QCheckBox("Show Magnetization Vectors")
         self.show_vectors_checkbox.setChecked(False)
         self.show_vectors_checkbox.stateChanged.connect(self.update_mesh)
         vector_layout.addWidget(self.show_vectors_checkbox)
-        
+
+        self.show_volume_vectors_checkbox = QCheckBox("Show Volume Vectors (not just surface)")
+        self.show_volume_vectors_checkbox.setChecked(False)
+        self.show_volume_vectors_checkbox.stateChanged.connect(self.update_mesh)
+        vector_layout.addWidget(self.show_volume_vectors_checkbox)
+
         scale_layout = QHBoxLayout()
         scale_layout.addWidget(QLabel("Vector Scale:"))
         self.vector_scale_spinbox = QDoubleSpinBox()
@@ -294,6 +299,7 @@ class CombinedInterface(QMainWindow):
         self.vector_scale_spinbox.valueChanged.connect(self.on_vector_scale_changed)
         scale_layout.addWidget(self.vector_scale_spinbox)
         vector_layout.addLayout(scale_layout)
+
         left_layout.addWidget(vector_group)
         
         # === Clipping Controls ===
@@ -694,10 +700,17 @@ class CombinedInterface(QMainWindow):
             print(f"Error updating mesh: {e}")
 
     def add_magnetization_vectors(self, axes_angles):
-        """Add magnetization vectors to surface nodes using optimized glyphs."""
+        """Add magnetization vectors to surface or volume nodes using optimized glyphs."""
         try:
-            surface_nodes = get_surface_nodes(self.mesh_object)
-            print(f"Found {len(surface_nodes)} surface nodes")
+            # Determine which nodes to show
+            if self.show_volume_vectors_checkbox.isChecked():
+                # Show all nodes that have magnetization data
+                nodes_to_show = set(self.magnetization_data.keys())
+                print(f"Showing volume vectors for all {len(nodes_to_show)} nodes with magnetization data")
+            else:
+                # Show only surface nodes
+                nodes_to_show = get_surface_nodes(self.mesh_object)
+                print(f"Showing surface vectors for {len(nodes_to_show)} surface nodes")
             
             positions = []
             vectors = []
@@ -706,8 +719,8 @@ class CombinedInterface(QMainWindow):
             print(f"Vector scale: {vector_scale}")
             
             # Collect all positions and vectors
-            for node_idx in surface_nodes:
-                if node_idx in self.magnetization_data:
+            for node_idx in nodes_to_show:
+                if node_idx in self.magnetization_data and node_idx < len(self.original_points):
                     node_pos = self.original_points[node_idx]
                     m_vec = self.magnetization_data[node_idx]
                     
@@ -715,7 +728,7 @@ class CombinedInterface(QMainWindow):
                     vectors.append(m_vec)
             
             if not positions:
-                print("No magnetization data found for surface nodes!")
+                print("No magnetization data found for selected nodes!")
                 return
             
             print(f"Found magnetization data for {len(positions)} nodes")
@@ -730,6 +743,38 @@ class CombinedInterface(QMainWindow):
             # Apply rotations in batch
             rotated_positions = apply_sequential_quaternion_rotations(positions, axes_angles)
             rotated_vectors = apply_sequential_quaternion_rotations(vectors, axes_angles)
+            
+            # If clipping is enabled, filter vectors to only show those in the clipped region
+            if self.clip_enabled and self.clip_mesh is not None:
+                clip_normal = self.get_clip_normal()
+                clip_position = self.clip_position_spinbox.value()
+                
+                # Get the original mesh center for calculating origin
+                temp_mesh = create_pyvista_mesh(
+                    apply_sequential_quaternion_rotations(self.original_points, axes_angles), 
+                    self.triangles
+                )
+                origin = temp_mesh.center + clip_normal * clip_position
+                
+                # Calculate which points are on the visible side of the clip plane
+                vectors_to_plane = rotated_positions - origin
+                distances = np.dot(vectors_to_plane, clip_normal)
+                
+                # Keep points based on invert setting
+                if self.clip_invert_checkbox.isChecked():
+                    mask = distances < 0  # Keep points behind the plane
+                else:
+                    mask = distances >= 0  # Keep points in front of the plane
+                
+                # Filter positions and vectors
+                rotated_positions = rotated_positions[mask]
+                rotated_vectors = rotated_vectors[mask]
+                
+                print(f"After clipping: {len(rotated_positions)} vectors remaining")
+                
+                if len(rotated_positions) == 0:
+                    print("No vectors in clipped region!")
+                    return
             
             # Scale vectors for visualization
             scaled_vectors = rotated_vectors * vector_scale
@@ -773,7 +818,7 @@ class CombinedInterface(QMainWindow):
             print(f"Error adding magnetization vectors: {e}")
             import traceback
             traceback.print_exc()
-
+            
     def add_bounding_box(self, original_points, axes_angles):
         """Add a bounding box around the mesh using 8 corner nodes and 12 edges."""
         xmin, ymin, zmin = np.min(original_points, axis=0)
