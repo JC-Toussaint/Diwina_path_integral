@@ -596,17 +596,17 @@ class CombinedInterface(QMainWindow):
             self.update_mesh()
 
     def update_mesh(self):
+        if not hasattr(self, 'original_points') or not hasattr(self, 'triangles'):
+            return
+
         try:
             axes_angles = self.get_rotations_from_inputs()
-            rotated_points = apply_sequential_quaternion_rotations(
-                self.original_points, axes_angles
-            )
+            rotated_points = apply_sequential_quaternion_rotations(self.original_points, axes_angles)
             mesh = create_pyvista_mesh(rotated_points, self.triangles)
 
             self.plotter.clear()
-
-            self.plotter.add_mesh(mesh, color="lightblue", show_edges=False, opacity=1.0)
-
+            self.plotter.add_mesh(mesh, color="lightblue", show_edges=False, opacity=0.4)
+            
             self.add_bounding_box(self.original_points, axes_angles)
             
             # Add magnetization vectors if available and enabled
@@ -614,28 +614,26 @@ class CombinedInterface(QMainWindow):
                 self.magnetization_data is not None and 
                 self.mesh_object is not None):
                 self.add_magnetization_vectors(axes_angles)
-                
-            # === GRADUATIONS + NUMÉROTATION X Y Z (ROBUSTE) ===
-            self.plotter.show_bounds(
-                grid="back",          # ← CRUCIAL
-                location="outer",    # ← CRUCIAL
-                ticks="both",
-                all_edges=True,
-                xlabel="X",
-                ylabel="Y",
-                zlabel="Z",
-                font_size=12
-            )
-
-            # Trièdre visuel (optionnel)
+            
             self.plotter.add_axes()
+            self.plotter.show_grid()
 
-            # Caméra stable
+            self.plotter.show_bounds(
+                grid='back',
+                location='outer',
+                ticks='both',
+                all_edges=True
+            )
+            self.plotter.show()
+            
+            center = mesh.center
+            camera_position = [center[0], center[1], center[2] + 2]
+            focal_point = center
+            view_up = [0, 1, 0]
+            self.plotter.camera_position = [camera_position, focal_point, view_up]
             self.plotter.reset_camera()
-
         except Exception as e:
-            print(f"Error while updating mesh: {e}")
-
+            print(f"Error updating mesh: {e}")
 
     def add_magnetization_vectors(self, axes_angles):
         """
