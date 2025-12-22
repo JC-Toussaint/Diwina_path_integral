@@ -168,6 +168,36 @@ def create_pyvista_mesh(points, triangles):
     faces = np.hstack([np.full((triangles.shape[0], 1), 3), triangles]).astype(np.int32)
     return pv.PolyData(points, faces)
 
+def compute_surface_normal_component(mesh, triangles, magnetization):
+    """
+    Compute normal component of magnetization for each surface triangle.
+    Returns array of size (n_triangles,)
+    """
+    normals = mesh.face_normals  # normals par triangle (déjà orientées)
+    mn = np.zeros(len(triangles))
+
+    for i, tri in enumerate(triangles):
+        # indices des 3 nœuds
+        n0, n1, n2 = tri
+
+        if (n0 not in magnetization or
+            n1 not in magnetization or
+            n2 not in magnetization):
+            mn[i] = 0.0
+            continue
+
+        # moyenne du vecteur m sur le triangle
+        m_avg = (
+            magnetization[n0] +
+            magnetization[n1] +
+            magnetization[n2]
+        ) / 3.0
+
+        # projection sur la normale extérieure
+        mn[i] = np.dot(m_avg, normals[i])
+
+    return np.clip(mn, -1.0, 1.0)
+
 def clean_yaml_content(content: str) -> str:
     lines = content.split('\n')
     cleaned_lines = [line.replace('\t', '  ') for line in lines]
@@ -662,8 +692,19 @@ class CombinedInterface(QMainWindow):
                     origin=origin,
                     invert=self.clip_invert_checkbox.isChecked()
                 )
-                
-                self.plotter.add_mesh(clipped, color="lightblue", show_edges=False)
+
+                if "m_normal" in mesh.cell_data:
+                    self.plotter.add_mesh(
+                        clipped,
+                        scalars="m_normal",
+                        cmap="jet",
+                        clim=[-1, 1],
+                        show_edges=False,
+                        scalar_bar_args={"title": "m · n"}
+                    )
+                else:
+                    self.plotter.add_mesh(clipped, color="lightblue", show_edges=False)
+
                 self.clip_mesh = clipped
                 
                 # Show the clipping plane
@@ -676,8 +717,32 @@ class CombinedInterface(QMainWindow):
                 )
                 self.plotter.add_mesh(plane, color="yellow", opacity=0.3, show_edges=False)
             else:
-                self.plotter.add_mesh(mesh, color="lightblue", show_edges=False)
-                self.clip_mesh = None
+                # === Coloration des triangles par m · n ===
+                if self.magnetization_data is not None:
+                    mn = compute_surface_normal_component(
+                        mesh,
+                        self.triangles,
+                        self.magnetization_data
+                    )
+
+                    # ATTENTION : cell_data → un scalaire par triangle
+                    mesh.cell_data["m_normal"] = mn
+
+                    self.plotter.add_mesh(
+                        mesh,
+                        scalars="m_normal",
+                        cmap="jet",
+                        clim=[-1, 1],
+                        show_edges=False,
+                        opacity = 1.0,
+                        scalar_bar_args={
+                            "title": "m · n",
+                            "vertical": False
+                        }
+                    )
+                else:
+                    self.plotter.add_mesh(mesh, color="lightblue", show_edges=False)
+                    self.clip_mesh = None
             
             self.add_bounding_box(self.original_points, axes_angles)
             
