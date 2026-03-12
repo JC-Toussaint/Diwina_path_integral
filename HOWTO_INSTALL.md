@@ -123,11 +123,6 @@ pip3 install meshio
 pip3 install pyyaml
 ```
 
-**Install NumPy (numerical computing library) - Originally developed by Travis Oliphant building on Numeric and Numarray, now maintained by NumPy developers, this is the fundamental package for scientific computing in Python**
-```bash
-pip3 install numpy
-```
-
 **Install SciPy (scientific computing library) - Developed by Travis Oliphant, Pearu Peterson, and Eric Jones, built on NumPy, this library provides algorithms for optimization, linear algebra, integration, and other mathematical tasks**
 ```bash
 pip3 install scipy
