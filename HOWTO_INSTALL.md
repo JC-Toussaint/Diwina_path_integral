@@ -142,6 +142,10 @@ pip3 install PyQt5
 ```bash
 pip3 install pyvista
 ```
+**Install PyVistaQt - GUI for PyVista**
+```bash
+pip3 install pyvistaqt
+```
 
 ## Launch the Path Integral Software
 
