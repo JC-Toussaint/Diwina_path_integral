@@ -78,6 +78,11 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 make
 ```
 
+**Install ScalFMM headers**
+```bash
+sudo make install
+```
+
 ## Diwina Path Integral Project Installation
 
 **Clone the main branch of the Diwina Path Integral project specifically adapted to work with the ScalFMM library from INRIA**
