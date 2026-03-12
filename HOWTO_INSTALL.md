@@ -87,7 +87,7 @@ sudo make install
 
 **Clone the main branch of the Diwina Path Integral project specifically adapted to work with the ScalFMM library from INRIA**
 ```bash
-git clone git@github.com:JC-Toussaint/Diwina_path_integral.git
+git clone https://github.com/JC-Toussaint/Diwina_path_integral.git
 ```
 
 **Navigate to the Diwina_path directory - Enter the project directory to begin configuration and compilation**
