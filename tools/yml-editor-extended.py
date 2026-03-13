@@ -1,5 +1,25 @@
 #!/usr/bin/env python3
 
+##How To Force Nvidia GPU Usage 
+#When working with Ubuntu systems that have both integrated graphics and discrete Nvidia GPUs 
+#(commonly found in laptops with Nvidia Optimus technology), the VTK OpenGL error often occurs 
+#because the application is trying to use the integrated GPU instead of the dedicated Nvidia GPU. 
+#This is particularly common in hybrid graphics setups.
+##Understanding the Problem
+#Some drivers, such as NVidia's, are generously fault tolerant and run cleanly on code that's not 
+#following the GL spec to the letter VTK/OpenGL Driver Information - KitwarePublic
+#but the issue here is usually related to GPU selection rather than OpenGL compliance.
+##Solution: Environment Variables Method
+#The most effective approach is to use Nvidia's PRIME render offload system through environment variables:
+# Set these environment variables before running your Python script
+#export __NV_PRIME_RENDER_OFFLOAD=1
+#export __GLX_VENDOR_LIBRARY_NAME=nvidia
+#export __VK_LAYER_NV_optimus=NVIDIA_only
+## Optional: Enable GPU debugging information
+#export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
+## Run your VTK Python script
+#python your_vtk_script.py
+
 import os
 import yaml
 import json
