@@ -9,7 +9,7 @@ fresnel_from_png_phase.py : post-processing : computes Fresnel intensities (to c
 
 fg-yml.py : 'tree like' text display of a yaml file 
 
-msh-explorer.py : some informations on a mesh file
+msh-explorer.py : informations on a mesh file: number of triangles, tetrahedrons, ...
 
 png_extractor.py : tool to get some metadatas from a png file
 
