@@ -193,3 +193,4 @@ target_link_libraries(pathIntegral
 #===========================================================================
 
 install(TARGETS pathIntegral RUNTIME DESTINATION bin)
+install(PROGRAMS ./tools/run_path_integral.py DESTINATION bin)
