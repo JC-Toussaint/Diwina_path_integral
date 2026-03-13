@@ -1,1 +1,0 @@
-export PYTHONPATH="$HOME/Devel/Diwina_path_integral/python-modules:$PYTHONPATH"
