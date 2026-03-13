@@ -41,7 +41,6 @@ pkg_search_module(FFTWF REQUIRED fftw3f IMPORTED_TARGET)
 list(APPEND FFTW_TARGET PkgConfig::FFTW)
 list(APPEND FFTW_TARGET PkgConfig::FFTWF)
 
-set(BLA_VENDOR "OpenBLAS")
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
