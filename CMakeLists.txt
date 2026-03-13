@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
+cmake_policy(SET CMP0115 NEW)
 PROJECT(pathIntegral CXX)
 
 # settings to add -std=c++17 option, and avoid -std=gnu++17
