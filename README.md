@@ -234,18 +234,6 @@ relevant for tubes filled with a non-magnetic material, such as copper (TO CHECK
 The CE and V parameters account for electrostatic effects on the holographic phase. CE depends on the type of microscope and the electron energy, while the inner potential V depends on the type of material.
 Finally, the holographic phase image is calculated at any point on a grid called the detector. Since its dimensions must be larger than those of the projected system, the zoom parameter must be less than 1 in the current version. The resolution is determined by the meshSize parameter.
 
- The program generates the following ASCII files:
-
-    sim_M_integrals.out – Columns represent the node number, its x and y coordinates, a boolean value indicating whether the beam propagates through materials, the length of material traversed, the integrals of Mx, My, and Mz over the beam path, and the STXM intensity contrast.
-    sim_Holo.out – Columns represent the node number, its x and y coordinates, a boolean value indicating whether the beam propagates through materials, the length of material traversed, and the holographic phase in radians, taking into account both electrostatic and magnetic contributions.
-
-The program also generates the following image files:
-
-    sim_MZ.png – A 16-bit grayscale map of the integral of Mz.
-    sim_PATH_LENGTH.png – A 16-bit grayscale map of the material path length.
-    sim_STXM_XMCD.png – A 16-bit grayscale map of the STXM contrast.
-    sim_HOLO_PHASE.png – An 8-bit indexed RGB map of the holographic phase.
-
 ## Launch the Path Integral Software
 
 In a feeLLGood directory, launch path_integral software:
@@ -255,4 +243,31 @@ cd examples/uni_sphere
 run_path_integral.py settings.yml
 ```
 
-> **Warning**: The program uses the default values from the `default-settings.yml` file if it does not find them in `settings.yml`. In particular, the absorption coefficients are set to 0.01 and 0.018 (nm⁻¹). 
+run_path_integral.py reads the yaml settings in the input file settings.yml and generates six files:
+```bash
+sim_M_integrals.out
+sim_Holo.out
+sim_MZ.png
+sim_PATH_LENGTH.png
+sim_STXM_XMCD.png
+sim_HOLO_PHASE.png
+```
+
+The .out files are text:
+
+    sim_M_integrals.out – Columns represent the node number, its x and y coordinates, a boolean value indicating whether the beam propagates through materials, the length of material traversed, the integrals of Mx, My, and Mz over the beam path, and the STXM intensity contrast.
+    sim_Holo.out – Columns represent the node number, its x and y coordinates, a boolean value indicating whether the beam propagates through materials, the length of material traversed, and the holographic phase in radians, taking into account both electrostatic and magnetic contributions.
+
+The .png files are image files:
+
+    sim_MZ.png – A 16-bit grayscale map of the integral of Mz.
+    sim_PATH_LENGTH.png – A 16-bit grayscale map of the material path length.
+    sim_STXM_XMCD.png – A 16-bit grayscale map of the STXM contrast.
+    sim_HOLO_PHASE.png – An 8-bit indexed RGB map of the holographic phase.
+
+The user might visualize them typing:
+```bash
+png_viewer.py
+```
+
+> **Warning**: run_path_integral.py uses the default values from the `default-settings.yml` file if it does not find them in `settings.yml`. In particular, the absorption coefficients are set to 0.01 and 0.018 (nm⁻¹). 

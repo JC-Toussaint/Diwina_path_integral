@@ -25,5 +25,5 @@ filename = f"{basename}_ray.yml"
 subprocess.run(["pathIntegral", filename], check=True)
 
 # Launch png_viewer.py
-subprocess.run(["png_viewer.py"], check=True)
+#subprocess.run(["png_viewer.py"], check=True)
 
