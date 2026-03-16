@@ -123,7 +123,8 @@ sudo apt upgrade
 
 
 ```bash
-sudo apt install paraview libfftw3-dev libopenblas-dev gfortran libpng-dev libcgal-dev
+sudo apt install wget git cmake pkgconf g++ gfortran python3-venv
+sudo apt install libgmsh-dev libeigen3-dev libtbb-dev libyaml-cpp-dev duktape-dev libfftw3-dev libopenblas-dev libpng-dev libcgal-dev
 ```
 ** ParaView (scientific visualization software) - A powerful, open-source application developed by Kitware, Sandia National Laboratories, and Los Alamos National Laboratory for visualizing large datasets, commonly used in scientific and engineering applications for 3D data analysis **
 
@@ -142,6 +143,7 @@ sudo apt install paraview libfftw3-dev libopenblas-dev gfortran libpng-dev libcg
 ** Clone ScalFMM repository with all its submodules - ScalFMM is a Fast Multipole Method library developed by INRIA (French National Institute for Research in Digital Science and Technology) for N-body simulations, widely used in computational physics and engineering. The --recursive flag ensures all dependent submodules are also downloaded **
 ```bash
 git clone --recursive https://gitlab.inria.fr/solverstack/ScalFMM.git
+cd ScalFMM
 ```
 
 ** Create a build directory - This follows CMake best practices (CMake developed by Kitware) by keeping build files separate from source code, making it easier to clean builds and manage multiple build configurations **
@@ -161,12 +163,28 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 
 ** Compile the ScalFMM project - This builds all the libraries and executables using GNU Make (part of the GNU Project by the Free Software Foundation), which may take several minutes depending on your system's performance **
 ```bash
-make
+make -j $(nproc)
 ```
 
 ** Install ScalFMM headers **
 ```bash
 sudo make install
+cd ../..
+```
+
+## Install ANN from sources
+
+If ANN is not already installed, download it and install it as follows:
+
+```shell
+wget https://www.cs.umd.edu/~mount/ANN/Files/1.1.2/ann_1.1.2.tar.gz
+tar xzf ann_1.1.2.tar.gz
+cd ann_1.1.2/
+sed -i 's/CFLAGS =.* -O3/& -std=c++98/' Make-config
+make linux-g++
+sudo cp lib/libANN.a /usr/local/lib/
+sudo cp include/ANN/ANN.h /usr/local/include/
+cd ..
 ```
 
 ## Diwina Path Integral Project Installation
@@ -178,7 +196,7 @@ git clone https://github.com/JC-Toussaint/Diwina_path_integral.git
 
 ** Navigate to the Diwina_path directory - Enter the project directory to begin configuration and compilation **
 ```bash
-cd Diwina_path
+cd Diwina_path_integral
 ```
 
 ** Configure compilation of the Diwina project in Release mode - This sets up the build system using CMake for optimal performance, linking against the previously compiled ScalFMM libraries **
@@ -188,8 +206,7 @@ cmake . -DCMAKE_BUILD_TYPE=Release
 ## Compile Diwina_path_integral Project
 
 ```bash
-cmake .
-make -j 8
+make -j $(nproc)
 ```
 ### installation
 ```bash
@@ -230,6 +247,7 @@ Kitware) and its Qt GUI **
 In a feeLLGood directory, launch path_integral software:
 
 ```bash
+cd examples/uni_sphere
 run_path_integral.py settings.yml
 ```
 
