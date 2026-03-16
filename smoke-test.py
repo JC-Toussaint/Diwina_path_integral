@@ -4,10 +4,9 @@ import os
 import sys
 import subprocess
 
-# sys.path.append('~/Devel/FeeLLGood/src/FeeLLGood/python-modules')
-from feellgood import meshMaker # you have to install this module with sudo make install from feellgood public directory
-
-r = 100 
+# you have to install feellgood module with sudo make install from feellgood public directory
+from feellgood import meshMaker
+r = 100
 meshSize = 4
 
 sphere = meshMaker.Ellipsoid(r,r,meshSize,"sphere_surface","sphere_volume")
