@@ -824,7 +824,8 @@ def main():
     args = get_params()
     display = os.environ.get('DISPLAY') #might not run correctly on WayLand, see WAYLAND_DISPLAY environment variable
     if ((display == "") or (display is None)):
-        dialog(args)
+        print("Error: no display.")
+        sys.exit()
     else:
         if has_nvidia_gpu():
             os.environ["__NV_PRIME_RENDER_OFFLOAD"] = "1"
