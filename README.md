@@ -192,12 +192,11 @@ cd ..
 ** Clone the main branch of the Diwina Path Integral project specifically adapted to work with the ScalFMM library from INRIA **
 ```bash
 git clone https://github.com/JC-Toussaint/Diwina_path_integral.git
-cd Diwina_path_integral
 ```
 
 ** Navigate to the Diwina_path directory - Enter the project directory to begin configuration and compilation **
 ```bash
-cd Diwina_path
+cd Diwina_path_integral
 ```
 
 ** Configure compilation of the Diwina project in Release mode - This sets up the build system using CMake for optimal performance, linking against the previously compiled ScalFMM libraries **
@@ -207,7 +206,6 @@ cmake . -DCMAKE_BUILD_TYPE=Release
 ## Compile Diwina_path_integral Project
 
 ```bash
-cmake .
 make -j $(nproc)
 ```
 ### installation
