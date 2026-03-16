@@ -442,7 +442,7 @@ if __name__ == "__main__":
     ]
 
     try:
-        custom_cmap = read_custom_colormap("./HoloScale.tsv")
+        custom_cmap = read_custom_colormap("/usr/local/share/HoloScale.tsv")
     except Exception as e:
         print(f"Erreur lecture colormap: {e}")
         custom_cmap = cm.viridis
