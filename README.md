@@ -191,6 +191,10 @@ cmake . -DCMAKE_BUILD_TYPE=Release
 cmake .
 make -j 8
 ```
+### installation
+```bash
+sudo make install
+```
 
 ## Python Environment Setup
 
@@ -226,7 +230,7 @@ Kitware) and its Qt GUI **
 In a feeLLGood directory, launch path_integral software:
 
 ```bash
-../../tools/run_path_integral.py settings.yml
+run_path_integral.py settings.yml
 ```
 
 > **Warning**: The program uses the default values from the `default-settings.yml` file if it does not find them in `settings.yml`. In particular, the absorption coefficients are set to 0.01 and 0.018 (nm⁻¹). 
