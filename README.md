@@ -243,7 +243,7 @@ cd examples/uni_sphere
 run_path_integral.py settings.yml
 ```
 
-run_path_integral.py reads the yaml settings in the input file settings.yml and generates six files:
+run_path_integral.py reads the yaml settings in the input file settings.yml and generates seven files:
 ```bash
 sim_M_integrals.out
 sim_Holo.out
@@ -251,6 +251,7 @@ sim_MZ.png
 sim_PATH_LENGTH.png
 sim_STXM_XMCD.png
 sim_HOLO_PHASE.png
+sim_HOLO_PHASE_RGB.png
 ```
 
 The .out files are text:
@@ -263,7 +264,8 @@ The .png files are image files:
     sim_MZ.png – A 16-bit grayscale map of the integral of Mz.
     sim_PATH_LENGTH.png – A 16-bit grayscale map of the material path length.
     sim_STXM_XMCD.png – A 16-bit grayscale map of the STXM contrast.
-    sim_HOLO_PHASE.png – An 8-bit indexed RGB map of the holographic phase.
+    sim_HOLO_PHASE.png – A 16-bit grayscale map of the holographic phase.
+    sim_HOLO_PHASE_RGB.png – An 8-bit indexed RGB map of the holographic phase.
 
 The user might visualize them typing:
 ```bash
