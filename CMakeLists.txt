@@ -194,4 +194,6 @@ target_link_libraries(pathIntegral
 
 install(TARGETS pathIntegral RUNTIME DESTINATION bin)
 install(PROGRAMS ./tools/run_path_integral.py DESTINATION bin)
-install(PROGRAMS ./tools/fg-yml.py DESTINATION bin)
+install(PROGRAMS ./tools/yml-editor-extended.py DESTINATION bin)
+install(PROGRAMS ./tools/png_viewer.py DESTINATION bin)
+install(FILES ./tools/HoloScale.tsv DESTINATION share)

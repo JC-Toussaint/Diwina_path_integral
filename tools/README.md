@@ -15,6 +15,4 @@ png_extractor.py : tool to get some metadatas from a png file
 
 png_viewer.py : tool to view output images from path_integral
 
-run_path_integral : shell version of run_path_integral.py
-
 yml-editor-extended-clipping.py : Work In Progress
