@@ -253,7 +253,7 @@ def read_image_metadata(image_path):
             return vmin, vmax, unit
             
     except Exception as e:
-        print(f"Erreur lecture métadonnées pour {image_path}: {e}")
+        print(f"Error while reading metadata for {image_path}: {e}")
         return None, None, None
 
 def read_custom_colormap(path):
@@ -399,7 +399,7 @@ class ImageTab(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self, image_paths, colorbar_cmap_list, metadata_list):
         super().__init__()
-        self.setWindowTitle("Visualiseur d'Images - Onglets avec Axes et Zoom Synchronisé")
+        self.setWindowTitle("pathIntegral png viewer")
 
         # Créer le synchroniseur de zoom
         self.zoom_sync = ZoomSynchronizer()
@@ -444,7 +444,7 @@ if __name__ == "__main__":
     try:
         custom_cmap = read_custom_colormap("/usr/local/share/HoloScale.tsv")
     except Exception as e:
-        print(f"Erreur lecture colormap: {e}")
+        print(f"Error while reading colormap: {e}")
         custom_cmap = cm.viridis
 
     gray_map = colormaps.get_cmap("gray")
