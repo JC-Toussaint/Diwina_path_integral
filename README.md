@@ -165,7 +165,7 @@ source .venv/bin/activate
 
 ** Install meshio pyyaml scipy PyQt5 pyvista pyvistaqt python modules **
 ```bash
-pip3 install meshio pyyaml scipy PyQt5 pyvista pyvistaqt
+pip3 install gmsh meshio pyyaml scipy PyQt5 pyvista pyvistaqt
 ```
 
 ** meshio (library for reading/writing mesh files) - Developed by Nico Schlömer, this library is essential for handling various mesh file formats commonly used in finite element analysis **
