@@ -1,21 +1,19 @@
 # pathIntegral from Diwina project
 ## based on FeeLLGood – A micromagnetic solver
 
-pathIntegral is a STXM image simulator using feeLLGood simulations inputs. feeLLGood is a micromagnetic solver using finite element technique to integrate Landau Lifshitz Gilbert equation, developped by JC Toussaint & al. The code is being modified without any warranty it works. A dedicated website can be found [here][]  
+pathIntegral is a STXM-XMCD and electron holography image simulator using feeLLGood simulations inputs. feeLLGood is a micromagnetic solver using finite element technique to integrate Landau Lifshitz Gilbert equation, developped by JC Toussaint & al. The code is being modified without any warranty it works. A dedicated website can be found [here][]  
 
 ### Dependencies
 
 * C++17 and the STL
-* Fortran 2018 (gfortran)
 * [GMSH][]
 * [TBB][]
 * [libpng][]
 * [yaml-cpp][]
 * [Duktape][] 2.7.0
-* [Eigen][] ≥ 3.3
+* [Eigen][] 3.4
 * BLAS
 * LAPACK
-* [fmmlib2d][] 1.2.4
 
 ### License
 
@@ -25,7 +23,7 @@ pathIntegral is free software: you can redistribute it and/or modify it under th
 
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-Additional permission under GNU GPL version 3 section 7: If you modify this Program, or any covered work, by linking or combining it with the Intel® MKL library (or a modified version of that library), containing parts covered by the terms of Intel Simplified Software License, the licensors of this Program grant you additional permission to convey the resulting work.
+Additional permission under GNU GPL version 3 section 7: If you modify this program, or any covered work, by linking or combining it with the Intel® MKL library (or a modified version of that library), containing parts covered by the terms of Intel Simplified Software License, the licensors of this Program grant you additional permission to convey the resulting work.
 
 The libraries used by pathIntegral are distributed under different licenses, and this is documented in their respective Web sites.
 
