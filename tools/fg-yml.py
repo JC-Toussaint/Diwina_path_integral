@@ -113,7 +113,7 @@ def load_yaml_from_file(filename: str = "paste.txt") -> Dict[str, Any]:
         print(f"❌ Error reading file: {e}")
         return None
 
-def analyze():
+def analyze(filename):
     """
     analyze function
     """            
@@ -149,15 +149,23 @@ def analyze():
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python fg-yml <setting.yml>")
-        sys.exit(1)
+def get_params():
+    import argparse
+    description = 'tree like printing og a yaml or json file'
+    epilogue = '''
+    tree like printing of the unfolded content of a yaml or json file
+    '''
+    parser = argparse.ArgumentParser(description=description, epilog=epilogue,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('fileName', help='a yaml file')
+    parser.add_argument('--version',action='version',version= __version__,help='show the version number')
+    args = parser.parse_args()
+    return args.fileName
 
-    try:
-        filename = sys.argv[1]
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        sys.exit(1)
-        
-    analyze()
+def main():
+    fileName = get_params()
+    analyze(fileName)
+
+__version__ = '1.0.0'
+if __name__ == "__main__":
+    main()
