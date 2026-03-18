@@ -1,11 +1,16 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import os
 import sys
 import subprocess
 
-from feellgood import meshMaker # you have to install feellgood module with sudo make install from feellgood public directory
+'''
+you have to install meshMaker feellgood module with pip install in your venv
+typing pip install ../FeeLLGood/python-modules
+with appropriate path
+'''
 
+import meshMaker
 r = 100 
 meshSize = 4
 
