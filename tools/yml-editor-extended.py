@@ -447,7 +447,7 @@ try:
             button_layout = QHBoxLayout()
             self.save_yaml_btn = QPushButton("Save YAML")
             self.save_yaml_btn.clicked.connect(self.save_yaml_config)
-            self.compute_btn = QPushButton("Save YAML & Compute")
+            self.compute_btn = QPushButton("Save YAML and Compute")
             self.compute_btn.clicked.connect(self.compute)
             button_layout.addWidget(self.save_yaml_btn)
             button_layout.addWidget(self.compute_btn)

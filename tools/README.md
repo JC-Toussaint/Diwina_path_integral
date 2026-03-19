@@ -1,7 +1,7 @@
-run_path_integral.py : launch global application for simulating phase images and XMCD images
-launch a yaml extended editor
-then C++ executable
-then png image viewer
+yml-editor-extended.py : 
+python executable that launch global application with a GUI, to build some settings, save those
+settings in yaml with some 3D visualization for simulating phase images and XMCD images
+Compute button launch a C++ executable (pathIntegral)
 
 phase_contours.py : iso values of the holographic phase
 
