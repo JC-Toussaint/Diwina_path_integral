@@ -13,6 +13,6 @@ msh-explorer.py : informations on a mesh file: number of triangles, tetrahedrons
 
 png_extractor.py : tool to get some metadatas from a png file
 
-png_viewer.py : tool to view output images from path_integral
+png_viewer.py : tool to view output four images from path_integral
 
 yml-editor-extended-clipping.py : Work In Progress

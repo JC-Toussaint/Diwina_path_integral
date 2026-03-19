@@ -434,22 +434,14 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     image_list = [
-        "sim_HOLO_PHASE_RGB.png",
         "sim_HOLO_PHASE.png",
         "sim_MZ.png",
         "sim_PATH_LENGTH.png",
         "sim_STXM_XMCD.png"
     ]
 
-    try:
-        custom_cmap = read_custom_colormap("/usr/local/share/HoloScale.tsv")
-    except Exception as e:
-        print(f"Error while reading colormap: {e}")
-        custom_cmap = cm.viridis
-
     gray_map = colormaps.get_cmap("gray")
     colorbar_cmap_list = [
-        custom_cmap,
         gray_map,
         gray_map,
         gray_map,
