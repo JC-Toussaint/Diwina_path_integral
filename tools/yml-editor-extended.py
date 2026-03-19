@@ -296,7 +296,8 @@ try:
             self.showMaximized()
 
             # Variables
-            self.file_path = yaml_file
+            self.inputFileName = yaml_file
+            self.outputFileName =  "noneYet"
             self.yaml_config = {}
             self.mesh_filename = None
             self.sol_file_path = None
@@ -446,10 +447,10 @@ try:
             button_layout = QHBoxLayout()
             self.save_yaml_btn = QPushButton("Save YAML")
             self.save_yaml_btn.clicked.connect(self.save_yaml_config)
-            self.quit_btn = QPushButton("Quit")
-            self.quit_btn.clicked.connect(self.quit_and_save)
+            self.compute_btn = QPushButton("Save YAML & Compute")
+            self.compute_btn.clicked.connect(self.compute)
             button_layout.addWidget(self.save_yaml_btn)
-            button_layout.addWidget(self.quit_btn)
+            button_layout.addWidget(self.compute_btn)
             button_layout.addStretch()
             right_layout.addLayout(button_layout)
 
@@ -481,8 +482,8 @@ try:
                     self.magnetization_data = None
 
         def load_yaml_file(self):
-            if self.file_path:
-                self.yaml_config = load_yaml_from_file(self.file_path)
+            if self.inputFileName:#file_path:
+                self.yaml_config = load_yaml_from_file(self.inputFileName)
                 if self.yaml_config:
                     self.update_yaml_display()
                     self.populate_fields_from_yaml()
@@ -579,17 +580,19 @@ try:
                 QMessageBox.critical(self, "Error", f"Error updating: {e}")
                 return
 
-            if self.file_path:
-                base, ext = os.path.splitext(self.file_path)
-                filename = f"{base}_ray{ext}"
+            if self.inputFileName:
+                base, ext = os.path.splitext(self.inputFileName)
+                self.outputFileName = f"{base}_ray{ext}"
             else:
                 filename, _ = QFileDialog.getSaveFileName(self, "Save YAML file", "", "YAML files (*.yml *.yaml)")
                 if not filename:
                     return
+                else:
+                    self.outputFileName = filename
 
             try:
-                save_yaml_file(self.yaml_config, filename)
-                QMessageBox.information(self, "Success", f"File saved: {filename}")
+                save_yaml_file(self.yaml_config, self.outputFileName)
+                QMessageBox.information(self, "Success", f"File saved: {self.outputFileName}")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Error saving: {e}")
 
@@ -786,6 +789,27 @@ try:
                 line = pv.Line(line_points[0], line_points[1])
                 self.plotter.add_mesh(line, color="black", line_width=2)
 
+        def compute(self):
+            """Save YAML configuration and launch pathIntegral executable """
+            try:
+                self.save_yaml_config()
+            except Exception as e:
+                reply = QMessageBox.question(
+                    self, 
+                    'Error Saving', 
+                    f"Error saving configuration: {e}\n\nDo you still want to quit?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+                if reply == QMessageBox.No:
+                    return
+            print("outputFileName=",self.outputFileName)
+            if self.outputFileName != "noneYet":
+                subprocess.run(["pathIntegral", self.outputFileName], check=True)
+            else:
+                print("you should never end here")
+                sys.exit()
+
         def quit_and_save(self):
             """Save YAML configuration before quitting"""
             try:
@@ -841,7 +865,7 @@ def main():
             window.show()
             sys.exit(app.exec_())
         finally:
-            print("Oups")
+            sys.exit()
 
 __version__ = '0.0.1'
 if __name__ == "__main__":

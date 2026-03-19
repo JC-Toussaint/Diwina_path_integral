@@ -1,4 +1,4 @@
-# Simulation settings for test.py.
+# Simulation settings
 
 outputs:
   directory: .
