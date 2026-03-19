@@ -23,7 +23,3 @@ filename = f"{basename}_ray.yml"
 
 # Launch pathIntegral
 subprocess.run(["pathIntegral", filename], check=True)
-
-# Launch png_viewer.py
-#subprocess.run(["png_viewer.py"], check=True)
-

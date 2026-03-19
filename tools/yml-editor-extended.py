@@ -360,7 +360,7 @@ try:
             rotation_group = QGroupBox("Rotation Parameters")
             rotation_layout = QVBoxLayout(rotation_group)
 
-            angle1_layout = QVBoxLayout()
+            angle1_layout = QHBoxLayout()
             angle1_label = QLabel("Angle 1 (°):")
             self.angle1_input = QLineEdit("0")
             self.angle1_input.textChanged.connect(self.update_mesh)
@@ -368,17 +368,17 @@ try:
             angle1_layout.addWidget(self.angle1_input)
             rotation_layout.addLayout(angle1_layout)
 
-            axe1_layout = QVBoxLayout()
-            axe1_layout.addWidget(QLabel("Axis 1 (x y z):"))
+            axe1_layout = QHBoxLayout()
             axis_input_layout = QHBoxLayout()
             self.axe1_inputs = [QLineEdit("1"), QLineEdit("0"), QLineEdit("0")]
+            axis_input_layout.addWidget(QLabel("Axis 1 (x y z):"))
             for inp in self.axe1_inputs:
                 inp.textChanged.connect(self.update_mesh)
                 axis_input_layout.addWidget(inp)
             axe1_layout.addLayout(axis_input_layout)
             rotation_layout.addLayout(axe1_layout)
 
-            angle2_layout = QVBoxLayout()
+            angle2_layout = QHBoxLayout()
             angle2_label = QLabel("Angle 2 (°):")
             self.angle2_input = QLineEdit("0")
             self.angle2_input.textChanged.connect(self.update_mesh)
@@ -386,10 +386,10 @@ try:
             angle2_layout.addWidget(self.angle2_input)
             rotation_layout.addLayout(angle2_layout)
 
-            axe2_layout = QVBoxLayout()
-            axe2_layout.addWidget(QLabel("Axis 2 (x y z):"))
+            axe2_layout = QHBoxLayout()
             axis_input_layout = QHBoxLayout()
             self.axe2_inputs = [QLineEdit("1"), QLineEdit("0"), QLineEdit("0")]
+            axis_input_layout.addWidget(QLabel("Axis 2 (x y z):"))
             for inp in self.axe2_inputs:
                 inp.textChanged.connect(self.update_mesh)
                 axis_input_layout.addWidget(inp)
