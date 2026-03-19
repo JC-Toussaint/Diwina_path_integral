@@ -234,14 +234,14 @@ Finally, the holographic phase image is calculated at any point on a grid called
 
 ## Launch the Path Integral Software
 
-In a feeLLGood directory, launch path_integral software:
+In a feeLLGood directory, launch path_integral GUI:
 
 ```bash
 cd examples/uni_sphere
-run_path_integral.py settings.yml
+yml-editor-extended.py settings.yml
 ```
 
-run_path_integral.py reads the yaml settings in the input file settings.yml and generates seven files:
+yml-editor-extended.py reads the yaml settings in the input file settings.yml and generates seven files:
 ```bash
 sim_M_integrals.out
 sim_Holo.out
