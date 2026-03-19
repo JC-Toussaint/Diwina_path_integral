@@ -832,11 +832,10 @@ except:
 
 def get_params():
     import argparse
-    description = 'pathIntegral application'
+    description = 'pathIntegral GUI frontend'
     epilogue = '''
     lauch a GUI if possible
-    then launch pathIntegral executable to compute outputs
-    then launch png_viewer to view computed outputs from pathIntegral
+    then launch pathIntegral executable to compute .out and .png outputs
     '''
     parser = argparse.ArgumentParser(description=description, epilog=epilogue, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('ymlFileName',help='a yaml settings input file')
@@ -867,6 +866,6 @@ def main():
         finally:
             sys.exit()
 
-__version__ = '0.0.1'
+__version__ = '0.1.0'
 if __name__ == "__main__":
     main()
