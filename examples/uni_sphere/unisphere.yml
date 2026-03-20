@@ -23,9 +23,6 @@ rotations:
   angle2: 0
   axe2: [0, 0, 1]
 filled: false
-electrostatics:
-  CE: 0
-  V : 0
 detector:
   zoom: 0.5
   meshSize: 0.5e-9

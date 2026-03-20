@@ -407,17 +407,6 @@ try:
             self.filled_checkbox.setChecked(True)
             other_layout.addWidget(self.filled_checkbox)
 
-            elec_layout = QVBoxLayout()
-            ce_label = QLabel("CE:")
-            self.ce_input = QLineEdit("0")
-            v_label = QLabel("V:")
-            self.v_input = QLineEdit("0.0")
-            elec_layout.addWidget(ce_label)
-            elec_layout.addWidget(self.ce_input)
-            elec_layout.addWidget(v_label)
-            elec_layout.addWidget(self.v_input)
-            other_layout.addLayout(elec_layout)
-
             det_layout = QVBoxLayout()
             zoom_label = QLabel("Zoom:")
             self.zoom_input = QLineEdit("0.5")
@@ -518,13 +507,6 @@ try:
             if 'filled' in self.yaml_config:
                 self.filled_checkbox.setChecked(str(self.yaml_config['filled']).lower() == 'true')
 
-            if 'electrostatics' in self.yaml_config:
-                elec = self.yaml_config['electrostatics']
-                if 'CE' in elec:
-                    self.ce_input.setText(str(elec['CE']))
-                if 'V' in elec:
-                    self.v_input.setText(str(elec['V']))
-
             if 'detector' in self.yaml_config:
                 det = self.yaml_config['detector']
                 if 'zoom' in det:
@@ -554,11 +536,6 @@ try:
                 self.yaml_config['rotations']['axe2'] = [float(inp.text()) for inp in self.axe2_inputs]
 
                 self.yaml_config['filled'] = str(self.filled_checkbox.isChecked()).lower()
-
-                if 'electrostatics' not in self.yaml_config:
-                    self.yaml_config['electrostatics'] = {}
-                self.yaml_config['electrostatics']['CE'] = int(self.ce_input.text())
-                self.yaml_config['electrostatics']['V'] = float(self.v_input.text())
 
                 if 'detector' not in self.yaml_config:
                     self.yaml_config['detector'] = {}
@@ -621,9 +598,7 @@ try:
                 mesh = create_pyvista_mesh(rotated_points, self.triangles)
 
                 self.plotter.clear()
-
                 self.plotter.add_mesh(mesh, color="lightblue", show_edges=False, opacity=1.0)
-
                 self.add_bounding_box(self.original_points, axes_angles)
             
             # Add magnetization vectors if available and enabled
@@ -725,12 +700,7 @@ try:
                 print(f"Created {arrows.n_cells} arrow cells, {arrows.n_points} points")
             
             # Add to plotter in black
-                self.plotter.add_mesh(
-                    arrows, 
-                    color='black',
-                    opacity=0.8,
-                    show_scalar_bar=False
-                )
+                self.plotter.add_mesh(arrows, color='black', opacity=0.8, show_scalar_bar=False)
             
                 print("Magnetization vectors added successfully")
                     
