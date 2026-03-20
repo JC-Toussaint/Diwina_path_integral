@@ -292,7 +292,7 @@ try:
     class CombinedInterface(QMainWindow):
         def __init__(self, yaml_file="settings.yml"):
             super().__init__()
-            self.setWindowTitle("FeeLLGood Micromagnetic Image Toolbox")
+            self.setWindowTitle("FeeLLGood Micromagnetic Image Computing Tool")
             self.showMaximized()
 
             # Variables
@@ -315,7 +315,7 @@ try:
             central_widget.setLayout(QHBoxLayout())
             central_widget.layout().addWidget(main_splitter)
 
-        # === Left Panel: YAML Editor ===
+        # === Left Panel ===
             left_panel = QFrame()
             left_panel.setFrameShape(QFrame.StyledPanel)
             left_panel.setMinimumWidth(500)
@@ -323,27 +323,24 @@ try:
 
         # Sol file selection
             sol_layout = QVBoxLayout()
-            self.sol_label = QLabel(".sol File:")
-            self.sol_input = QLineEdit()
+            self.sol_label = QLabel("no .sol file selected.")
             self.sol_btn = QPushButton("Browse .sol")
             self.sol_btn.clicked.connect(self.select_sol_file)
-
-            sol_layout.addWidget(self.sol_label)
-            sol_layout.addWidget(self.sol_input)
             sol_layout.addWidget(self.sol_btn)
+            sol_layout.addWidget(self.sol_label)
             left_layout.addLayout(sol_layout)
 
         # Vector display controls
-            vector_group = QGroupBox("Magnetization Vector Display")
+            vector_group = QGroupBox()
             vector_layout = QVBoxLayout(vector_group)
-
-            self.show_vectors_checkbox = QCheckBox("Show Magnetization Vectors")
+            self.show_vectors_checkbox = QCheckBox("Show")
             self.show_vectors_checkbox.setChecked(False)
             self.show_vectors_checkbox.stateChanged.connect(self.update_mesh)
-            vector_layout.addWidget(self.show_vectors_checkbox)
 
         # Vector scale control
             scale_layout = QHBoxLayout()
+            scale_layout.addWidget(QLabel("Magnetization:"))
+            scale_layout.addWidget(self.show_vectors_checkbox)
             scale_layout.addWidget(QLabel("Vector Scale:"))
             self.vector_scale_spinbox = QDoubleSpinBox()
             self.vector_scale_spinbox.setRange(0.001, 100.0)
@@ -419,15 +416,11 @@ try:
             sensor_pixel_size_layout.addWidget(QLabel("Sensor pixel size:"))
             sensor_pixel_size_layout.addWidget(self.meshsize_input)
             det_layout.addLayout(sensor_pixel_size_layout)
-            #det_layout.addWidget(self.zoom_input)
-            #det_layout.addWidget(QLabel("Sensor pixel size:"))
-            #det_layout.addWidget(self.meshsize_input)
             other_layout.addLayout(det_layout)
 
             left_layout.addWidget(other_group)
 
-            left_layout.addWidget(QLabel("YAML configuration:"))
-        
+            left_layout.addWidget(QLabel("YAML output file:"))
             self.yaml_display = QTextEdit()
             self.yaml_display.setReadOnly(True)
             self.highlighter = YAMLSyntaxHighlighter(self.yaml_display.document())
@@ -460,7 +453,7 @@ try:
             path, _ = QFileDialog.getOpenFileName(self, "Select a .sol file", "", "SOL files (*.sol)")
             if path:
                 self.sol_file_path = path
-                self.sol_input.setText(path)
+                self.sol_label.setText(path)
                 try:
                     self.magnetization_data = load_sol_file(path)
                     QMessageBox.information(self, "Success", 
@@ -492,7 +485,7 @@ try:
                 return
 
             if 'initial_magnetization' in self.yaml_config:
-                self.sol_input.setText('No sol file selected')
+                self.sol_label.setText('No sol file selected')
 			
             if 'rotations' in self.yaml_config:
                 rot = self.yaml_config['rotations']
