@@ -413,7 +413,7 @@ try:
 
             sensor_pixel_size_layout = QHBoxLayout()
             self.meshsize_input = QLineEdit("1e-9")
-            sensor_pixel_size_layout.addWidget(QLabel("Sensor pixel size:"))
+            sensor_pixel_size_layout.addWidget(QLabel("Sensor pixel size [m]:"))
             sensor_pixel_size_layout.addWidget(self.meshsize_input)
             det_layout.addLayout(sensor_pixel_size_layout)
             other_layout.addLayout(det_layout)
