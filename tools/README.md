@@ -1,4 +1,6 @@
-yml-editor-extended.py : 
+# FeeLLGood micromagnetic imaging toolbox (fmit)
+
+fmit-GUI :
 python executable that launch global application with a GUI, to build some settings, save those
 settings in yaml with some 3D visualization for simulating phase images and XMCD images
 Compute button launch a C++ executable (pathIntegral)
@@ -11,8 +13,7 @@ fg-yml.py : 'tree like' text display of a yaml file
 
 msh-explorer.py : informations on a mesh file: number of triangles, tetrahedrons, ...
 
-png_extractor.py : tool to get some metadatas from a png file
+fmit-png-extractor : tool to get some metadatas from an png file from pathIntegral
 
-png_viewer.py : tool to view output four images from path_integral
+fmit-png-viewer : tool to display pngs output from pathIntegral
 
-yml-editor-extended-clipping.py : Work In Progress
