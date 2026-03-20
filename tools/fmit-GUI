@@ -292,7 +292,7 @@ try:
     class CombinedInterface(QMainWindow):
         def __init__(self, yaml_file="settings.yml"):
             super().__init__()
-            self.setWindowTitle("YAML Editor + 3D Visualization with Magnetization")
+            self.setWindowTitle("FeeLLGood Micromagnetic Image Toolbox")
             self.showMaximized()
 
             # Variables
@@ -358,7 +358,7 @@ try:
             left_layout.addWidget(vector_group)
 
         # Rotation parameters
-            rotation_group = QGroupBox("Rotation Parameters")
+            rotation_group = QGroupBox("Rotations")
             rotation_layout = QVBoxLayout(rotation_group)
 
             angle1_layout = QHBoxLayout()
@@ -421,7 +421,7 @@ try:
             det_layout = QVBoxLayout()
             zoom_label = QLabel("Zoom:")
             self.zoom_input = QLineEdit("0.5")
-            meshsize_label = QLabel("Mesh Size:")
+            meshsize_label = QLabel("Sensor pixel size:")
             self.meshsize_input = QLineEdit("1e-9")
             det_layout.addWidget(zoom_label)
             det_layout.addWidget(self.zoom_input)
@@ -439,11 +439,6 @@ try:
             self.highlighter = YAMLSyntaxHighlighter(self.yaml_display.document())
             left_layout.addWidget(self.yaml_display, 1)
 
-        # === Right Panel: 3D Visualization ===
-            right_panel = QFrame()
-            right_panel.setFrameShape(QFrame.StyledPanel)
-            right_layout = QVBoxLayout(right_panel)
-
             button_layout = QHBoxLayout()
             self.save_yaml_btn = QPushButton("Save YAML")
             self.save_yaml_btn.clicked.connect(self.save_yaml_config)
@@ -452,14 +447,14 @@ try:
             button_layout.addWidget(self.save_yaml_btn)
             button_layout.addWidget(self.compute_btn)
             button_layout.addStretch()
-            right_layout.addLayout(button_layout)
+            left_layout.addLayout(button_layout)
 
-            title_label = QLabel("3D Visualization - Rotations & Magnetization")
-            title_label.setFont(QFont("Arial", 14, QFont.Bold))
-            title_label.setAlignment(Qt.AlignCenter)
-            right_layout.addWidget(title_label)
+            # === Right Panel: 3D Visualization ===
+            right_panel = QFrame()
+            right_panel.setFrameShape(QFrame.StyledPanel)
+            right_layout = QVBoxLayout(right_panel)
 
-            self.plotter = QtInteractor()
+            self.plotter = QtInteractor() # QtInteractor comes from pyvista
             self.plotter.set_background("white")
             right_layout.addWidget(self.plotter.interactor)
 
