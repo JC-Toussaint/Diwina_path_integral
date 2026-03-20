@@ -150,8 +150,7 @@ SET(HEADERS config.h node.h  expression_parser.h mesh.h
 SET(SOURCES settings.cpp read.cpp tetra.cpp expression_parser.cpp chronometer.cpp
     tags.cpp write_png.cpp exportRatioGrayScaleImage.cpp exportMagIntegrals.cpp chapeaux.cpp 
     scalfmm2d_sum.cpp direct2d_sum.cpp
-    femutil.cpp correction.cpp 
-    exportHoloPhase.cpp exportRatioRGBscaleImage.cpp pathIntegral.cpp)
+    femutil.cpp correction.cpp exportHoloPhase.cpp pathIntegral.cpp)
 
 configure_file(config.h.in ./config.h)
 
@@ -193,5 +192,5 @@ target_link_libraries(pathIntegral
 #===========================================================================
 
 install(TARGETS pathIntegral RUNTIME DESTINATION bin)
-install(PROGRAMS ./tools/yml-editor-extended.py DESTINATION bin)
-install(PROGRAMS ./tools/png_viewer.py DESTINATION bin)
+install(PROGRAMS ./tools/fmit-GUI DESTINATION bin)
+install(PROGRAMS ./tools/fmit-png-viewer DESTINATION bin)

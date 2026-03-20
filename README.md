@@ -64,17 +64,6 @@ sudo apt upgrade
 sudo apt install wget git cmake pkgconf g++ gfortran python3-venv
 sudo apt install libgmsh-dev libeigen3-dev libtbb-dev libyaml-cpp-dev duktape-dev libfftw3-dev libopenblas-dev libpng-dev libcgal-dev
 ```
-** ParaView (scientific visualization software) - A powerful, open-source application developed by Kitware, Sandia National Laboratories, and Los Alamos National Laboratory for visualizing large datasets, commonly used in scientific and engineering applications for 3D data analysis **
-
-** FFTW library for fast Fourier transforms - A high-performance C library developed by Matteo Frigo and Steven G. Johnson at MIT for computing discrete Fourier transforms, essential for signal processing and numerical analysis **
-
-** OpenBLAS (optimized linear algebra library) - A highly optimized implementation of Basic Linear Algebra Subprograms (BLAS) developed by Zhang Xianyi at the Chinese Academy of Sciences, providing fast matrix operations crucial for scientific computing **
-
-** GNU Fortran compiler - Part of the GNU Compiler Collection (GCC) developed by the Free Software Foundation, required for compiling Fortran source code commonly used in scientific computing applications **
-
-** PNG development library - The reference implementation of the PNG specification, developed by the PNG Development Group, providing support for reading and writing PNG image files **
-
-** CGAL (computational geometry algorithms library) - A comprehensive C++ library developed by INRIA, ETH Zurich, and other European research institutions, providing efficient and reliable geometric algorithms for computational geometry applications **
 
 ## ScalFMM Installation
 
@@ -165,27 +154,16 @@ source .venv/bin/activate
 
 ** Install meshio pyyaml scipy PyQt5 pyvista pyvistaqt python modules **
 ```bash
-pip3 install gmsh meshio pyyaml scipy PyQt5 pyvista pyvistaqt
+pip3 install meshio pyyaml scipy PyQt5 pyvista pyvistaqt
 ```
-
-** meshio (library for reading/writing mesh files) - Developed by Nico Schlömer, this library is essential for handling various mesh file formats commonly used in finite element analysis **
-
-** PyYAML (for processing YAML files) - Developed by Kirill Simonov and Ingy döt Net, this library enables parsing and generation of YAML configuration files, commonly used for application settings and data serialization **
-
-** SciPy (scientific computing library) - Developed by Travis Oliphant, Pearu Peterson, and Eric Jones, built on NumPy, this library provides algorithms for optimization, linear algebra, integration, and other mathematical tasks **
-
-** PyQt5 (graphical user interface) - Developed by Riverbank Computing, Python bindings for the Qt5 framework (originally developed by Trolltech, now The Qt Company), enabling creation of desktop applications **
-
-** PyVista and PyVistaQt (3D visualization) - Developed by Bane Sullivan and Alex Kaszynski, Python
-library for 3D plotting and mesh analysis, built on top of VTK (Visualization Toolkit developed by
-Kitware) and its Qt GUI **
-
 
 # Getting started
 
-A configuration template file can be generated, giving you all the fields you need to fill in to run a simulation.  To do this, enter :
+A configuration template file can be generated, giving you all the fields you need to fill in to run a simulation.
+To do this, from command line, enter :
+```bash
 ./pathIntegral --print-defaults > settings.yml
-
+```
 The resulting file is in YAML format. It has lots of comments (everything after a # sign) documenting the file structure 
 and the meaning of the individual settings.
 With the comments stripped, the file looks like this:
@@ -223,7 +201,7 @@ detector:
 ```
 
 The previous settings file corresponds to the case of a sphere uniformly magnetized along the Ox axis, with a radius of r=100nm. 
-The Gmsh mesh generator has already been used to generate the mesh of the sphere. We define two regions: sphere_volume and sphere_surface. 
+The mesh generator has already been used to generate the mesh of the sphere. We define two regions: sphere_volume and sphere_surface. 
 For the sphere_volume region, you need to specify the material’s magnetization in Tesla, as well as the photon absorption lengths 
 for left- and right-circular polarizations in nanometers.
 The micromagnetic system can be rotated along two axes (i.e., axis1 and axis2) by specifying the rotation angles (i.e., angle1 and angle2) in degrees.
@@ -232,16 +210,16 @@ relevant for tubes filled with a non-magnetic material, such as copper (TO CHECK
 The CE and V parameters account for electrostatic effects on the holographic phase. CE depends on the type of microscope and the electron energy, while the inner potential V depends on the type of material.
 Finally, the holographic phase image is calculated at any point on a grid called the detector. Since its dimensions must be larger than those of the projected system, the zoom parameter must be less than 1 in the current version. The resolution is determined by the meshSize parameter.
 
-## Launch the Path Integral Software
+## Launch pathIntegral graphic interface
 
-In a feeLLGood directory, launch path_integral GUI:
+In a feeLLGood directory, launch the graphic interface to pathIntegral:
 
 ```bash
 cd examples/uni_sphere
-yml-editor-extended.py settings.yml
+fmit-GUI settings.yml
 ```
 
-yml-editor-extended.py reads the yaml settings in the input file settings.yml and generates seven files:
+fmit-GUI.py reads the yaml settings in the input file settings.yml and generates six files:
 ```bash
 sim_M_integrals.out
 sim_Holo.out
@@ -249,7 +227,6 @@ sim_MZ.png
 sim_PATH_LENGTH.png
 sim_STXM_XMCD.png
 sim_HOLO_PHASE.png
-sim_HOLO_PHASE_RGB.png
 ```
 
 The .out files are text:
@@ -263,11 +240,10 @@ The .png files are image files:
     sim_PATH_LENGTH.png – A 16-bit grayscale map of the material path length.
     sim_STXM_XMCD.png – A 16-bit grayscale map of the STXM contrast.
     sim_HOLO_PHASE.png – A 16-bit grayscale map of the holographic phase.
-    sim_HOLO_PHASE_RGB.png – An 8-bit indexed RGB map of the holographic phase.
 
 The user might visualize them typing:
 ```bash
-png_viewer.py
+fmit-png-viewer
 ```
 
-> **Warning**: run_path_integral.py uses the default values from the `default-settings.yml` file if it does not find them in `settings.yml`. In particular, the absorption coefficients are set to 0.01 and 0.018 (nm⁻¹). 
+> **Warning**: fmit-GUI uses the default values from the `default-settings.yml` file if it does not find them in `settings.yml`. In particular, the absorption coefficients are set to 0.01 and 0.018 (nm⁻¹). 
