@@ -192,9 +192,6 @@ rotations:
   angle2: 0
   axe2: [0, 0, 1]
 filled: false
-electrostatics:
-  CE: 0
-  V : 0
 detector:
   zoom: 0.5
   meshSize: 1.0e-9
@@ -207,7 +204,6 @@ for left- and right-circular polarizations in nanometers.
 The micromagnetic system can be rotated along two axes (i.e., axis1 and axis2) by specifying the rotation angles (i.e., angle1 and angle2) in degrees.
 The filled flag is not relevant for a sphere entirely made of magnetic material. However, it is
 relevant for tubes filled with a non-magnetic material, such as copper (TO CHECK).
-The CE and V parameters account for electrostatic effects on the holographic phase. CE depends on the type of microscope and the electron energy, while the inner potential V depends on the type of material.
 Finally, the holographic phase image is calculated at any point on a grid called the detector. Since its dimensions must be larger than those of the projected system, the zoom parameter must be less than 1 in the current version. The resolution is determined by the meshSize parameter.
 
 ## Launch pathIntegral graphic interface
@@ -229,10 +225,12 @@ sim_STXM_XMCD.png
 sim_HOLO_PHASE.png
 ```
 
-The .out files are text:
+The .out files are text (tsv) files:
 
     sim_M_integrals.out – Columns represent the node number, its x and y coordinates, a boolean value indicating whether the beam propagates through materials, the length of material traversed, the integrals of Mx, My, and Mz over the beam path, and the STXM intensity contrast.
-    sim_Holo.out – Columns represent the node number, its x and y coordinates, a boolean value indicating whether the beam propagates through materials, the length of material traversed, and the holographic phase in radians, taking into account both electrostatic and magnetic contributions.
+    sim_Holo.out – Columns represent the node number, its x and y coordinates, a boolean value
+    indicating whether the beam propagates through materials, the length of material traversed, and
+    the holographic phase in radians, taking into account magnetic contributions only.
 
 The .png files are image files:
 
