@@ -613,9 +613,9 @@ try:
                     location="outer",    # ← CRUCIAL
                     ticks="both",
                     all_edges=True,
-                    xlabel="X",
-                    ylabel="Y",
-                    zlabel="Z",
+                    xtitle="X",
+                    ytitle="Y",
+                    ztitle="Z",
                     font_size=12
                 )
 
