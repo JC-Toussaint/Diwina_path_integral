@@ -408,20 +408,25 @@ try:
             other_layout.addWidget(self.filled_checkbox)
 
             det_layout = QVBoxLayout()
-            zoom_label = QLabel("Zoom:")
+            zoom_layout = QHBoxLayout()
             self.zoom_input = QLineEdit("0.5")
-            meshsize_label = QLabel("Sensor pixel size:")
+            zoom_layout.addWidget(QLabel("Zoom:"))
+            zoom_layout.addWidget(self.zoom_input)
+            det_layout.addLayout(zoom_layout)
+
+            sensor_pixel_size_layout = QHBoxLayout()
             self.meshsize_input = QLineEdit("1e-9")
-            det_layout.addWidget(zoom_label)
-            det_layout.addWidget(self.zoom_input)
-            det_layout.addWidget(meshsize_label)
-            det_layout.addWidget(self.meshsize_input)
+            sensor_pixel_size_layout.addWidget(QLabel("Sensor pixel size:"))
+            sensor_pixel_size_layout.addWidget(self.meshsize_input)
+            det_layout.addLayout(sensor_pixel_size_layout)
+            #det_layout.addWidget(self.zoom_input)
+            #det_layout.addWidget(QLabel("Sensor pixel size:"))
+            #det_layout.addWidget(self.meshsize_input)
             other_layout.addLayout(det_layout)
 
             left_layout.addWidget(other_group)
 
-            yaml_label = QLabel("YAML Configuration:")
-            left_layout.addWidget(yaml_label)
+            left_layout.addWidget(QLabel("YAML configuration:"))
         
             self.yaml_display = QTextEdit()
             self.yaml_display.setReadOnly(True)
