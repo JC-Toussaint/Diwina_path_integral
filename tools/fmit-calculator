@@ -361,6 +361,7 @@ try:
             angle1_layout = QHBoxLayout()
             angle1_label = QLabel("Angle 1 (°):")
             self.angle1_input = QLineEdit("0")
+            self.angle1_input.setToolTip("angle 1 in degree")
             self.angle1_input.textChanged.connect(self.update_mesh)
             angle1_layout.addWidget(angle1_label)
             angle1_layout.addWidget(self.angle1_input)
@@ -369,7 +370,10 @@ try:
             axe1_layout = QHBoxLayout()
             axis_input_layout = QHBoxLayout()
             self.axe1_inputs = [QLineEdit("1"), QLineEdit("0"), QLineEdit("0")]
-            axis_input_layout.addWidget(QLabel("Axis 1 (x y z):"))
+            axis_input_layout.addWidget(QLabel("Axis 1:"))
+            self.axe1_inputs[0].setToolTip("axis1[x]")
+            self.axe1_inputs[1].setToolTip("axis1[y]")
+            self.axe1_inputs[2].setToolTip("axis1[z]")
             for inp in self.axe1_inputs:
                 inp.textChanged.connect(self.update_mesh)
                 axis_input_layout.addWidget(inp)
@@ -379,6 +383,7 @@ try:
             angle2_layout = QHBoxLayout()
             angle2_label = QLabel("Angle 2 (°):")
             self.angle2_input = QLineEdit("0")
+            self.angle2_input.setToolTip("angle 2 in degree")
             self.angle2_input.textChanged.connect(self.update_mesh)
             angle2_layout.addWidget(angle2_label)
             angle2_layout.addWidget(self.angle2_input)
@@ -387,7 +392,10 @@ try:
             axe2_layout = QHBoxLayout()
             axis_input_layout = QHBoxLayout()
             self.axe2_inputs = [QLineEdit("1"), QLineEdit("0"), QLineEdit("0")]
-            axis_input_layout.addWidget(QLabel("Axis 2 (x y z):"))
+            axis_input_layout.addWidget(QLabel("Axis 2:"))
+            self.axe2_inputs[0].setToolTip("axis2[x]")
+            self.axe2_inputs[1].setToolTip("axis2[y]")
+            self.axe2_inputs[2].setToolTip("axis2[z]")
             for inp in self.axe2_inputs:
                 inp.textChanged.connect(self.update_mesh)
                 axis_input_layout.addWidget(inp)
