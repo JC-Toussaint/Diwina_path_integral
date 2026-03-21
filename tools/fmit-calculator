@@ -310,7 +310,7 @@ try:
         def setup_ui(self):
             central_widget = QWidget()
             self.setCentralWidget(central_widget)
-
+            self.statusBar().showMessage("Welcome to fmit-calculator")
             main_splitter = QSplitter(Qt.Horizontal)
             central_widget.setLayout(QHBoxLayout())
             central_widget.layout().addWidget(main_splitter)
@@ -468,6 +468,7 @@ try:
             if path:
                 self.sol_file_path = path
                 self.sol_label.setText(path)
+                self.statusBar().showMessage(".sol file " + path + " selected.")
                 try:
                     self.magnetization_data = load_sol_file(path)
                     QMessageBox.information(self, "Success", 
@@ -577,6 +578,7 @@ try:
             try:
                 save_yaml_file(self.yaml_config, self.outputFileName)
                 QMessageBox.information(self, "Success", f"File saved: {self.outputFileName}")
+                self.statusBar().showMessage(f"YAML file saved: {self.outputFileName}")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Error saving: {e}")
 
@@ -768,21 +770,11 @@ try:
 
         def compute(self):
             """Save YAML configuration and launch pathIntegral executable """
-            try:
-                self.save_yaml_config()
-            except Exception as e:
-                reply = QMessageBox.question(
-                    self, 
-                    'Error Saving', 
-                    f"Error saving configuration: {e}\n\nDo you still want to quit?",
-                    QMessageBox.Yes | QMessageBox.No,
-                    QMessageBox.No
-                )
-                if reply == QMessageBox.No:
-                    return
-            print("outputFileName=",self.outputFileName)
+            self.save_yaml_config()
             if self.outputFileName != "noneYet":
+                self.statusBar().showMessage(f"YAML file saved: {self.outputFileName}, launch ray-tracing computations ...")
                 subprocess.run(["pathIntegral", self.outputFileName], check=True)
+                self.statusBar().showMessage(f"Computations done, .out and .png saved.")
             else:
                 print("you should never end here")
                 sys.exit()
@@ -801,7 +793,6 @@ try:
                 )
                 if reply == QMessageBox.No:
                     return
-        
             self.close()
 except:
     print("PyQt5 not fully installed")
@@ -812,7 +803,7 @@ def get_params():
     description = 'pathIntegral GUI frontend'
     epilogue = '''
     lauch a GUI if possible
-    then launch pathIntegral executable to compute .out and .png outputs
+    launch pathIntegral executable from GUI to compute .out and .png outputs
     '''
     parser = argparse.ArgumentParser(description=description, epilog=epilogue, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('ymlFileName',help='a yaml settings input file')
