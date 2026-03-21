@@ -292,7 +292,7 @@ try:
     class CombinedInterface(QMainWindow):
         def __init__(self, yaml_file="settings.yml"):
             super().__init__()
-            self.setWindowTitle("FeeLLGood Micromagnetic Image Computing Tool")
+            self.setWindowTitle("FeeLLGood Micromagnetic Image Toolbox - Calculator")
             self.showMaximized()
 
             # Variables

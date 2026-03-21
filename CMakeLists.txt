@@ -192,5 +192,5 @@ target_link_libraries(pathIntegral
 #===========================================================================
 
 install(TARGETS pathIntegral RUNTIME DESTINATION bin)
-install(PROGRAMS ./tools/fmit-GUI DESTINATION bin)
+install(PROGRAMS ./tools/fmit-calculator DESTINATION bin)
 install(PROGRAMS ./tools/fmit-png-viewer DESTINATION bin)

@@ -208,14 +208,13 @@ Finally, the holographic phase image is calculated at any point on a grid called
 
 ## Launch pathIntegral graphic interface
 
-In a feeLLGood directory, launch the graphic interface to pathIntegral:
+In a feeLLGood directory, launch fmit-calculator, the graphic interface to pathIntegral:
 
 ```bash
 cd examples/uni_sphere
-fmit-GUI unisphere.yml
+fmit-calculator unisphere.yml
 ```
-
-fmit-GUI.py reads the yaml settings in the input file unisphere.yml and generates six files:
+In that example, fmit-calculator reads the yaml settings in the input file unisphere.yml and generates six files:
 ```bash
 sim_M_integrals.out
 sim_Holo.out
@@ -244,5 +243,5 @@ The user might visualize them typing:
 fmit-png-viewer
 ```
 
-**Warning**: fmit-GUI uses the default values from the `default-settings.yml` file if it does not
+**Warning**: fmit-calculator uses the default values from the `default-settings.yml` file if it does not
  find them in the yaml input file. The absorption coefficient values are set to 0.01 and 0.018 (nm⁻¹). 
