@@ -246,11 +246,11 @@ def save_yaml_file(data: dict, filename: str):
 
 try:
     from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFileDialog, QLineEdit, QMessageBox, QCheckBox, QMainWindow, QFrame,
     QSplitter, QTextEdit, QGroupBox, QDoubleSpinBox )
 
-    from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter
+    from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter, QPixmap
     from PyQt5.QtCore import Qt, QRegExp, QLocale
 
     class YAMLSyntaxHighlighter(QSyntaxHighlighter):
@@ -450,18 +450,39 @@ try:
             button_layout.addStretch()
             left_layout.addLayout(button_layout)
 
-            # === Right Panel: 3D Visualization ===
-            right_panel = QFrame()
-            right_panel.setFrameShape(QFrame.StyledPanel)
+            # === Right Panel: Tabbed visualizations: 3D,Holo,XMCD ===
+            right_visualizations = QTabWidget()
+            right_panel = QWidget()
             right_layout = QVBoxLayout(right_panel)
 
             self.plotter = QtInteractor() # QtInteractor comes from pyvista
             self.plotter.set_background("white")
             right_layout.addWidget(self.plotter.interactor)
 
+            holoPhase_panel = QWidget()
+            holoPhase_layout = QVBoxLayout(holoPhase_panel)
+            self.holo_label_image = QLabel(holoPhase_panel)
+
+            xmcdContrast_panel = QWidget()
+            xmcdContrast_layout = QVBoxLayout(xmcdContrast_panel)
+            self.xmcd_label_image = QLabel(xmcdContrast_panel)
+
+            right_visualizations.addTab(right_panel,"3D")
+            right_visualizations.addTab(holoPhase_panel,"Holographic phase")
+            right_visualizations.addTab(xmcdContrast_panel,"XMCD contrast")
+            right_visualizations.tabBarClicked.connect(self.update_images)
+
             main_splitter.addWidget(left_panel)
-            main_splitter.addWidget(right_panel)
+            main_splitter.addWidget(right_visualizations)
             main_splitter.setSizes([500, 900])
+
+        def update_images(self):
+            holo_qpixmap =  QPixmap("./sim_HOLO_PHASE.png")
+            self.holo_label_image.setGeometry(holo_qpixmap.rect())
+            self.holo_label_image.setPixmap(holo_qpixmap)
+            xmcd_qpixmap = QPixmap("./sim_STXM_XMCD.png")
+            self.xmcd_label_image.setGeometry(xmcd_qpixmap.rect())
+            self.xmcd_label_image.setPixmap(xmcd_qpixmap)
 
         def select_sol_file(self):
             path, _ = QFileDialog.getOpenFileName(self, "Select a .sol file", "", "SOL files (*.sol)")
