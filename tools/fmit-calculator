@@ -478,11 +478,18 @@ try:
 
         def update_images(self):
             holo_qpixmap =  QPixmap("./sim_HOLO_PHASE.png")
-            self.holo_label_image.setGeometry(holo_qpixmap.rect())
-            self.holo_label_image.setPixmap(holo_qpixmap)
+            if not holo_qpixmap.isNull():
+                self.holo_label_image.setGeometry(holo_qpixmap.rect())
+                self.holo_label_image.setPixmap(holo_qpixmap)
+            else:
+                self.statusBar().showMessage(f"No png file to view.")
+
             xmcd_qpixmap = QPixmap("./sim_STXM_XMCD.png")
-            self.xmcd_label_image.setGeometry(xmcd_qpixmap.rect())
-            self.xmcd_label_image.setPixmap(xmcd_qpixmap)
+            if not xmcd_qpixmap.isNull():
+                self.xmcd_label_image.setGeometry(xmcd_qpixmap.rect())
+                self.xmcd_label_image.setPixmap(xmcd_qpixmap)
+            else:
+                self.statusBar().showMessage(f"No png file to view.")
 
         def select_sol_file(self):
             path, _ = QFileDialog.getOpenFileName(self, "Select a .sol file", "", "SOL files (*.sol)")
