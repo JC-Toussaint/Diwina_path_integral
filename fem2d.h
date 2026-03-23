@@ -140,6 +140,7 @@ public:
 	
     int exportMagIntegrals(const std::string &simName);
     int exportHoloPhase(const std::string &simName);
+    int exportMagIntegrals_nd_HoloPhase(const std::string &simName);
 
 	/** getter : return node.p */
 	inline const Eigen::Vector2d getNode_p(const int i) const { return node[i].p; }
