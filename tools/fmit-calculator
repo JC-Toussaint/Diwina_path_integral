@@ -169,37 +169,35 @@ def get_region_elements(mesh):
 def load_mesh(filename):
     """
     Load a mesh from a file using meshio.
-    Returns the point coordinates and the triangular connectivity.
+    Returns a string message, mesh, point coordinates and triangular connectivity.
     Raises an error if the file does not exist or contains no triangles.
     """
     if not os.path.isfile(filename):
         raise FileNotFoundError(f"The file '{filename}' does not exist.")
-
     try:
         import meshio
         mesh = meshio.read(filename)
+        strMessage = f"mesh file '{filename}' loaded: "
         for cell_block, cell_data in zip(mesh.cells, mesh.cell_data["gmsh:physical"]):
             cell_type = cell_block.type
-            print(f"\nCell type: {cell_type}")
             for region_name, (region_id, dim) in mesh.field_data.items():
                 element_indices = np.where(cell_data == region_id)[0]
                 if len(element_indices) > 0:
-                    print(f"  Region '{region_name}' (ID={region_id}, dim={dim}): {len(element_indices)} elements")
+                    strMessage += f"  Region '{region_name}' (ID={region_id}, dim={dim}): {len(element_indices)} elements"
 
         regions = get_region_elements(mesh)
         points = mesh.points[:, :3]
-
         triangles = []
         for cell_block in mesh.cells:
             if cell_block.type == "triangle":
                 triangles.append(cell_block.data)
 
         if not triangles:
-            raise ValueError(f"No triangular cells found in mesh '{filename}'.")
+            strMessage += f"No triangles found in mesh '{filename}'."
+            raise ValueError(f"No triangles found in mesh '{filename}'.")
 
         triangles = np.vstack(triangles)
-
-        return mesh, points, triangles
+        return strMessage, mesh, points, triangles
 
     except Exception as e:
         raise RuntimeError(f"Error while loading mesh '{filename}': {e}")
@@ -518,7 +516,8 @@ try:
             if 'mesh' in self.yaml_config and 'filename' in self.yaml_config['mesh']:
                 self.mesh_filename = self.yaml_config['mesh']['filename']
                 try:
-                    self.mesh_object, self.original_points, self.triangles = load_mesh(self.mesh_filename)
+                    msg, self.mesh_object, self.original_points, self.triangles = load_mesh(self.mesh_filename)
+                    self.statusBar().showMessage(msg)
                     self.update_mesh()
                 except Exception as e:
                     print(f"Error loading mesh: {e}")
