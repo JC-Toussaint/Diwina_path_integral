@@ -495,6 +495,9 @@ try:
                 self.statusBar().showMessage(f"No png file to view.")
 
         def select_sol_file(self):
+            """ slot triggered by the clicking on browse .sol button
+            launch file browser and read input sol file
+            """
             path, _ = QFileDialog.getOpenFileName(self, "Select a .sol file", "", "SOL files (*.sol)")
             if path:
                 self.sol_file_path = path
@@ -510,7 +513,8 @@ try:
                     self.magnetization_data = None
 
         def load_yaml_file(self):
-            if self.inputFileName:#file_path:
+            """ load a yaml input file """
+            if self.inputFileName:
                 strMessage, self.yaml_config = load_yaml_from_file(self.inputFileName)
                 self.statusBar().showMessage(strMessage)
                 if self.yaml_config:
@@ -519,6 +523,7 @@ try:
                     self.load_mesh_from_config()
 
         def load_mesh_from_config(self):
+            """ load a mesh file from input file name found within the yaml input file """
             if 'mesh' in self.yaml_config and 'filename' in self.yaml_config['mesh']:
                 self.mesh_filename = self.yaml_config['mesh']['filename']
                 try:
@@ -529,6 +534,7 @@ try:
                     self.statusBar().showMessage(f"Error loading mesh: {e}")
 
         def populate_fields_from_yaml(self):
+            """ update LineEdits with the yaml contents """
             if not self.yaml_config:
                 return
 
@@ -561,11 +567,13 @@ try:
                     self.meshsize_input.setText(str(det['meshSize']))
 
         def update_yaml_display(self):
+            """ update text editBox with yaml output """
             if self.yaml_config:
                 yaml_text = yaml.dump(self.yaml_config, default_flow_style=False, sort_keys=False)
                 self.yaml_display.setPlainText(yaml_text)
 
         def save_yaml_config(self):
+            """ same yaml as a text file """
             try:
                 if not self.yaml_config:
                     self.yaml_config = {}
@@ -616,6 +624,7 @@ try:
                 QMessageBox.critical(self, "Error", f"Error saving: {e}")
 
         def get_rotations_from_inputs(self):
+            """read from GUI all values needed to define two rotations """
             try:
                 axes_angles = []
                 angle1 = float(self.angle1_input.text())
@@ -637,6 +646,7 @@ try:
                 self.update_mesh()
 
         def update_mesh(self):
+            ''' 3D replot '''
             try:
                 axes_angles = self.get_rotations_from_inputs()
                 rotated_points = apply_sequential_quaternion_rotations(
@@ -687,7 +697,6 @@ try:
             # Prepare lists for batch processing
                 positions = []
                 vectors = []
-            
                 vector_scale = self.vector_scale_spinbox.value()
                 self.statusBar().showMessage(f"Vector scale: {vector_scale}")
             
@@ -696,7 +705,6 @@ try:
                     if node_idx in self.magnetization_data:
                         node_pos = self.original_points[node_idx]
                         m_vec = self.magnetization_data[node_idx]
-                    
                         positions.append(node_pos)
                         vectors.append(m_vec)
             
@@ -719,7 +727,6 @@ try:
             
             # Calculate colors based on z-component
                 z_components = rotated_vectors[:, 2]
-            
                 up_count = np.sum(z_components > 0.5)
                 down_count = np.sum(z_components < -0.5)
                 inplane_count = len(z_components) - up_count - down_count
@@ -799,7 +806,7 @@ try:
             if self.outputFileName != "noneYet":
                 self.statusBar().showMessage(f"YAML file saved: {self.outputFileName}, launch ray-tracing computations ...")
                 subprocess.run(["pathIntegral", self.outputFileName], check=True)
-                self.statusBar().showMessage(f"Computations done, .out and .png saved.")
+                self.statusBar().showMessage(f"Computations done, .out and .png files saved.")
             else:
                 print("you should never end here")
                 sys.exit()
@@ -839,6 +846,11 @@ def get_params():
     return args
 
 def main():
+    '''
+    launnch the parsing of the command line
+    if some NVIDIA GPU is found change some environnment variables for VTK to benefit from GPU
+    then launch the GUI if PYQt5 is usable else exit 
+    '''
     args = get_params()
     display = os.environ.get('DISPLAY') #might not run correctly on WayLand, see WAYLAND_DISPLAY environment variable
     if ((display == "") or (display is None)):
