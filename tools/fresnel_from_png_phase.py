@@ -105,9 +105,9 @@ def apply_window(phase, window_type='hann', width_fraction=0.1):
     win_y = np.ones(Ny)
     
     if window_type == 'hann':
-        win_x[:wx] = np.sin(np.linspace(0, np.pi/2, wx))**2
+        win_x[ :wx] = np.sin(np.linspace(0, np.pi/2, wx))**2
         win_x[-wx:] = np.sin(np.linspace(np.pi/2, 0, wx))**2
-        win_y[:wy] = np.sin(np.linspace(0, np.pi/2, wy))**2
+        win_y[ :wy] = np.sin(np.linspace(0, np.pi/2, wy))**2
         win_y[-wy:] = np.sin(np.linspace(np.pi/2, 0, wy))**2
     
     # Fenêtre 2D
@@ -275,6 +275,50 @@ def cosine_edge_apodization(phase, edge_width=0.15):
 def simulate_fresnel_mirrored(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
     Ny, Nx = phase.shape
     lam = relativistic_wavelength(E0_eV)
+
+    # Padding miroir 2×2 — conditions aux limites C⁰ sur tous les bords
+    #
+    #  [ flip_xy | flip_y ]
+    #  [ flip_x  |  φ     ]
+    #
+    top_left  = np.flipud(np.fliplr(phase))   # flip horizontal + vertical
+    top_right = np.flipud(phase)              # flip vertical seulement
+    bot_left  = np.fliplr(phase)              # flip horizontal seulement
+    bot_right = phase                         # image originale
+
+    phase_pad = np.block([
+        [top_left,  top_right],
+        [bot_left,  bot_right]
+    ])
+    # Taille résultante : (2*Ny, 2*Nx)
+
+    Ny_pad, Nx_pad = phase_pad.shape
+    psi0 = np.exp(1j * phase_pad)
+
+    # Grille de fréquences spatiales
+    kx = np.fft.fftfreq(Nx_pad, d=dx)
+    ky = np.fft.fftfreq(Ny_pad, d=dy)
+    KX, KY = np.meshgrid(kx, ky)
+    k2 = KX**2 + KY**2
+
+    # Fonction d'aberration : défocus + aberration sphérique
+    chi = np.pi * lam * defocus * k2 + 0.5 * np.pi * Cs * (lam**3) * (k2**2)
+    H = np.exp(-1j * chi)
+
+    # Propagation dans l'espace de Fourier
+    Psi0    = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psi0)))
+    Psi_def = Psi0 * H
+    psi_def = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(Psi_def)))
+
+    # Extraire le quadrant original (bot_right → [Ny:2Ny, Nx:2Nx])
+    psi_def_crop = psi_def[Ny:2*Ny, Nx:2*Nx]
+
+    return np.abs(psi_def_crop)**2
+
+""" Buggy
+def simulate_fresnel_mirrored(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
+    Ny, Nx = phase.shape
+    lam = relativistic_wavelength(E0_eV)
     
     # Padding par symétrie miroir
     # Haut-bas
@@ -311,6 +355,7 @@ def simulate_fresnel_mirrored(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-
     psi_def_crop = psi_def[Ny:2*Ny, Nx:2*Nx]
     
     return np.abs(psi_def_crop)**2
+"""
 
 def remove_edge_discontinuity(phase):
     """Retire les discontinuités de bord par résolution de Poisson"""
