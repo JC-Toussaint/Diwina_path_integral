@@ -225,18 +225,23 @@ def clean_yaml_content(content: str) -> str:
     return '\n'.join(cleaned_lines)
 
 def load_yaml_from_file(filename: str) -> Dict[str, Any]:
+    '''
+    return a status message string and yaml from input file as a dictionary
+    '''
+    strMessage = ""
     try:
         with open(filename, 'r', encoding='utf-8') as file:
             content = file.read()
         cleaned_content = clean_yaml_content(content)
         config = yaml.safe_load(cleaned_content)
-        return config
+        strMessage = f"File '{filename}' read and parsed"
+        return strMessage, config
     except FileNotFoundError:
-        print(f"❌ File '{filename}' not found")
-        return None
+        strMessage = f"❌ File '{filename}' not found"
+        return strMessage,None
     except Exception as e:
-        print(f"❌ Error reading file: {e}")
-        return None
+        strMessage = f"❌ Error reading file: {e}"
+        return strMessage,None
 
 def save_yaml_file(data: dict, filename: str):
     with open(filename, 'w') as f:
@@ -506,7 +511,8 @@ try:
 
         def load_yaml_file(self):
             if self.inputFileName:#file_path:
-                self.yaml_config = load_yaml_from_file(self.inputFileName)
+                strMessage, self.yaml_config = load_yaml_from_file(self.inputFileName)
+                self.statusBar().showMessage(strMessage)
                 if self.yaml_config:
                     self.update_yaml_display()
                     self.populate_fields_from_yaml()
