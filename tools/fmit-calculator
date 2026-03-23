@@ -520,7 +520,7 @@ try:
                     self.statusBar().showMessage(msg)
                     self.update_mesh()
                 except Exception as e:
-                    print(f"Error loading mesh: {e}")
+                    self.statusBar().showMessage(f"Error loading mesh: {e}")
 
         def populate_fields_from_yaml(self):
             if not self.yaml_config:
@@ -626,7 +626,7 @@ try:
 
         def on_vector_scale_changed(self, value):
             """Called when vector scale spinbox value changes"""
-            print(f"Vector scale changed to: {value}")
+            self.statusBar().showMessage(f"Vector scale changed to: {value}")
             if self.show_vectors_checkbox.isChecked():
                 self.update_mesh()
 
@@ -667,7 +667,7 @@ try:
                 self.plotter.reset_camera()
 
             except Exception as e:
-                print(f"Error while updating mesh: {e}")
+                self.statusBar().showMessage(f"Error while updating mesh: {e}")
 
 
         def add_magnetization_vectors(self, axes_angles):
@@ -676,14 +676,14 @@ try:
             try:
                 # Get surface nodes
                 surface_nodes = get_surface_nodes(self.mesh_object)
-                print(f"Found {len(surface_nodes)} surface nodes")
+                self.statusBar().showMessage(f"Found {len(surface_nodes)} surface nodes")
             
             # Prepare lists for batch processing
                 positions = []
                 vectors = []
             
                 vector_scale = self.vector_scale_spinbox.value()
-                print(f"Vector scale: {vector_scale}")
+                self.statusBar().showMessage(f"Vector scale: {vector_scale}")
             
             # Collect all positions and vectors
                 for node_idx in surface_nodes:
@@ -695,17 +695,14 @@ try:
                         vectors.append(m_vec)
             
                 if not positions:
-                    print("No magnetization data found for surface nodes!")
+                    self.statusBar().showMessage("No magnetization data found for surface nodes!")
                     return
             
-                print(f"Found magnetization data for {len(positions)} nodes")
+                self.satusBar().showMessage(f"Found magnetization data for {len(positions)} nodes")
             
             # Convert to numpy arrays for batch rotation
                 positions = np.array(positions)
                 vectors = np.array(vectors)
-            
-                print(f"Position range: {positions.min(axis=0)} to {positions.max(axis=0)}")
-                print(f"Vector magnitude range: {np.linalg.norm(vectors, axis=1).min():.3f} to {np.linalg.norm(vectors, axis=1).max():.3f}")
             
             # Apply rotations in batch
                 rotated_positions = apply_sequential_quaternion_rotations(positions, axes_angles)
@@ -720,14 +717,12 @@ try:
                 up_count = np.sum(z_components > 0.5)
                 down_count = np.sum(z_components < -0.5)
                 inplane_count = len(z_components) - up_count - down_count
-            
-                print(f"Magnetization distribution - Up: {up_count}, Down: {down_count}, In-plane: {inplane_count}")
+                self.statusBar().showMessage(f"Magnetization distribution - Up: {up_count}, Down: {down_count}, In-plane: {inplane_count}")
             
             # Create a PolyData object with points and vectors
                 vector_poly = pv.PolyData(rotated_positions)
                 vector_poly['vectors'] = scaled_vectors
-            
-                print(f"Creating glyphs with scale factor {vector_scale}")
+                self.statusBar().showMessage(f"Creating glyphs with scale factor {vector_scale}")
             
             # Create arrows using glyphs 
                 vector_scale = self.vector_scale_spinbox.value()
@@ -738,15 +733,12 @@ try:
                     geom=pv.Arrow(tip_length=0.25, tip_radius=0.1, shaft_radius=0.05)
                 )
             
-                print(f"Created {arrows.n_cells} arrow cells, {arrows.n_points} points")
-            
             # Add to plotter in black
                 self.plotter.add_mesh(arrows, color='black', opacity=0.8, show_scalar_bar=False)
-            
-                print("Magnetization vectors added successfully")
+                self.statusBar().showMessage(f"Magnetization vectors added successfully with {arrows.n_cells} arrows and {arrows.n_points} points ")
                     
             except Exception as e:
-                print(f"Error adding magnetization vectors: {e}")
+                self.statusBar().showMessage(f"Error adding magnetization vectors: {e}")
                 import traceback
                 traceback.print_exc()
 
@@ -822,15 +814,17 @@ try:
                     return
             self.close()
 except:
-    print("PyQt5 not fully installed")
+    print("Error: PyQt5 module(s) not imported")
     sys.exit()
 
 def get_params():
     import argparse
     description = 'pathIntegral GUI frontend'
     epilogue = '''
-    lauch a GUI if possible
+    lauch a graphic user interface as a front-end to pathIntegral command line executable
+    save a yaml file from the inputs within the graphic user interface
     launch pathIntegral executable from GUI to compute .out and .png outputs
+    raw view of the output png's in a basic viewer
     '''
     parser = argparse.ArgumentParser(description=description, epilog=epilogue, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('ymlFileName',help='a yaml settings input file')
@@ -848,9 +842,8 @@ def main():
         if has_nvidia_gpu():
             os.environ["__NV_PRIME_RENDER_OFFLOAD"] = "1"
             os.environ["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia"
-            print("NVIDIA detected, environment variables set.")
         else:
-            print("No NVIDIA GPU detected.")
+            print("Warning: no NVIDIA GPU detected.")
 
         try:
             from PyQt5.QtWidgets import QApplication
