@@ -812,6 +812,8 @@ try:
             self.save_yaml_config()
             if self.outputFileName != "noneYet":
                 self.statusBar().showMessage(f"✓ YAML file saved: {self.outputFileName}, launch ray-tracing computations ...")
+                self.lastLog = open("lastLog.log","wb")
+                self.lastErr = open("lastErr.log","wb")
                 self.process = QProcess()
                 self.process.readyReadStandardOutput.connect(self.handle_pathIntegral_stdout)
                 self.process.readyReadStandardError.connect(self.handle_pathIntegral_stderr)
@@ -823,18 +825,18 @@ try:
         def process_finished(self):
             self.statusBar().showMessage("✓ Computations done, .out and .png files saved, lastLog.log (over)written.")
             self.process = None
+            self.lastLog.close()
+            self.lastErr.close()
 
         def handle_pathIntegral_stdout(self):
             out = self.process.readAllStandardOutput()
-            with open("lastLog.log", "ab") as f: #"ab" mode might end in some big log file, "wb" ?
-                f.write(out)
+            self.lastLog.write(out)
 
         def handle_pathIntegral_stderr(self):
-            out = self.process.readAllStandardError()
-            if out:
+            err = self.process.readAllStandardError()
+            if err:
                 self.statusBar().showMessage("Error while ray tracing.")
-                with open("lastErr.log", "wb") as f:
-                    f.write(out)
+                self.lastErr.write(err)
 
         def quit_and_save(self):
             """Save YAML configuration before quitting"""
