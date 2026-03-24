@@ -416,7 +416,7 @@ try:
             other_layout = QVBoxLayout(other_group)
 
             self.filled_checkbox = QCheckBox("Filled")
-            self.filled_checkbox.setToolTip("if checked assumes in the computation that the crossed hollow parts of the sample are filled with some materials")
+            self.filled_checkbox.setToolTip("if checked assumes in the computation that the crossed hollow parts of the sample are filled with materials")
             self.filled_checkbox.setChecked(True)
             self.filled_checkbox.stateChanged.connect(self.update_yaml_display)
             other_layout.addWidget(self.filled_checkbox)
@@ -564,7 +564,7 @@ try:
                             self.axe2_inputs[i].setText(str(val))
 
             if 'filled' in self.yaml_config:
-                self.filled_checkbox.setChecked(str(self.yaml_config['filled']).lower() == 'true')
+                self.filled_checkbox.setChecked(self.yaml_config['filled'])
 
             if 'detector' in self.yaml_config:
                 det = self.yaml_config['detector']
@@ -587,8 +587,8 @@ try:
             self.yaml_config['rotations']['axe2'] = [float(inp.text()) for inp in self.axe2_inputs]
             
             if 'filled' not in self.yaml_config:
-                self.yaml_config['filled'] = "false"
-            self.yaml_config['filled'] = str(self.filled_checkbox.isChecked()).lower()
+                self.yaml_config['filled'] = False
+            self.yaml_config['filled'] = self.filled_checkbox.isChecked()
 
             if 'detector' not in self.yaml_config:
                 self.yaml_config['detector'] = {}
