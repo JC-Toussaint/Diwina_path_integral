@@ -38,6 +38,7 @@ from pyvistaqt import QtInteractor
 from typing import Any, Dict, List, Union
 
 def has_nvidia_gpu():
+    ''' ask nvidia-smi if there is any nvidia GPU with proprietary driver, return true if any '''
     try:
         subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
         return True
@@ -203,10 +204,12 @@ def load_mesh(filename):
         raise RuntimeError(f"❌ Error while loading mesh '{filename}': {e}")
 
 def normalize(v):
+    ''' return normalized v except if v=0 return (1,0,0) '''
     norm = np.linalg.norm(v)
     return v / norm if norm != 0 else np.array([1.0, 0.0, 0.0])
 
 def apply_sequential_quaternion_rotations(points, axes_angles):
+    ''' apply successive rotations to point list stored in points, in place '''
     rotated_points = points.copy()
     rotation = R.identity()
     for axis, angle in axes_angles:
@@ -286,6 +289,7 @@ def yaml_dump(data, context=None, prefix=""):
     return text
 
 def save_yaml_file(data: dict, filename: str):
+    ''' save dictionary data into a yaml text file '''
     with open(filename, 'w') as f:
         f.write(yaml_dump(data))
 
