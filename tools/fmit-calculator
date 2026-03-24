@@ -719,7 +719,7 @@ try:
                     self.statusBar().showMessage("❌ No magnetization data found for surface nodes!")
                     return
             
-                self.satusBar().showMessage(f"✓ Found magnetization data for {len(positions)} nodes")
+                self.statusBar().showMessage(f"✓ Found magnetization data for {len(positions)} nodes")
             
             # Convert to numpy arrays for batch rotation
                 positions = np.array(positions)
