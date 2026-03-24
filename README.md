@@ -1,7 +1,7 @@
 # pathIntegral from Diwina project
 ## based on FeeLLGood – A micromagnetic solver
 
-pathIntegral is a STXM-XMCD and electron holography image simulator using feeLLGood simulations inputs. feeLLGood is a micromagnetic solver using finite element technique to integrate Landau Lifshitz Gilbert equation, developped by JC Toussaint & al. The code is being modified without any warranty it works. A dedicated website can be found [here][]  
+pathIntegral is a STXM-XMCD and electron holography magnetic phase image simulator using feeLLGood simulations inputs. feeLLGood is a micromagnetic solver using finite element technique to integrate Landau Lifshitz Gilbert equation, developped by JC Toussaint & al. The code is being modified without any warranty it works. A dedicated website can be found [here][]  
 
 ### Dependencies
 
@@ -47,13 +47,9 @@ wsl --install
 
 ## For Linux or WSL2, initial Setup 
 
-** Update the list of available packages - This refreshes the package database to ensure you have access to the latest versions of software available in the repositories **
+** Update the list of available packages and upggrade to their latest versions **
 ```bash
 sudo apt update
-```
-
-** Upgrade all installed packages to their latest versions - This ensures system security and compatibility by installing the most recent updates and patches **
-```bash
 sudo apt upgrade
 ```
 
@@ -73,12 +69,9 @@ git clone --recursive https://gitlab.inria.fr/solverstack/ScalFMM.git
 cd ScalFMM
 ```
 
-** Create a build directory - This follows CMake best practices (CMake developed by Kitware) by keeping build files separate from source code, making it easier to clean builds and manage multiple build configurations **
+** Create a build directory and navigate to it - All compilation will happen in this isolated directory  **
 ```bash
 mkdir build
-```
-
-** Navigate to the build directory - All compilation will happen in this isolated directory **
 ```bash
 cd build
 ```
@@ -182,10 +175,7 @@ mesh:
       lbm: 0.018
   surface_regions:
     sphere_surface:
-initial_magnetization:
-  - 1
-  - 0
-  - 0
+initial_magnetization: [1, 0, 0]
 rotations:
   angle1: 0
   axe1: [1, 0, 0]
@@ -204,7 +194,7 @@ for left- and right-circular polarizations in nanometers.
 The micromagnetic system can be rotated along two axes (i.e., axis1 and axis2) by specifying the rotation angles (i.e., angle1 and angle2) in degrees.
 The filled flag is not relevant for a sphere entirely made of magnetic material. However, it is
 relevant for tubes filled with a non-magnetic material, such as copper (TO CHECK).
-Finally, the holographic phase image is calculated at any point on a grid called the detector. Since its dimensions must be larger than those of the projected system, the zoom parameter must be less than 1 in the current version. The resolution is determined by the meshSize parameter.
+Finally, the holographic phase image is calculated at any point on a grid called the detector. Since its dimensions must be larger than those of the projected system, the zoom parameter must be less than 1. The resolution is determined by the meshSize parameter.
 
 ## Launch pathIntegral graphic interface
 
@@ -217,7 +207,7 @@ fmit-calculator unisphere.yml
 In that example, fmit-calculator reads the yaml settings in the input file unisphere.yml and generates six files:
 ```bash
 sim_M_integrals.out
-sim_Holo.out
+sim_STXM_HOLO.out
 sim_MZ.png
 sim_PATH_LENGTH.png
 sim_STXM_XMCD.png
@@ -227,7 +217,8 @@ sim_HOLO_PHASE.png
 The .out files are text (tsv) files:
 
     sim_M_integrals.out – Columns represent the node number, its x and y coordinates, a boolean value indicating whether the beam propagates through materials, the length of material traversed, the integrals of Mx, My, and Mz over the beam path, and the STXM intensity contrast.
-    sim_Holo.out – Columns represent the node number, its x and y coordinates, a boolean value
+    sim_STXM_HOLO.out – Columns represent the node number, its x and y coordinates, a boolean value,
+    crossed thickness, integrated Mx, integrated My, integrated Mz, XMCD conrast, holographic phase
     indicating whether the beam propagates through materials, the length of material traversed, and
     the holographic phase in radians, taking into account magnetic contributions only.
 
