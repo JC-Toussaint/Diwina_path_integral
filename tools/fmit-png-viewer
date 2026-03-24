@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm, colormaps
@@ -147,11 +148,6 @@ class ImageViewer(QGraphicsView):
         # Émettre le signal initial
         self.emit_view_changed()
 
-#    def showEvent(self, event):
-#        super().showEvent(event)
-#        self.fitInView(self.sceneRect(), Qt.KeepAspectRatio)
-#        self.emit_view_changed()
-    
     def wheelEvent(self, event):
         if self._sync_updating:
             return
@@ -178,7 +174,6 @@ class ImageViewer(QGraphicsView):
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             pos = self.mapToScene(event.pos())
-#            print(f"Clicked at scene position: {pos.x():.1f}, {pos.y():.1f}")
         super().mousePressEvent(event)
 
     def scrollContentsBy(self, dx, dy):
@@ -246,10 +241,6 @@ def read_image_metadata(image_path):
                 elif 'unit' in key.lower():
                     unit = value
                         
-#            print(f"Métadonnées pour {image_path}:")
-#            for key, value in metadata.items():
-#                print(f"  {key}: {value}")
-                
             return vmin, vmax, unit
             
     except Exception as e:
@@ -292,7 +283,6 @@ def generate_colorbar_pixmap(cmap, vmin=0, vmax=1, unit=None):
     cbar_ax = fig.add_axes([0.1, 0.1, 0.2, 0.8])  # [left, bottom, width, height]
     
     # Créer la colorbar avec les vraies valeurs
-    # La colormap sera interpolée linéairement entre vmin et vmax
     norm = plt.Normalize(vmin=vmin, vmax=vmax)
     cb = plt.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax)
     cb.outline.set_visible(False)
@@ -369,23 +359,21 @@ class ImageTab(QWidget):
             colorbar_widget.setMaximumWidth(100)
         
         # Organiser les widgets dans la grille
-        # Position: (row, col, rowspan, colspan)
-        layout.addWidget(self.top_axis, 0, 1, 1, 1)  # Axe horizontal en haut
-        layout.addWidget(self.left_axis, 1, 0, 1, 1)  # Axe vertical à gauche
-        layout.addWidget(self.viewer, 1, 1, 1, 1)  # Visualiseur d'image au centre
+        layout.addWidget(self.top_axis, 0, 1, 1, 1)
+        layout.addWidget(self.left_axis, 1, 0, 1, 1)
+        layout.addWidget(self.viewer, 1, 1, 1, 1)
         if colorbar_widget:
-            layout.addWidget(colorbar_widget, 1, 2, 1, 1)  # Colorbar à droite
+            layout.addWidget(colorbar_widget, 1, 2, 1, 1)
         
         # Ajuster les proportions des colonnes et lignes
-        layout.setColumnStretch(0, 0)  # Colonne de l'axe vertical : taille fixe
-        layout.setColumnStretch(1, 1)  # La colonne de l'image s'étend
+        layout.setColumnStretch(0, 0)
+        layout.setColumnStretch(1, 1)
         if colorbar_widget:
-            layout.setColumnStretch(2, 0)  # Colonne colorbar : taille fixe
+            layout.setColumnStretch(2, 0)
         
-        layout.setRowStretch(0, 0)     # Ligne de l'axe horizontal : taille fixe  
-        layout.setRowStretch(1, 1)     # La ligne de l'image s'étend
+        layout.setRowStretch(0, 0)
+        layout.setRowStretch(1, 1)
         
-        # Réduire les marges et l'espacement pour maximiser l'espace image
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
@@ -397,9 +385,9 @@ class ImageTab(QWidget):
         self.left_axis.update_range(min_y, max_y)
 
 class MainWindow(QMainWindow):
-    def __init__(self, image_paths, colorbar_cmap_list, metadata_list):
+    def __init__(self, image_paths, colorbar_cmap_list, metadata_list, sim_name):
         super().__init__()
-        self.setWindowTitle("pathIntegral png viewer")
+        self.setWindowTitle(f"pathIntegral png viewer — {sim_name}")
 
         # Créer le synchroniseur de zoom
         self.zoom_sync = ZoomSynchronizer()
@@ -420,24 +408,41 @@ class MainWindow(QMainWindow):
             self.zoom_sync.register_viewer(tab.viewer)
             
             # Extraire le nom du fichier pour le titre de l'onglet
-            tab_name = path.split("/")[-1].replace(".png", "").replace("sim_", "")
+            tab_name = path.split("/")[-1].replace(".png", "").replace(f"{sim_name}_", "")
             
             # Ajouter l'onglet au widget d'onglets
             self.tab_widget.addTab(tab, tab_name)
 
         # Redimensionner la fenêtre
-        # Redimensionner la fenêtre et empêcher le redimensionnement
         self.resize(1000, 900)
         self.setFixedSize(1000, 900)
         
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog="fmit-pngviewer",
+        description="Viewer for simulation PNG output files.",
+        usage="%(prog)s [-h] [--version] SimFileName"
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s 0.1.0"
+    )
+    parser.add_argument(
+        "SimFileName",
+        help="Base name of the simulation (e.g. 'sim' will load sim_*.png files)"
+    )
+
+    args = parser.parse_args()
+    sim_name = args.SimFileName
+
     app = QApplication(sys.argv)
 
     image_list = [
-        "sim_HOLO_PHASE.png",
-        "sim_MZ.png",
-        "sim_PATH_LENGTH.png",
-        "sim_STXM_XMCD.png"
+        f"{sim_name}_HOLO_PHASE.png",
+        f"{sim_name}_MZ.png",
+        f"{sim_name}_PATH_LENGTH.png",
+        f"{sim_name}_STXM_XMCD.png",
     ]
 
     gray_map = colormaps.get_cmap("gray")
@@ -445,7 +450,7 @@ if __name__ == "__main__":
         gray_map,
         gray_map,
         gray_map,
-        gray_map
+        gray_map,
     ]
 
     # Lire les métadonnées de toutes les images
@@ -453,8 +458,7 @@ if __name__ == "__main__":
     for image_path in image_list:
         vmin, vmax, unit = read_image_metadata(image_path)
         metadata_list.append((vmin, vmax, unit))
-#        print(f"{image_path} - Min: {vmin}, Max: {vmax}, Unit: {unit}")
 
-    window = MainWindow(image_list, colorbar_cmap_list, metadata_list)
+    window = MainWindow(image_list, colorbar_cmap_list, metadata_list, sim_name)
     window.show()
     sys.exit(app.exec_())
