@@ -277,6 +277,10 @@ def yaml_dump(data, context=None, prefix=""):
             return text + "[" + ", ".join(map(str, data)) + "]\n"
         for i, value in enumerate(data):
             text += f"{prefix}- {yaml_dump(value, 'list', prefix + indent)}"
+    elif isinstance(data, bool):
+        text += f"{str(data).lower()}\n"
+    elif data is None:
+        text += "null\n"
     else:
         text += f"{str(data)}\n"
     return text
