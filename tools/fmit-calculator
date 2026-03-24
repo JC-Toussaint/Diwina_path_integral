@@ -243,9 +243,47 @@ def load_yaml_from_file(filename: str) -> Dict[str, Any]:
         strMessage = f"❌ Error reading file: {e}"
         return strMessage,None
 
+def yaml_dump(data, context=None, prefix=""):
+    """
+    Simple YAML serializer. Should be appropriate for the YAML documents
+    handled by this script, and probably not much more.
+
+    Serialize a Python object in YAML. Collections are serialized in
+    block style, except for lists of numbers, which are serialized in
+    flow style.
+    """
+
+    def is_inline(data):
+        """
+        Should this piece of data be serialized inline (in flow style)?
+        """
+        if isinstance(data, list):
+            return all(isinstance(value, (int, float)) for value in data)
+        return not isinstance(data, dict)
+
+    text = ""
+    indent = "  "
+    if isinstance(data, dict):
+        for i, (key, value) in enumerate(data.items()):
+            if is_inline(value):
+                separator = " "
+            else:
+                separator = "\n"
+            if i > 0 or context != 'list':
+                text += prefix
+            text += f"{key}:{separator}{yaml_dump(value, 'object', prefix + indent)}"
+    elif isinstance(data, list):
+        if is_inline(data):
+            return text + "[" + ", ".join(map(str, data)) + "]\n"
+        for i, value in enumerate(data):
+            text += f"{prefix}- {yaml_dump(value, 'list', prefix + indent)}"
+    else:
+        text += f"{str(data)}\n"
+    return text
+
 def save_yaml_file(data: dict, filename: str):
     with open(filename, 'w') as f:
-        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+        f.write(yaml_dump(data))
 
 try:
     from PyQt5.QtWidgets import (
@@ -600,7 +638,7 @@ try:
             self.yaml_config['detector']['zoom'] = zoom
             self.yaml_config['detector']['meshSize'] = float(self.meshsize_input.text())
 
-            yaml_text = yaml.dump(self.yaml_config, default_flow_style=False, sort_keys=False)
+            yaml_text = yaml_dump(self.yaml_config)
             self.yaml_display.setPlainText(yaml_text)
 
         def save_yaml_config(self):
