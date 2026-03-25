@@ -344,31 +344,33 @@ try:
             central_widget.setLayout(QHBoxLayout())
             central_widget.layout().addWidget(main_splitter)
 
+            minLeftPanelWidth = 333
+
         # === Left Panel ===
             left_panel = QFrame()
             left_panel.setFrameShape(QFrame.StyledPanel)
-            left_panel.setMinimumWidth(500)
+            left_panel.setMinimumWidth(minLeftPanelWidth)
             left_layout = QVBoxLayout(left_panel)
 
-        # Sol file selection
-            sol_layout = QVBoxLayout()
-            self.sol_label = QLabel("❌ no .sol file selected.")
+        # Magnetization display controls
+            magnetization_group = QGroupBox("Magnetization")
+            magnetization_layout = QVBoxLayout(magnetization_group)
+
+            # Sol file selection
+            sol_layout = QHBoxLayout()
             self.sol_btn = QPushButton("Browse .sol")
+            self.sol_label = QLabel("❌ no .sol file selected.")
             self.sol_btn.clicked.connect(self.select_sol_file)
             sol_layout.addWidget(self.sol_btn)
             sol_layout.addWidget(self.sol_label)
-            left_layout.addLayout(sol_layout)
 
-        # Vector display controls
-            vector_group = QGroupBox()
-            vector_layout = QVBoxLayout(vector_group)
+            #magnetization 3D view parameters
+            vector_layout = QHBoxLayout()
             self.show_vectors_checkbox = QCheckBox("Show")
             self.show_vectors_checkbox.setChecked(False)
             self.show_vectors_checkbox.stateChanged.connect(self.update_mesh)
 
-        # Vector scale control
             scale_layout = QHBoxLayout()
-            scale_layout.addWidget(QLabel("Magnetization:"))
             scale_layout.addWidget(self.show_vectors_checkbox)
             scale_layout.addWidget(QLabel("Vector Scale:"))
             self.vector_scale_spinbox = QDoubleSpinBox()
@@ -381,7 +383,11 @@ try:
             scale_layout.addWidget(self.vector_scale_spinbox)
             vector_layout.addLayout(scale_layout)
 
-            left_layout.addWidget(vector_group)
+            magnetization_layout.addLayout(sol_layout)
+            magnetization_layout.addLayout(vector_layout)
+            magnetization_layout.setSpacing(2)
+
+            left_layout.addWidget(magnetization_group)
 
         # Rotation parameters
             rotation_group = QGroupBox("Rotations")
@@ -435,39 +441,54 @@ try:
             axe2_layout.addLayout(axis_input_layout)
             rotation_layout.addLayout(axe2_layout)
         
+            rotation_layout.setSpacing(2)
+
             left_layout.addWidget(rotation_group)
 
-        # Other parameters
-            other_group = QGroupBox("Other Parameters")
-            other_layout = QVBoxLayout(other_group)
+            # Material
+            material_group = QGroupBox("Material")
+            material_layout = QHBoxLayout(material_group)
+
+            #material_layout.addWidget(QLabel("lbp:"))
+            #self.lbp_input = QLineEdit()
+            #material_layout.addWidget(self.lbp_input)
+
+            #material_layout.addWidget(QLabel(" lbm:"))
+            #self.lbm_input = QLineEdit()
+            #material_layout.addWidget(self.lbm_input)
 
             self.filled_checkbox = QCheckBox("Filled")
             self.filled_checkbox.setToolTip("if checked assumes in the computation that the crossed hollow parts of the sample are filled with materials")
             self.filled_checkbox.setChecked(True)
             self.filled_checkbox.stateChanged.connect(self.update_yaml_display)
-            other_layout.addWidget(self.filled_checkbox)
+            material_layout.addWidget(self.filled_checkbox)
 
-            det_layout = QVBoxLayout()
-            zoom_layout = QHBoxLayout()
+            material_layout.setSpacing(2)
+
+            left_layout.addWidget(material_group)
+
+            # Sensor
+            sensor_group = QGroupBox("Sensor")
+            sensor_layout = QHBoxLayout(sensor_group)
+            sensor_layout.addWidget(QLabel("Zoom:"))
+
             self.zoom_input = QLineEdit("0.5")
             self.zoom_input.setToolTip("aspect ratio: size(object)/size(sensor), between 0 and 1")
-            zoom_layout.addWidget(QLabel("Zoom:"))
-            zoom_layout.addWidget(self.zoom_input)
+            sensor_layout.addWidget(self.zoom_input)
             self.zoom_input.editingFinished.connect(self.update_yaml_display)
             self.zoom_input.editingFinished.connect(self.update_mesh)
-            det_layout.addLayout(zoom_layout)
 
-            sensor_pixel_size_layout = QHBoxLayout()
             self.meshsize_input = QLineEdit("1e-9")
             self.meshsize_input.setToolTip("sensor pixel size in meters")
-            sensor_pixel_size_layout.addWidget(QLabel("Sensor pixel size [m]:"))
-            sensor_pixel_size_layout.addWidget(self.meshsize_input)
+            sensor_layout.addWidget(QLabel("pixel size [m]:"))
+            sensor_layout.addWidget(self.meshsize_input)
             self.meshsize_input.editingFinished.connect(self.update_yaml_display)
-            det_layout.addLayout(sensor_pixel_size_layout)
-            other_layout.addLayout(det_layout)
 
-            left_layout.addWidget(other_group)
+            sensor_layout.setSpacing(2)
 
+            left_layout.addWidget(sensor_group)
+
+            # yaml text view
             left_layout.addWidget(QLabel("YAML output file:"))
             self.yaml_display = QTextEdit()
             self.yaml_display.setToolTip("yaml that will be used to do the ray-tracing computation")
@@ -489,7 +510,7 @@ try:
             left_layout.setContentsMargins(0,0,0,0)
             left_layout.setSpacing(2)
 
-            # === Right Panel: Tabbed visualizations: 3D,Holo,XMCD ===
+            # === Right Panel: Tabbed visualizations: 3D,Holo,XMCD,Help ===
             right_visualizations = QTabWidget()
             right_panel = QWidget()
             right_layout = QVBoxLayout(right_panel)
@@ -506,14 +527,31 @@ try:
             xmcdContrast_layout = QVBoxLayout(xmcdContrast_panel)
             self.xmcd_label_image = QLabel(xmcdContrast_panel)
 
+            help_panel = QWidget()
+            help_layout = QVBoxLayout()
+            self.help_label = QTextEdit(help_panel)
+            self.help_label.setFixedSize(800,800)
+            help_layout.addWidget(self.help_label)
+            self.help_label.setReadOnly(True)
+            s = "Workflow:\n"
+            s+= "Select your .sol file from browse .sol button\n"
+            s+= "Adjust rotations and zoom parameters\n"
+            s+= "Press compute button\n"
+            s+= "See a preview of holographic phase or XMCD contrast in their respective panels\n"
+            s+= "Alternatively you might view png images using fmit-png-viewer\n"
+            s+= ".out text file is a tab separated value text file\n"
+            s+= "images are unsigned int 16 bits grey pngs"
+            self.help_label.setText(s)
+
             right_visualizations.addTab(right_panel,"3D")
             right_visualizations.addTab(holoPhase_panel,"Holographic phase")
             right_visualizations.addTab(xmcdContrast_panel,"XMCD contrast")
+            right_visualizations.addTab(help_panel,"Help")
             right_visualizations.tabBarClicked.connect(self.update_images)
 
             main_splitter.addWidget(left_panel)
             main_splitter.addWidget(right_visualizations)
-            main_splitter.setSizes([500, 900])
+            main_splitter.setSizes([minLeftPanelWidth, 900])
 
         def update_images(self):
             ''' update tabbed Qwidgets with pixmaps of the png files '''
@@ -538,7 +576,9 @@ try:
             path, _ = QFileDialog.getOpenFileName(self, "Select a .sol file", "", "SOL files (*.sol)")
             if path:
                 self.sol_file_path = path
-                self.sol_label.setText(path)
+                import pathlib
+                fileName = pathlib.Path(path)
+                self.sol_label.setText(fileName.name)
                 self.statusBar().showMessage("✓ .sol file " + path + " selected.")
                 try:
                     self.magnetization_data = load_sol_file(path)
