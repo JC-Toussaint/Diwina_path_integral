@@ -714,18 +714,13 @@ try:
 
 
         def add_magnetization_vectors(self, axes_angles):
-            """ Add magnetization vectors to surface nodes using optimized glyphs.
+            """ Add magnetization vectors to surface nodes using glyphs
             """
             try:
-                # Get surface nodes
                 surface_nodes = get_surface_nodes(self.mesh_object)
-                self.statusBar().showMessage(f"✓ Found {len(surface_nodes)} surface nodes")
-            
-            # Prepare lists for batch processing
                 positions = []
                 vectors = []
                 vector_scale = self.vector_scale_spinbox.value()
-                self.statusBar().showMessage(f"Vector scale: {vector_scale}")
             
             # Collect all positions and vectors
                 for node_idx in surface_nodes:
@@ -738,44 +733,24 @@ try:
                 if not positions:
                     self.statusBar().showMessage("❌ No magnetization data found for surface nodes!")
                     return
-            
-                self.statusBar().showMessage(f"✓ Found magnetization data for {len(positions)} nodes")
-            
-            # Convert to numpy arrays for batch rotation
+
                 positions = np.array(positions)
                 vectors = np.array(vectors)
-            
-            # Apply rotations in batch
                 rotated_positions = apply_sequential_quaternion_rotations(positions, axes_angles)
                 rotated_vectors = apply_sequential_quaternion_rotations(vectors, axes_angles)
             
-            # Scale vectors for visualization
-                scaled_vectors = rotated_vectors * vector_scale
-            
-            # Calculate colors based on z-component
-                z_components = rotated_vectors[:, 2]
-                up_count = np.sum(z_components > 0.5)
-                down_count = np.sum(z_components < -0.5)
-                inplane_count = len(z_components) - up_count - down_count
-                self.statusBar().showMessage(f"Magnetization distribution - Up: {up_count}, Down: {down_count}, In-plane: {inplane_count}")
-            
-            # Create a PolyData object with points and vectors
+            # Create a PolyData object with rotated points and vectors
                 vector_poly = pv.PolyData(rotated_positions)
-                vector_poly['vectors'] = scaled_vectors
-                self.statusBar().showMessage(f"Creating glyphs with scale factor {vector_scale}")
+                vector_poly['vectors'] = rotated_vectors * vector_scale
             
             # Create arrows using glyphs 
                 vector_scale = self.vector_scale_spinbox.value()
-                arrows = vector_poly.glyph(
-                    orient='vectors',
-                    scale=False,
-                    factor=vector_scale,  # TEST
+                arrows = vector_poly.glyph(orient='vectors', scale=False, factor=vector_scale,
                     geom=pv.Arrow(tip_length=0.25, tip_radius=0.1, shaft_radius=0.05)
                 )
             
-            # Add to plotter in black
-                self.plotter.add_mesh(arrows, color='black', opacity=0.8, show_scalar_bar=False)
-                self.statusBar().showMessage(f"✓ Magnetization vectors added successfully with {arrows.n_cells} arrows and {arrows.n_points} points ")
+                self.plotter.add_mesh(arrows, color='grey', opacity=0.8, show_scalar_bar=False)
+                self.statusBar().showMessage(f"✓ Magnetization vectors plotted with {arrows.n_cells} arrows on {arrows.n_points} points ")
                     
             except Exception as e:
                 self.statusBar().showMessage(f"❌ Error adding magnetization vectors: {e}")
