@@ -372,7 +372,7 @@ try:
             self.vector_scale_spinbox.setSingleStep(0.1)
             self.vector_scale_spinbox.setDecimals(3)
             self.vector_scale_spinbox.setLocale(QLocale(QLocale.English, QLocale.UnitedStates))  # Force decimal point
-            self.vector_scale_spinbox.valueChanged.connect(self.on_vector_scale_changed)
+            self.vector_scale_spinbox.editingFinished.connect(self.on_vector_scale_changed)
             scale_layout.addWidget(self.vector_scale_spinbox)
             vector_layout.addLayout(scale_layout)
 
@@ -449,6 +449,7 @@ try:
             zoom_layout.addWidget(QLabel("Zoom:"))
             zoom_layout.addWidget(self.zoom_input)
             self.zoom_input.editingFinished.connect(self.update_yaml_display)
+            self.zoom_input.editingFinished.connect(self.update_mesh)
             det_layout.addLayout(zoom_layout)
 
             sensor_pixel_size_layout = QHBoxLayout()
@@ -613,11 +614,11 @@ try:
             if 'detector' not in self.yaml_config:
                 self.yaml_config['detector'] = {}
             
-            zoom = float(self.zoom_input.text())
-            if zoom>1.0: 
-                zoom=1.0
-            self.zoom_input.setText(str(zoom))
-            self.yaml_config['detector']['zoom'] = zoom
+            self.zoom = float(self.zoom_input.text())
+            if self.zoom>1.0: 
+                self.zoom=1.0
+            self.zoom_input.setText(str(self.zoom))
+            self.yaml_config['detector']['zoom'] = self.zoom
             self.yaml_config['detector']['meshSize'] = float(self.meshsize_input.text())
 
             yaml_text = yaml_dump(self.yaml_config)
@@ -666,7 +667,7 @@ try:
             except ValueError:
                 return [([1, 0, 0], 0), ([0, 1, 0], 0)]
 
-        def on_vector_scale_changed(self, value):
+        def on_vector_scale_changed(self):
             """Called when vector scale spinbox value changes"""
             if self.show_vectors_checkbox.isChecked():
                 self.update_mesh()
@@ -680,7 +681,7 @@ try:
 
                 self.plotter.clear()
                 self.plotter.add_mesh(mesh, color="lightblue", show_edges=False, opacity=1.0)
-                self.add_bounding_box(self.original_points, axes_angles)
+                self.add_bounding_box_and_sensor(self.original_points, axes_angles)
             
             # Add magnetization vectors if available and enabled
                 if (self.show_vectors_checkbox.isChecked() and 
@@ -744,8 +745,11 @@ try:
                 import traceback
                 traceback.print_exc()
 
-        def add_bounding_box(self, original_points, axes_angles):
-            """ Add a bounding box around the mesh using 8 corners and 12 edges """
+        def add_bounding_box_and_sensor(self, original_points, axes_angles):
+            """
+            Add a bounding box around the mesh using 8 corners and 12 edges and a rectangle for
+            the sensor
+            """
             xmin, ymin, zmin = np.min(original_points, axis=0)
             xmax, ymax, zmax = np.max(original_points, axis=0)
         
@@ -759,31 +763,60 @@ try:
                 [xmax, ymax, zmax],  # 6
                 [xmin, ymax, zmax],  # 7
             ])
-        
-            rotated_corners = apply_sequential_quaternion_rotations(corners, axes_angles)
-        
+            
+            rot_corners = apply_sequential_quaternion_rotations(corners, axes_angles)
+            
+            Xmin = np.min([rot_corners[0][0], rot_corners[1][0], rot_corners[2][0], rot_corners[3][0],
+                rot_corners[4][0], rot_corners[5][0], rot_corners[6][0], rot_corners[7][0]])
+
+            Ymin = np.min([rot_corners[0][1], rot_corners[1][1], rot_corners[2][1], rot_corners[3][1],
+                rot_corners[4][1], rot_corners[5][1], rot_corners[6][1], rot_corners[7][1]])
+
+            Zmin = np.min([rot_corners[0][2], rot_corners[1][2], rot_corners[2][2], rot_corners[3][2],
+                rot_corners[4][2], rot_corners[5][2], rot_corners[6][2], rot_corners[7][2]])
+
+            Xmax = np.max([rot_corners[0][0], rot_corners[1][0], rot_corners[2][0], rot_corners[3][0],
+                rot_corners[4][0], rot_corners[5][0], rot_corners[6][0], rot_corners[7][0]])
+
+            Ymax = np.max([rot_corners[0][1], rot_corners[1][1], rot_corners[2][1], rot_corners[3][1],
+                rot_corners[4][1], rot_corners[5][1], rot_corners[6][1], rot_corners[7][1]])
+
+            Zmax = np.max([rot_corners[0][2], rot_corners[1][2], rot_corners[2][2], rot_corners[3][2],
+                rot_corners[4][2], rot_corners[5][2], rot_corners[6][2], rot_corners[7][2]])
+
+            s = np.max([Xmax-Xmin,Ymax-Ymin])#sensor is a square of side s, center Xc,Yc in Zmin plane
+            Xc = 0.5*(Xmin + Xmax)
+            Yc = 0.5*(Ymin + Ymax)
+            epsilon = 0.01*(Zmax-Zmin)
+            g = 1.0/self.zoom
+
+            rectangle = pv.Rectangle([[(Xc-0.5*s)*g,(Yc-0.5*s)*g,Zmin-epsilon],
+                [(Xc+0.5*s)*g,(Yc-0.5*s)*g,Zmin-epsilon],
+                [(Xc+0.5*s)*g,(Yc+0.5*s)*g,Zmin-epsilon]])
+            self.plotter.add_mesh(rectangle, show_edges=True, opacity=0.5, color="grey", line_width=4)
+
             edges_x = [[0, 1], [3, 2], [4, 5]]
             edges_y = [[1, 2], [0, 3], [4, 7]]
             edges_z = [[0, 4], [1, 5], [3, 7]]
             edges   = [[7, 6], [5, 6], [2, 6]]
         
             for edge in edges_x:
-                line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
+                line_points = np.array([rot_corners[edge[0]], rot_corners[edge[1]]])
                 line = pv.Line(line_points[0], line_points[1])
                 self.plotter.add_mesh(line, color="red", line_width=4)
         
             for edge in edges_y:
-                line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
+                line_points = np.array([rot_corners[edge[0]], rot_corners[edge[1]]])
                 line = pv.Line(line_points[0], line_points[1])
                 self.plotter.add_mesh(line, color="green", line_width=4)
         
             for edge in edges_z:
-                line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
+                line_points = np.array([rot_corners[edge[0]], rot_corners[edge[1]]])
                 line = pv.Line(line_points[0], line_points[1])
                 self.plotter.add_mesh(line, color="blue", line_width=4)
 
             for edge in edges:
-                line_points = np.array([rotated_corners[edge[0]], rotated_corners[edge[1]]])
+                line_points = np.array([rot_corners[edge[0]], rot_corners[edge[1]]])
                 line = pv.Line(line_points[0], line_points[1])
                 self.plotter.add_mesh(line, color="black", line_width=2)
 
