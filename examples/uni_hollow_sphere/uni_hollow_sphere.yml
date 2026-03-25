@@ -13,10 +13,7 @@ mesh:
       lbm: 0.018
   surface_regions:
     hollow_surface:
-initial_magnetization: 
-  - 1
-  - 0
-  - 0
+initial_magnetization: [0, 0, 1]
 rotations:
   angle1: 0
   axe1: [1, 0, 0]
