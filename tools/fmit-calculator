@@ -696,6 +696,7 @@ try:
                 )
 
                 self.plotter.add_axes() # visible XYZ trihedral vectors
+                self.plotter.enable_parallel_projection()
                 self.plotter.reset_camera()
 
             except Exception as e:
