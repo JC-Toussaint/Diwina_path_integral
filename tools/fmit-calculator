@@ -672,14 +672,6 @@ try:
 
         def save_yaml_config(self):
             """ save yaml as a text file """
-            try:
-                if not hasattr(self, 'sol_file_path') or not self.sol_file_path:
-                    raise ValueError("❌ No .sol file selected")
-                self.update_yaml_display()
-
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Error updating: {e}")
-                return
 
             if self.inputFileName:
                 base, ext = os.path.splitext(self.inputFileName)
