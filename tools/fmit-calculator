@@ -668,17 +668,14 @@ try:
 
         def on_vector_scale_changed(self, value):
             """Called when vector scale spinbox value changes"""
-            self.statusBar().showMessage(f"Vector scale changed to: {value}")
             if self.show_vectors_checkbox.isChecked():
                 self.update_mesh()
 
         def update_mesh(self):
-            ''' 3D replot '''
+            ''' 3D replot of the mesh '''
             try:
                 axes_angles = self.get_rotations_from_inputs()
-                rotated_points = apply_sequential_quaternion_rotations(
-                    self.original_points, axes_angles
-                )
+                rotated_points = apply_sequential_quaternion_rotations(self.original_points, axes_angles)
                 mesh = create_pyvista_mesh(rotated_points, self.triangles)
 
                 self.plotter.clear()
@@ -691,22 +688,13 @@ try:
                     self.mesh_object is not None):
                     self.add_magnetization_vectors(axes_angles)
                 
-            # === GRADUATIONS + NUMÉROTATION X Y Z (ROBUSTE) ===
+            # Grid and ticks X Y Z, grid and location are crucial
                 self.plotter.show_bounds(
-                    grid="back",          # ← CRUCIAL
-                    location="outer",    # ← CRUCIAL
-                    ticks="both",
-                    all_edges=True,
-                    xtitle="X",
-                    ytitle="Y",
-                    ztitle="Z",
-                    font_size=12
+                    grid="back", location="outer",  ticks="both", all_edges=True,
+                    xtitle="X", ytitle="Y", ztitle="Z", font_size=12
                 )
 
-            # Trièdre visuel (optionnel)
-                self.plotter.add_axes()
-
-            # Caméra stable
+                self.plotter.add_axes() # visible XYZ trihedral vectors
                 self.plotter.reset_camera()
 
             except Exception as e:
@@ -714,8 +702,7 @@ try:
 
 
         def add_magnetization_vectors(self, axes_angles):
-            """ Add magnetization vectors to surface nodes using glyphs
-            """
+            """ Add magnetization vectors to surface nodes using glyphs """
             try:
                 surface_nodes = get_surface_nodes(self.mesh_object)
                 positions = []
@@ -758,9 +745,7 @@ try:
                 traceback.print_exc()
 
         def add_bounding_box(self, original_points, axes_angles):
-            """
-            Add a bounding box around the mesh using 8 corner nodes and 12 edges.
-            """
+            """ Add a bounding box around the mesh using 8 corners and 12 edges """
             xmin, ymin, zmin = np.min(original_points, axis=0)
             xmax, ymax, zmax = np.max(original_points, axis=0)
         
@@ -818,16 +803,19 @@ try:
                 self.statusBar().showMessage("Error: .sol not yet selected.")
 
         def process_finished(self):
+            ''' when pathIntegral (launched in a Qprocess) ends we end up here '''
             self.statusBar().showMessage("✓ Computations done, .out and .png files saved, lastLog.log (over)written.")
             self.process = None
             self.lastLog.close()
             self.lastErr.close()
 
         def handle_pathIntegral_stdout(self):
+            ''' write pathIntegral stdout's in a log file '''
             out = self.process.readAllStandardOutput()
             self.lastLog.write(out)
 
         def handle_pathIntegral_stderr(self):
+            ''' write pathIntegral stderr's in an err log file '''
             err = self.process.readAllStandardError()
             if err:
                 self.statusBar().showMessage("Error while ray tracing.")
@@ -853,6 +841,7 @@ except:
     sys.exit()
 
 def get_params():
+    ''' parse command line '''
     import argparse
     description = 'pathIntegral GUI frontend'
     epilogue = '''
