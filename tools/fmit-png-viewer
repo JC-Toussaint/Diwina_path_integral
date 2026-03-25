@@ -244,7 +244,7 @@ class ImageTab(QWidget):
             colorbar_pixmap = generate_colorbar_pixmap(cmap, vmin, vmax, unit)
             colorbar_widget = QLabel()
             colorbar_widget.setPixmap(colorbar_pixmap)
-            colorbar_widget.setFixedWidth(80) 
+            colorbar_widget.setFixedWidth(140) 
 
         layout.addWidget(self.top_axis, 0, 1)
         layout.addWidget(self.left_axis, 1, 0)
