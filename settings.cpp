@@ -241,15 +241,19 @@ void Settings::read(YAML::Node yaml)
        if (rot["angle1"] && rot["axe1"]) {
           assign(p_rot.angle1, rot["angle1"]);
           if (rot["axe1"].size() != DIM) error("axe1 should have three components.");
-          p_rot.axe1 = rot["axe1"].as<std::vector<double>>();
+          auto tmp1 = rot["axe1"].as<std::vector<double>>();
+          p_rot.axe1 = Eigen::Vector3d(tmp1[0], tmp1[1], tmp1[2]);
+	  p_rot.axe1.normalize();
           }
        if (rot["angle2"] && rot["axe2"]) {
           assign(p_rot.angle2, rot["angle2"]);
           if (rot["axe2"].size() != DIM) error("axe2 should have three components.");
-          p_rot.axe2 = rot["axe2"].as<std::vector<double>>();
+          auto tmp2 = rot["axe2"].as<std::vector<double>>();
+          p_rot.axe2 = Eigen::Vector3d(tmp2[0], tmp2[1], tmp2[2]);
+	  p_rot.axe2.normalize();
           }
        }
-      
+
     assign(filled, yaml["filled"]);
 
     YAML::Node electrostatics = yaml["electrostatics"];

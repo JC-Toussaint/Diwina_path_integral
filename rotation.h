@@ -13,7 +13,7 @@ struct ROT
     double angle1, angle2;
 
     /** \f$ axes \f$ of rotation   */
-    std::vector<double> axe1, axe2;
+    Eigen::Vector3d axe1, axe2;
 
     /** printing function */
     inline void infos(void)
