@@ -194,10 +194,12 @@ def apply_sequential_quaternion_rotations(points, axes_angles):
     return rotation.apply(rotated_points)
 
 def create_pyvista_mesh(points, triangles):
+    ''' return pyvista triangles '''
     faces = np.hstack([np.full((triangles.shape[0], 1), 3), triangles]).astype(np.int32)
     return pv.PolyData(points, faces)
 
 def clean_yaml_content(content: str) -> str:
+    ''' reformat content string to yaml friendly string '''
     lines = content.split('\n')
     cleaned_lines = [line.replace('\t', '  ') for line in lines]
     return '\n'.join(cleaned_lines)
@@ -287,8 +289,10 @@ try:
             self.value_format.setForeground(QColor("red"))
             self.comment_format = QTextCharFormat()
             self.comment_format.setForeground(QColor("green"))
+            # useless, regexp remove comments in highlightBlock function
         
         def highlightBlock(self, text):
+            ''' homemade yaml highLighter '''
             comment_pattern = QRegExp(r'#.*')
             index = comment_pattern.indexIn(text)
             while index >= 0:
@@ -332,6 +336,7 @@ try:
             self.load_yaml_file()
 
         def setup_ui(self):
+            """ build the PyQt5 GUI """
             central_widget = QWidget()
             self.setCentralWidget(central_widget)
             self.statusBar().showMessage("Welcome to fmit-calculator")
@@ -511,6 +516,7 @@ try:
             main_splitter.setSizes([500, 900])
 
         def update_images(self):
+            ''' update tabbed Qwidgets with pixmaps of the png files '''
             holo_qpixmap =  QPixmap("./sim_HOLO_PHASE.png")
             if not holo_qpixmap.isNull():
                 self.holo_label_image.setGeometry(holo_qpixmap.rect())
@@ -562,7 +568,7 @@ try:
                     self.statusBar().showMessage(f"❌ Error loading mesh: {e}")
 
         def populate_fields_from_yaml(self):
-            """ update LineEdits with the yaml contents """
+            """ update LineEdits with the dictionary representing the yaml """
             if not self.yaml_config:
                 return
 
@@ -595,7 +601,7 @@ try:
                     self.meshsize_input.setText(str(det['meshSize']))
 
         def update_yaml_display(self):
-            """ update yaml_config dictionary and update text editBox with it """
+            """ update yaml_config dictionary and update LineEdits with it """
             if not self.yaml_config:
                 print("you should not be there...")
                 sys.exit()
@@ -625,7 +631,7 @@ try:
             self.yaml_display.setPlainText(yaml_text)
 
         def save_yaml_config(self):
-            """ same yaml as a text file """
+            """ save yaml as a text file """
             try:
                 if not hasattr(self, 'sol_file_path') or not self.sol_file_path:
                     raise ValueError("❌ No .sol file selected")
