@@ -445,7 +445,7 @@ try:
             det_layout = QVBoxLayout()
             zoom_layout = QHBoxLayout()
             self.zoom_input = QLineEdit("0.5")
-            self.zoom_input.setToolTip("zoom factor for the sensor, between 0 and 1")
+            self.zoom_input.setToolTip("aspect ratio: size(object)/size(sensor), between 0 and 1")
             zoom_layout.addWidget(QLabel("Zoom:"))
             zoom_layout.addWidget(self.zoom_input)
             self.zoom_input.editingFinished.connect(self.update_yaml_display)
