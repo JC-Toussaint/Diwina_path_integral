@@ -346,6 +346,7 @@ try:
             central_widget.layout().addWidget(main_splitter)
 
             minLeftPanelWidth = 333
+            self.flagComputed = False
 
         # === Left Panel ===
             left_panel = QFrame()
@@ -556,19 +557,22 @@ try:
 
         def update_images(self):
             ''' update tabbed Qwidgets with pixmaps of the png files '''
-            holo_qpixmap =  QPixmap("./sim_HOLO_PHASE.png")
-            if not holo_qpixmap.isNull():
-                self.holo_label_image.setGeometry(holo_qpixmap.rect())
-                self.holo_label_image.setPixmap(holo_qpixmap)
-            else:
-                self.statusBar().showMessage(f"No png file(s) to view.")
+            if self.flagComputed:
+                holo_qpixmap =  QPixmap("./sim_HOLO_PHASE.png")
+                if not holo_qpixmap.isNull():
+                    self.holo_label_image.setGeometry(holo_qpixmap.rect())
+                    self.holo_label_image.setPixmap(holo_qpixmap)
+                else:
+                    self.statusBar().showMessage(f"No png file(s) to view.")
 
-            xmcd_qpixmap = QPixmap("./sim_STXM_XMCD.png")
-            if not xmcd_qpixmap.isNull():
-                self.xmcd_label_image.setGeometry(xmcd_qpixmap.rect())
-                self.xmcd_label_image.setPixmap(xmcd_qpixmap)
+                xmcd_qpixmap = QPixmap("./sim_STXM_XMCD.png")
+                if not xmcd_qpixmap.isNull():
+                    self.xmcd_label_image.setGeometry(xmcd_qpixmap.rect())
+                    self.xmcd_label_image.setPixmap(xmcd_qpixmap)
+                else:
+                    self.statusBar().showMessage(f"No png file(s) to view.")
             else:
-                self.statusBar().showMessage(f"No png file(s) to view.")
+                self.statusBar().showMessage("no computed pngs yet.")
 
         def select_sol_file(self):
             """ slot triggered by the clicking on browse .sol button
@@ -895,6 +899,7 @@ try:
             self.process = None
             self.lastLog.close()
             self.lastErr.close()
+            self.flagComputed = True
 
         def handle_pathIntegral_stdout(self):
             ''' write pathIntegral stdout's in a log file '''
