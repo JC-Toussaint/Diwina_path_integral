@@ -169,7 +169,7 @@ def load_mesh(filename):
                 triangles.append(cell_block.data)
 
         if not triangles:
-            strMessage += f"❌ No triangles found in mesh '{filename}'."
+            strMessage += f"✗ No triangles found in mesh '{filename}'."
             raise ValueError(f"❌ No triangles found in mesh '{filename}'.")
 
         triangles = np.vstack(triangles)
@@ -217,10 +217,10 @@ def load_yaml_from_file(filename: str) -> Dict[str, Any]:
         strMessage = f"✓ File '{filename}' read and parsed"
         return strMessage, config
     except FileNotFoundError:
-        strMessage = f"❌ File '{filename}' not found"
+        strMessage = f"✗ File '{filename}' not found"
         return strMessage,None
     except Exception as e:
-        strMessage = f"❌ Error reading file: {e}"
+        strMessage = f"✗ Error reading file: {e}"
         return strMessage,None
 
 def yaml_dump(data, context=None, prefix=""):
@@ -360,7 +360,7 @@ try:
             # Sol file selection
             sol_layout = QHBoxLayout()
             self.sol_btn = QPushButton("Browse .sol")
-            self.sol_label = QLabel("❌ no .sol file selected.")
+            self.sol_label = QLabel("✗ no .sol file selected.")
             self.sol_btn.clicked.connect(self.select_sol_file)
             sol_layout.addWidget(self.sol_btn)
             sol_layout.addWidget(self.sol_label)
@@ -606,7 +606,7 @@ try:
                     self.statusBar().showMessage(msg)
                     self.update_mesh()
                 except Exception as e:
-                    self.statusBar().showMessage(f"❌ Error loading mesh: {e}")
+                    self.statusBar().showMessage(f"✗ Error loading mesh: {e}")
 
         def populate_fields_from_yaml(self):
             """ update LineEdits with the dictionary representing the yaml """
@@ -739,7 +739,7 @@ try:
                 self.plotter.reset_camera()
 
             except Exception as e:
-                self.statusBar().showMessage(f"❌ Error while updating mesh: {e}")
+                self.statusBar().showMessage(f"✗ Error while updating mesh: {e}")
 
 
         def add_magnetization_vectors(self, axes_angles):
@@ -759,7 +759,7 @@ try:
                         vectors.append(m_vec)
             
                 if not positions:
-                    self.statusBar().showMessage("❌ No magnetization data found for surface nodes!")
+                    self.statusBar().showMessage("✗ No magnetization data found for surface nodes!")
                     return
 
                 positions = np.array(positions)
@@ -781,7 +781,7 @@ try:
                 self.statusBar().showMessage(f"✓ Magnetization vectors plotted with {arrows.n_cells} arrows on {arrows.n_points} points ")
                     
             except Exception as e:
-                self.statusBar().showMessage(f"❌ Error adding magnetization vectors: {e}")
+                self.statusBar().showMessage(f"✗ Error adding magnetization vectors: {e}")
                 import traceback
                 traceback.print_exc()
 
