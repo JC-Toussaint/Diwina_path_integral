@@ -879,10 +879,15 @@ try:
                 self.process = QProcess()
                 self.process.readyReadStandardOutput.connect(self.handle_pathIntegral_stdout)
                 self.process.readyReadStandardError.connect(self.handle_pathIntegral_stderr)
+                self.process.errorOccurred.connect(self.process_failed_to_start)
                 self.process.finished.connect(self.process_finished)
                 self.process.start("pathIntegral",[self.outputFileName])
             else:
                 self.statusBar().showMessage("Error: .sol not yet selected.")
+
+        def process_failed_to_start(self):
+            ''' tell the user we could not start the program '''
+            self.statusBar().showMessage("Error: failed to start pathIntegral.")
 
         def process_finished(self):
             ''' when pathIntegral (launched in a Qprocess) ends we end up here '''
