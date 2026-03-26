@@ -10,7 +10,7 @@ typing pip install ../FeeLLGood/python-modules
 with appropriate path
 '''
 
-import meshMaker
+from feellgood import meshMaker
 r = 100 
 meshSize = 4
 

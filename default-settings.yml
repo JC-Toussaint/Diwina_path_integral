@@ -90,8 +90,8 @@ filled: false
 
 # electrostatic parameters depending on microscope and material
 electrostatics:
-  CE: 6.5262e6
-  V : 22
+  CE: 0.0
+  V : 0.0
 
 # detector zoom and resolution
 detector:

@@ -200,3 +200,24 @@ time_integration:
 
   # Maximal time step.
   max(dt): 5e-13
+
+# Rotation angles in degrees, and respective axes.
+rotations:
+  angle1: 0
+  axe1: [0, 0, 1]
+  angle2: 0
+  axe2: [0, 0, 1]
+
+# hollow part filled with metal 
+filled: false
+
+# electrostatic parameters depending on microscope and material
+electrostatics:
+  CE: 0
+  V : 0
+
+# detector zoom and resolution
+detector:
+  zoom: 0.5
+  meshSize: 1e-9
+

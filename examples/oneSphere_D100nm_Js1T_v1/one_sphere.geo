@@ -1,9 +1,9 @@
 // Paramètres de la sphère
-D = 100;  // Diamètre
+D = 200;  // Diamètre
 R = D/2; // Rayon
 
 Mesh.Algorithm = 6;
-lc = 3;  // Taille de maillage
+lc = 5;  // Taille de maillage
 Point(1) = {0.0,0.0,0.0,lc};
 Point(2) = {R,0.0,0.0,lc};
 Point(3) = {0,R,0.0,lc};
