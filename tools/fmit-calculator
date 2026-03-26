@@ -555,22 +555,23 @@ try:
             main_splitter.addWidget(right_visualizations)
             main_splitter.setSizes([minLeftPanelWidth, 900])
 
-        def update_images(self):
+        def update_images(self, index):
             ''' update tabbed Qwidgets with pixmaps of the png files '''
             if self.flagComputed:
-                holo_qpixmap =  QPixmap("./sim_HOLO_PHASE.png")
-                if not holo_qpixmap.isNull():
-                    self.holo_label_image.setGeometry(holo_qpixmap.rect())
-                    self.holo_label_image.setPixmap(holo_qpixmap)
-                else:
-                    self.statusBar().showMessage(f"No png file(s) to view.")
-
-                xmcd_qpixmap = QPixmap("./sim_STXM_XMCD.png")
-                if not xmcd_qpixmap.isNull():
-                    self.xmcd_label_image.setGeometry(xmcd_qpixmap.rect())
-                    self.xmcd_label_image.setPixmap(xmcd_qpixmap)
-                else:
-                    self.statusBar().showMessage(f"No png file(s) to view.")
+                if index == 1:
+                    holo_qpixmap =  QPixmap("./sim_HOLO_PHASE.png")
+                    if not holo_qpixmap.isNull():
+                        self.holo_label_image.setGeometry(holo_qpixmap.rect())
+                        self.holo_label_image.setPixmap(holo_qpixmap)
+                    else:
+                        self.holo_label_image.setText("No png file")
+                elif index == 2:
+                    xmcd_qpixmap = QPixmap("./sim_STXM_XMCD.png")
+                    if not xmcd_qpixmap.isNull():
+                        self.xmcd_label_image.setGeometry(xmcd_qpixmap.rect())
+                        self.xmcd_label_image.setPixmap(xmcd_qpixmap)
+                    else:
+                        self.xmcd_label_image.setText("No png file")
             else:
                 self.statusBar().showMessage("no computed pngs yet.")
 
