@@ -12,6 +12,21 @@ import pyvista as pv
 from pyvistaqt import QtInteractor
 from typing import Any, Dict, List, Union
 
+strHelp = "Workflow:\n"
+strHelp += "Select your .sol file from browse .sol button\n"
+strHelp += "Adjust rotation angles and axis\n"
+strHelp += "Adjust Sensor zoom and pixel size\n"
+strHelp += "\tzoom parameter is the ratio between cross-section of the object and the detector size.\n"
+strHelp += "\tIt must be in ]0,1]\n"
+strHelp += "\nPress compute button\n"
+strHelp += "\tBoth holographic phase and xmcd are computed\n"
+strHelp += "\tThe 3D renderer updates with either holographic phase or XMCD contrast once computation is finished\n"
+strHelp += "\tWhen 3D renderer has the focus, pressing w key turns wireframe on\n"
+strHelp += "\tpressing s key returns to solidframe on\n"
+strHelp += "\tYou might see a preview of holographic phase or XMCD contrast in their respective panels\n"
+strHelp += "\n.out text files are tab separated value text files\n"
+strHelp += "images are unsigned int 16 bits grey pngs\n"
+
 def has_nvidia_gpu():
     ''' ask nvidia-smi if there is any nvidia GPU with proprietary driver, return true if any '''
     try:
@@ -551,15 +566,7 @@ try:
             self.help_label = QTextEdit(help_panel)
             help_layout.addWidget(self.help_label,stretch=1)
             self.help_label.setReadOnly(True)
-            s = "Workflow:\n"
-            s+= "Select your .sol file from browse .sol button\n"
-            s+= "Adjust rotations and zoom parameters\n"
-            s+= "Press compute button\n"
-            s+= "See a preview of holographic phase or XMCD contrast in their respective panels\n"
-            s+= "Alternatively you might view png images using fmit-png-viewer\n"
-            s+= ".out text file is a tab separated value text file\n"
-            s+= "images are unsigned int 16 bits grey pngs"
-            self.help_label.setText(s)
+            self.help_label.setText(strHelp)
             help_panel.setLayout(help_layout)
 
             right_visualizations.addTab(right_panel,"3D")
