@@ -275,7 +275,7 @@ try:
     from PyQt5.QtWidgets import (
     QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFileDialog, QLineEdit, QMessageBox, QCheckBox, QMainWindow, QFrame,
-    QSplitter, QTextEdit, QGroupBox, QDoubleSpinBox )
+    QSplitter, QTextEdit, QGroupBox, QDoubleSpinBox, QRadioButton )
 
     from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter, QPixmap
     from PyQt5.QtCore import Qt, QRegExp, QLocale, QProcess
@@ -347,6 +347,7 @@ try:
 
             minLeftPanelWidth = 333
             self.flagComputed = False
+            self.whatSensor = "Holo"
 
         # === Left Panel ===
             left_panel = QFrame()
@@ -471,23 +472,39 @@ try:
 
             # Sensor
             sensor_group = QGroupBox("Sensor")
-            sensor_layout = QHBoxLayout(sensor_group)
-            sensor_layout.addWidget(QLabel("Zoom:"))
+            sensor_layout = QVBoxLayout(sensor_group)
 
+            radioButton_layout = QHBoxLayout()
+
+            radioButton = QRadioButton("Holographic phase")
+            radioButton.setChecked(True)
+            radioButton.whatSensor = "Holo"
+            radioButton.toggled.connect(self.onSensorSelectorClicked)
+            radioButton_layout.addWidget(radioButton)#sensor_layout.addWidget(radioButton)
+
+            radioButton = QRadioButton("XMCD contrast")
+            radioButton.whatSensor = "XMCD"
+            radioButton.toggled.connect(self.onSensorSelectorClicked)
+            radioButton_layout.addWidget(radioButton)#sensor_layout.addWidget(radioButton)
+            sensor_layout.addLayout(radioButton_layout)
+
+            zoomAndPixelSize_layout = QHBoxLayout()
+
+            zoomAndPixelSize_layout.addWidget(QLabel("Zoom:"))#sensor_layout.addWidget(QLabel("Zoom:"))
             self.zoom_input = QLineEdit("0.5")
             self.zoom_input.setToolTip("aspect ratio: size(object)/size(sensor), between 0 and 1")
-            sensor_layout.addWidget(self.zoom_input)
+            zoomAndPixelSize_layout.addWidget(self.zoom_input)#sensor_layout.addWidget(self.zoom_input)
             self.zoom_input.editingFinished.connect(self.update_yaml_display)
             self.zoom_input.editingFinished.connect(self.update_mesh)
 
             self.meshsize_input = QLineEdit("1e-9")
             self.meshsize_input.setToolTip("sensor pixel size in meters")
-            sensor_layout.addWidget(QLabel("pixel size [m]:"))
-            sensor_layout.addWidget(self.meshsize_input)
+            zoomAndPixelSize_layout.addWidget(QLabel("pixel size [m]:"))#sensor_layout.addWidget(QLabel("pixel size [m]:"))
+            zoomAndPixelSize_layout.addWidget(self.meshsize_input)#sensor_layout.addWidget(self.meshsize_input)
             self.meshsize_input.editingFinished.connect(self.update_yaml_display)
+            sensor_layout.addLayout(zoomAndPixelSize_layout)
 
             sensor_layout.setSpacing(2)
-
             left_layout.addWidget(sensor_group)
 
             # yaml text view
@@ -554,6 +571,13 @@ try:
             main_splitter.addWidget(left_panel)
             main_splitter.addWidget(right_visualizations)
             main_splitter.setSizes([minLeftPanelWidth, 900])
+
+        def onSensorSelectorClicked(self):
+            radioButton = self.sender()
+            if radioButton.isChecked():
+                self.whatSensor = radioButton.whatSensor
+                if self.flagComputed:
+                    self.update_mesh()
 
         def update_images(self, index):
             ''' update tabbed Qwidgets with pixmaps of the png files '''
@@ -726,7 +750,8 @@ try:
                 self.plotter.clear()
                 self.plotter.add_mesh(mesh, color="lightblue", show_edges=False, opacity=1.0)
                 self.add_bounding_box_and_sensor(self.original_points, axes_angles)
-            
+                self.add_sim_image()
+
             # Add magnetization vectors if available and enabled
                 if (self.show_vectors_checkbox.isChecked() and 
                     self.magnetization_data is not None and 
@@ -838,7 +863,15 @@ try:
             rectangle = pv.Rectangle([[(Xc-0.5*s)*g,(Yc-0.5*s)*g,Zmin-epsilon],
                 [(Xc+0.5*s)*g,(Yc-0.5*s)*g,Zmin-epsilon],
                 [(Xc+0.5*s)*g,(Yc+0.5*s)*g,Zmin-epsilon]])
-            self.plotter.add_mesh(rectangle, show_edges=True, opacity=0.5, color="grey", line_width=4)
+            
+            self.imageCenterX = (Xc-0.5*s)*g
+            self.imageCenterY = (Yc-0.5*s)*g
+            self.imageCenterZ = Zmin-0.25*s
+
+            if not self.flagComputed:
+                self.plotter.add_mesh(rectangle, show_edges=True, opacity=0.5, color="grey", line_width=4)
+            else:
+                self.add_sim_image()
 
             edges_x = [[0, 1], [3, 2], [4, 5]]
             edges_y = [[1, 2], [0, 3], [4, 7]]
@@ -865,14 +898,18 @@ try:
                 line = pv.Line(line_points[0], line_points[1])
                 self.plotter.add_mesh(line, color="black", line_width=2)
 
-            #self.add_sim_image((Xc-0.5*s)*g,(Yc-0.5*s)*g,Zmin-0.25*s)
-
-        def add_sim_image(self,x,y,z):
+        def add_sim_image(self):
             """ Work In Progress """
-            sim_image = pv.read("./sim_STXM_XMCD.png")
-            actor = self.plotter.add_mesh(sim_image,cmap='grey')
-            actor.position = (x,y,z)
-            self.plotter.show()
+            if self.flagComputed:
+                imageFileToRead = ""
+                if self.whatSensor == "XMCD":
+                    imageFileToRead = "./sim_STXM_XMCD.png"
+                else:
+                    imageFileToRead = "./sim_HOLO_PHASE.png"
+                sim_image = pv.read(imageFileToRead)
+                actor = self.plotter.add_mesh(sim_image,cmap='grey',show_scalar_bar= False)
+                actor.position = (self.imageCenterX,self.imageCenterY,self.imageCenterZ)
+                #self.plotter.show()
 
         def compute(self):
             """Save YAML configuration and launch pathIntegral executable """
@@ -901,6 +938,7 @@ try:
             self.lastLog.close()
             self.lastErr.close()
             self.flagComputed = True
+            self.update_mesh()
 
         def handle_pathIntegral_stdout(self):
             ''' write pathIntegral stdout's in a log file '''
