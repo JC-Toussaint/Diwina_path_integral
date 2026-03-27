@@ -532,8 +532,7 @@ try:
             help_panel = QWidget()
             help_layout = QVBoxLayout()
             self.help_label = QTextEdit(help_panel)
-            self.help_label.setFixedSize(800,800)
-            help_layout.addWidget(self.help_label)
+            help_layout.addWidget(self.help_label,stretch=1)
             self.help_label.setReadOnly(True)
             s = "Workflow:\n"
             s+= "Select your .sol file from browse .sol button\n"
@@ -544,6 +543,7 @@ try:
             s+= ".out text file is a tab separated value text file\n"
             s+= "images are unsigned int 16 bits grey pngs"
             self.help_label.setText(s)
+            help_panel.setLayout(help_layout)
 
             right_visualizations.addTab(right_panel,"3D")
             right_visualizations.addTab(holoPhase_panel,"Holographic phase")
@@ -558,14 +558,14 @@ try:
         def update_images(self, index):
             ''' update tabbed Qwidgets with pixmaps of the png files '''
             if self.flagComputed:
-                if index == 1:
+                if index == 1: #HOLO
                     holo_qpixmap =  QPixmap("./sim_HOLO_PHASE.png")
                     if not holo_qpixmap.isNull():
                         self.holo_label_image.setGeometry(holo_qpixmap.rect())
                         self.holo_label_image.setPixmap(holo_qpixmap)
                     else:
                         self.holo_label_image.setText("No png file")
-                elif index == 2:
+                elif index == 2: #XMCD
                     xmcd_qpixmap = QPixmap("./sim_STXM_XMCD.png")
                     if not xmcd_qpixmap.isNull():
                         self.xmcd_label_image.setGeometry(xmcd_qpixmap.rect())
