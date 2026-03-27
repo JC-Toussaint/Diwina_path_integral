@@ -92,21 +92,6 @@ sudo make install
 cd ../..
 ```
 
-## Install ANN from sources
-
-If ANN is not already installed, download it and install it as follows:
-
-```shell
-wget https://www.cs.umd.edu/~mount/ANN/Files/1.1.2/ann_1.1.2.tar.gz
-tar xzf ann_1.1.2.tar.gz
-cd ann_1.1.2/
-sed -i 's/CFLAGS =.* -O3/& -std=c++98/' Make-config
-make linux-g++
-sudo cp lib/libANN.a /usr/local/lib/
-sudo cp include/ANN/ANN.h /usr/local/include/
-cd ..
-```
-
 ## Diwina Path Integral Project Installation
 
 ** Clone the main branch of the Diwina Path Integral project specifically adapted to work with the ScalFMM library from INRIA **

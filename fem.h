@@ -24,7 +24,6 @@ It does also contains the definition of many constants for the solver, and for s
 
 #include "mesh.h"
 
-#include "ANN.h"
 #include "settings.h"
 
 #include "geo.h"
