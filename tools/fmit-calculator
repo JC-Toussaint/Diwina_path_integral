@@ -229,7 +229,11 @@ def load_yaml_from_file(filename: str) -> Dict[str, Any]:
             content = file.read()
         cleaned_content = clean_yaml_content(content)
         config = yaml.safe_load(cleaned_content)
-        strMessage = f"✓ File '{filename}' read and parsed"
+        missingStuffs, bool_ok = check_input(config)
+        if not bool_ok:
+            strMessage = f"Missing inputs or errors in some inputs of the yaml file '{filename}':\n\t" + str(missingStuffs)
+            print(strMessage)
+            sys.exit()
         return strMessage, config
     except FileNotFoundError:
         strMessage = f"✗ File '{filename}' not found"
@@ -237,6 +241,60 @@ def load_yaml_from_file(filename: str) -> Dict[str, Any]:
     except Exception as e:
         strMessage = f"✗ Error reading file: {e}"
         return strMessage,None
+
+def check_input(yaml_config):
+    """
+    check that dictionary built from yaml input file contains appropriate keys
+    Warning: does not check if all volume_regions has their Js,lbp,lbm keys
+    """
+    missingStuffs = []
+    checkSum = 0
+
+    if 'initial_magnetization' in yaml_config:
+        checkSum += 1
+    else:
+        missingStuffs.append("initial_magnetization")
+    if 'rotations' in yaml_config:
+        checkSum += 1
+        rot = yaml_config['rotations']
+        if 'angle1' in rot:
+            checkSum += 1
+        else:
+            missingStuffs.append("angle1")
+        if ('axe1' in rot) and (len(rot['axe1']) == 3):
+            checkSum += 1
+        else:
+            missingStuffs.append("axe1")
+        if 'angle2' in rot:
+            checkSum += 1
+        else:
+            missingStuffs.append("angle2")
+        if ('axe2' in rot) and (len(rot['axe2']) == 3):
+            checkSum += 1
+        else:
+            missingStuffs.append("axe2")
+    else:
+        missingStuffs.append("rotations")
+    if 'filled' in yaml_config:
+        checkSum += 1
+    else:
+        missingStuffs.append("filled")
+    if 'detector' in yaml_config:
+        checkSum += 1
+        det = yaml_config['detector']
+        if 'zoom' in det:
+            checkSum += 1
+        else:
+            missingStuffs.append("zoom")
+        if 'meshSize' in det:
+            checkSum += 1
+        else:
+            missingsStuffs.append("meshSize")
+    else:
+        missingStuffs.append("detector")
+    check_bool = (checkSum == 10)
+
+    return missingStuffs, check_bool
 
 def yaml_dump(data, context=None, prefix=""):
     """
@@ -341,15 +399,17 @@ try:
 
             # Variables
             self.inputFileName = yaml_file
+            helloMessage, self.yaml_config = load_yaml_from_file(yaml_file)
+            print(helloMessage)
+            self.zoom = self.yaml_config['detector']['zoom']
             self.outputFileName =  "noneYet"
-            self.yaml_config = {}
+            self.flagComputed = False
+            self.whatSensor = "Holo"
             self.mesh_filename = None
             self.sol_file_path = None
             self.magnetization_data = None
             self.mesh_object = None
-
             self.setup_ui()
-            self.load_yaml_file()
 
         def setup_ui(self):
             """ build the PyQt5 GUI """
@@ -359,10 +419,7 @@ try:
             main_splitter = QSplitter(Qt.Horizontal)
             central_widget.setLayout(QHBoxLayout())
             central_widget.layout().addWidget(main_splitter)
-
             minLeftPanelWidth = 333
-            self.flagComputed = False
-            self.whatSensor = "Holo"
 
         # === Left Panel ===
             left_panel = QFrame()
@@ -413,7 +470,7 @@ try:
 
             angle1_layout = QHBoxLayout()
             angle1_label = QLabel("Angle 1 (°):")
-            self.angle1_input = QLineEdit("0")
+            self.angle1_input = QLineEdit(str(self.yaml_config['rotations']['angle1']))
             self.angle1_input.setToolTip("angle 1 in degrees")
             self.angle1_input.editingFinished.connect(self.update_mesh)
             self.angle1_input.editingFinished.connect(self.update_yaml_display)
@@ -423,7 +480,9 @@ try:
 
             axe1_layout = QHBoxLayout()
             axis_input_layout = QHBoxLayout()
-            self.axe1_inputs = [QLineEdit("1"), QLineEdit("0"), QLineEdit("0")]
+            self.axe1_inputs = [QLineEdit(str(self.yaml_config['rotations']['axe1'][0])),
+                QLineEdit(str(self.yaml_config['rotations']['axe1'][1])),
+                QLineEdit(str(self.yaml_config['rotations']['axe1'][2]))]
             axis_input_layout.addWidget(QLabel("Axis 1:"))
             self.axe1_inputs[0].setToolTip("axis1[x]")
             self.axe1_inputs[1].setToolTip("axis1[y]")
@@ -437,7 +496,7 @@ try:
 
             angle2_layout = QHBoxLayout()
             angle2_label = QLabel("Angle 2 (°):")
-            self.angle2_input = QLineEdit("0")
+            self.angle2_input = QLineEdit(str(self.yaml_config['rotations']['angle2']))
             self.angle2_input.setToolTip("angle 2 in degrees")
             self.angle2_input.editingFinished.connect(self.update_mesh)
             self.angle2_input.editingFinished.connect(self.update_yaml_display)
@@ -447,7 +506,9 @@ try:
 
             axe2_layout = QHBoxLayout()
             axis_input_layout = QHBoxLayout()
-            self.axe2_inputs = [QLineEdit("1"), QLineEdit("0"), QLineEdit("0")]
+            self.axe2_inputs = [QLineEdit(str(self.yaml_config['rotations']['axe2'][0])),
+                QLineEdit(str(self.yaml_config['rotations']['axe2'][1])),
+                QLineEdit(str(self.yaml_config['rotations']['axe2'][2]))]
             axis_input_layout.addWidget(QLabel("Axis 2:"))
             self.axe2_inputs[0].setToolTip("axis2[x]")
             self.axe2_inputs[1].setToolTip("axis2[y]")
@@ -477,8 +538,8 @@ try:
 
             self.filled_checkbox = QCheckBox("Filled")
             self.filled_checkbox.setToolTip("if checked assumes in the computation that the crossed hollow parts of the sample are filled with materials")
-            self.filled_checkbox.setChecked(True)
-            self.filled_checkbox.stateChanged.connect(self.update_yaml_display)
+            self.filled_checkbox.setChecked(self.yaml_config['filled'])
+            self.filled_checkbox.stateChanged.connect(self.onFilledChanged)
             material_layout.addWidget(self.filled_checkbox)
 
             material_layout.setSpacing(2)
@@ -495,28 +556,28 @@ try:
             radioButton.setChecked(True)
             radioButton.whatSensor = "Holo"
             radioButton.toggled.connect(self.onSensorSelectorClicked)
-            radioButton_layout.addWidget(radioButton)#sensor_layout.addWidget(radioButton)
+            radioButton_layout.addWidget(radioButton)
 
             radioButton = QRadioButton("XMCD contrast")
             radioButton.whatSensor = "XMCD"
             radioButton.toggled.connect(self.onSensorSelectorClicked)
-            radioButton_layout.addWidget(radioButton)#sensor_layout.addWidget(radioButton)
+            radioButton_layout.addWidget(radioButton)
             sensor_layout.addLayout(radioButton_layout)
 
             zoomAndPixelSize_layout = QHBoxLayout()
 
-            zoomAndPixelSize_layout.addWidget(QLabel("Zoom:"))#sensor_layout.addWidget(QLabel("Zoom:"))
-            self.zoom_input = QLineEdit("0.5")
+            zoomAndPixelSize_layout.addWidget(QLabel("Zoom:"))
+            self.zoom_input = QLineEdit(str(self.yaml_config['detector']['zoom']))
             self.zoom_input.setToolTip("aspect ratio: size(object)/size(sensor), between 0 and 1")
-            zoomAndPixelSize_layout.addWidget(self.zoom_input)#sensor_layout.addWidget(self.zoom_input)
-            self.zoom_input.editingFinished.connect(self.update_yaml_display)
+            zoomAndPixelSize_layout.addWidget(self.zoom_input)
+            self.zoom_input.editingFinished.connect(self.onZoomChanged)
             self.zoom_input.editingFinished.connect(self.update_mesh)
 
-            self.meshsize_input = QLineEdit("1e-9")
+            self.meshsize_input = QLineEdit(str(self.yaml_config['detector']['meshSize']))
             self.meshsize_input.setToolTip("sensor pixel size in meters")
-            zoomAndPixelSize_layout.addWidget(QLabel("pixel size [m]:"))#sensor_layout.addWidget(QLabel("pixel size [m]:"))
-            zoomAndPixelSize_layout.addWidget(self.meshsize_input)#sensor_layout.addWidget(self.meshsize_input)
-            self.meshsize_input.editingFinished.connect(self.update_yaml_display)
+            zoomAndPixelSize_layout.addWidget(QLabel("pixel size [m]:"))
+            zoomAndPixelSize_layout.addWidget(self.meshsize_input)
+            self.meshsize_input.editingFinished.connect(self.onMeshSizeChanged)
             sensor_layout.addLayout(zoomAndPixelSize_layout)
 
             sensor_layout.setSpacing(2)
@@ -579,6 +640,17 @@ try:
             main_splitter.addWidget(right_visualizations)
             main_splitter.setSizes([minLeftPanelWidth, 900])
 
+            self.update_yaml_display()
+            self.load_mesh_from_config()
+
+        def onFilledChanged(self):
+            checkedBox = self.sender()
+            if checkedBox.isChecked():
+                self.yaml_config['filled'] = True
+            else:
+                self.yaml_config['filled'] = False
+            self.update_yaml_display()
+
         def onSensorSelectorClicked(self):
             radioButton = self.sender()
             if radioButton.isChecked():
@@ -586,8 +658,22 @@ try:
                 if self.flagComputed:
                     self.update_mesh()
 
+        def onZoomChanged(self):
+            lineEdit = self.sender()
+            self.zoom = float(lineEdit.text())
+            if self.zoom>1.0:
+                self.zoom=1.0
+            self.zoom_input.setText(str(self.zoom))
+            self.yaml_config['detector']['zoom'] = self.zoom
+            self.update_yaml_display()
+
+        def onMeshSizeChanged(self):
+            lineEdit = self.sender()
+            self.yaml_config['detector']['meshSize'] = float(lineEdit.text())
+            self.update_yaml_display()
+
         def update_images(self, index):
-            ''' update tabbed Qwidgets with pixmaps of the png files '''
+            ''' update the clicked tabbed widget with pixmap of the corresponding png file '''
             if self.flagComputed:
                 if index == 1: #HOLO
                     holo_qpixmap =  QPixmap("./sim_HOLO_PHASE.png")
@@ -624,15 +710,6 @@ try:
                     QMessageBox.critical(self, "Error", f"Error loading .sol file: {e}")
                     self.magnetization_data = None
 
-        def load_yaml_file(self):
-            """ load a yaml input file """
-            if self.inputFileName:
-                strMessage, self.yaml_config = load_yaml_from_file(self.inputFileName)
-                self.statusBar().showMessage(strMessage)
-                if self.yaml_config:
-                    self.populate_fields_from_yaml()
-                    self.load_mesh_from_config()
-
         def load_mesh_from_config(self):
             """ load a mesh file from input file name found within the yaml input file """
             if 'mesh' in self.yaml_config and 'filename' in self.yaml_config['mesh']:
@@ -644,41 +721,8 @@ try:
                 except Exception as e:
                     self.statusBar().showMessage(f"✗ Error loading mesh: {e}")
 
-        def populate_fields_from_yaml(self):
-            """ update LineEdits with the dictionary representing the yaml """
-            if not self.yaml_config:
-                return
-
-            if 'initial_magnetization' in self.yaml_config:
-                self.sol_label.setText('No sol file selected')
-			
-            if 'rotations' in self.yaml_config:
-                rot = self.yaml_config['rotations']
-                if 'angle1' in rot:
-                    self.angle1_input.setText(str(rot['angle1']))
-                if 'axe1' in rot:
-                    for i, val in enumerate(rot['axe1']):
-                        if i < len(self.axe1_inputs):
-                            self.axe1_inputs[i].setText(str(val))
-                if 'angle2' in rot:
-                    self.angle2_input.setText(str(rot['angle2']))
-                if 'axe2' in rot:
-                    for i, val in enumerate(rot['axe2']):
-                        if i < len(self.axe2_inputs):
-                            self.axe2_inputs[i].setText(str(val))
-
-            if 'filled' in self.yaml_config:
-                self.filled_checkbox.setChecked(self.yaml_config['filled'])
-
-            if 'detector' in self.yaml_config:
-                det = self.yaml_config['detector']
-                if 'zoom' in det:
-                    self.zoom_input.setText(str(det['zoom']))
-                if 'meshSize' in det:
-                    self.meshsize_input.setText(str(det['meshSize']))
-
         def update_yaml_display(self):
-            """ update yaml_config dictionary and update LineEdits with it """
+            """ update yaml_config dictionary """
             if not self.yaml_config:
                 print("you should not be there...")
                 sys.exit()
@@ -697,13 +741,6 @@ try:
             if 'detector' not in self.yaml_config:
                 self.yaml_config['detector'] = {}
             
-            self.zoom = float(self.zoom_input.text())
-            if self.zoom>1.0: 
-                self.zoom=1.0
-            self.zoom_input.setText(str(self.zoom))
-            self.yaml_config['detector']['zoom'] = self.zoom
-            self.yaml_config['detector']['meshSize'] = float(self.meshsize_input.text())
-
             yaml_text = yaml_dump(self.yaml_config)
             self.yaml_display.setPlainText(yaml_text)
 
@@ -916,7 +953,6 @@ try:
                 sim_image = pv.read(imageFileToRead)
                 actor = self.plotter.add_mesh(sim_image,cmap='grey',show_scalar_bar= False)
                 actor.position = (self.imageCenterX,self.imageCenterY,self.imageCenterZ)
-                #self.plotter.show()
 
         def compute(self):
             """Save YAML configuration and launch pathIntegral executable """
