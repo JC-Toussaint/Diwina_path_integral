@@ -794,7 +794,6 @@ try:
                 self.plotter.clear()
                 self.plotter.add_mesh(mesh, color="lightblue", show_edges=False, opacity=1.0)
                 self.add_bounding_box_and_sensor(self.original_points, axes_angles)
-                self.add_sim_image()
 
             # Add magnetization vectors if available and enabled
                 if (self.show_vectors_checkbox.isChecked() and 
@@ -810,7 +809,7 @@ try:
 
                 self.plotter.add_axes() # visible XYZ trihedral vectors
                 self.plotter.enable_parallel_projection()
-                self.plotter.reset_camera()
+                #self.plotter.reset_camera()
 
             except Exception as e:
                 self.statusBar().showMessage(f"✗ Error while updating mesh: {e}")
@@ -941,6 +940,7 @@ try:
                 line_points = np.array([rot_corners[edge[0]], rot_corners[edge[1]]])
                 line = pv.Line(line_points[0], line_points[1])
                 self.plotter.add_mesh(line, color="black", line_width=2)
+
 
         def add_sim_image(self):
             """ Work In Progress """
