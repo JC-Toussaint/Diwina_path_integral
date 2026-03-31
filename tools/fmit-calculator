@@ -162,7 +162,7 @@ def get_region_elements(mesh):
 def load_mesh(filename):
     """
     Load a mesh from a file using meshio.
-    Returns a string message, mesh, point coordinates and triangular connectivity.
+    Returns a string message, surface node indices, point coordinates and triangular connectivity.
     Raises an error if the file does not exist or contains no triangles.
     """
     if not os.path.isfile(filename):
@@ -170,13 +170,11 @@ def load_mesh(filename):
     try:
         import meshio
         mesh = meshio.read(filename)
-        strMessage = f"✓ mesh file '{filename}' loaded: "
+        strMessage = f"✓ mesh file '{filename}' loaded, "
         for cell_block, cell_data in zip(mesh.cells, mesh.cell_data["gmsh:physical"]):
             cell_type = cell_block.type
             for region_name, (region_id, dim) in mesh.field_data.items():
                 element_indices = np.where(cell_data == region_id)[0]
-                if len(element_indices) > 0:
-                    strMessage += f"  Region '{region_name}' (ID={region_id}, dim={dim}): {len(element_indices)} elements"
 
         regions = get_region_elements(mesh)
         points = mesh.points[:, :3]
@@ -190,7 +188,10 @@ def load_mesh(filename):
             raise ValueError(f"❌ No triangles found in mesh '{filename}'.")
 
         triangles = np.vstack(triangles)
-        return strMessage, mesh, points, triangles
+        strMessage += str(len(triangles)) + " triangles"
+        surface_nodes = get_surface_nodes(mesh)
+
+        return strMessage, surface_nodes, points, triangles
 
     except Exception as e:
         raise RuntimeError(f"❌ Error while loading mesh '{filename}': {e}")
@@ -410,7 +411,7 @@ try:
             self.mesh_filename = None
             self.sol_file_path = None
             self.magnetization_data = None
-            self.mesh_object = None
+            self.surface_nodes = None
             self.setup_ui()
 
         def setup_ui(self):
@@ -717,7 +718,7 @@ try:
             if 'mesh' in self.yaml_config and 'filename' in self.yaml_config['mesh']:
                 self.mesh_filename = self.yaml_config['mesh']['filename']
                 try:
-                    msg, self.mesh_object, self.original_points, self.triangles = load_mesh(self.mesh_filename)
+                    msg, self.surface_nodes, self.original_points, self.triangles = load_mesh(self.mesh_filename)
                     self.statusBar().showMessage(msg)
                     self.update_mesh()
                 except Exception as e:
@@ -800,7 +801,7 @@ try:
             # Add magnetization vectors if available and enabled
                 if (self.show_vectors_checkbox.isChecked() and 
                     self.magnetization_data is not None and 
-                    self.mesh_object is not None):
+                    self.surface_nodes is not None):
                     self.add_magnetization_vectors(axes_angles)
                 
             # Grid and ticks X Y Z, grid and location are crucial
@@ -811,7 +812,6 @@ try:
 
                 self.plotter.add_axes() # visible XYZ trihedral vectors
                 self.plotter.enable_parallel_projection()
-                #self.plotter.reset_camera()
 
             except Exception as e:
                 self.statusBar().showMessage(f"✗ Error while updating mesh: {e}")
@@ -820,13 +820,12 @@ try:
         def add_magnetization_vectors(self, axes_angles):
             """ Add magnetization vectors to surface nodes using glyphs """
             try:
-                surface_nodes = get_surface_nodes(self.mesh_object)
                 positions = []
                 vectors = []
                 vector_scale = self.vector_scale_spinbox.value()
             
             # Collect all positions and vectors
-                for node_idx in surface_nodes:
+                for node_idx in self.surface_nodes:
                     if node_idx in self.magnetization_data:
                         node_pos = self.original_points[node_idx]
                         m_vec = self.magnetization_data[node_idx]
@@ -853,7 +852,7 @@ try:
                 )
             
                 self.plotter.add_mesh(arrows, color='grey', opacity=0.8, show_scalar_bar=False)
-                self.statusBar().showMessage(f"✓ Magnetization vectors plotted with {arrows.n_cells} arrows on {arrows.n_points} points ")
+                self.statusBar().showMessage(f"✓ Magnetization vectors plotted. If nothing is visible increase vector scale.")
                     
             except Exception as e:
                 self.statusBar().showMessage(f"✗ Error adding magnetization vectors: {e}")
