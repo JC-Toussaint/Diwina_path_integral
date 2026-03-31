@@ -960,6 +960,7 @@ try:
             """Save YAML configuration and launch pathIntegral executable """
             self.save_yaml_config()
             if self.outputFileName != "noneYet":
+                self.compute_btn.setEnabled(False)
                 self.statusBar().showMessage(f"✓ YAML file saved: {self.outputFileName}, launch ray-tracing computations ...")
                 self.lastLog = open("lastLog.log","wb")
                 self.lastErr = open("lastErr.log","wb")
@@ -971,6 +972,7 @@ try:
                 self.process.start("pathIntegral",[self.outputFileName])
             else:
                 self.statusBar().showMessage("Error: .sol not yet selected.")
+                self.compute_btn.setEnabled(True)
 
         def process_failed_to_start(self):
             ''' tell the user we could not start the program '''
@@ -983,6 +985,7 @@ try:
             self.lastLog.close()
             self.lastErr.close()
             self.flagComputed = True
+            self.compute_btn.setEnabled(True)
             self.update_mesh()
 
         def handle_pathIntegral_stdout(self):
