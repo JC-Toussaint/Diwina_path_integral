@@ -12,20 +12,22 @@ import pyvista as pv
 from pyvistaqt import QtInteractor
 from typing import Any, Dict, List, Union
 
-strHelp = "Workflow:\n"
-strHelp += "Select your .sol file from browse .sol button\n"
-strHelp += "Adjust rotation angles and axis\n"
-strHelp += "Adjust Sensor zoom and pixel size\n"
-strHelp += "\tzoom parameter is the ratio between cross-section of the object and the detector size.\n"
-strHelp += "\tIt must be in ]0,1]\n"
-strHelp += "\nPress compute button\n"
-strHelp += "\tBoth holographic phase and xmcd are computed\n"
-strHelp += "\tThe 3D renderer updates with either holographic phase or XMCD contrast once computation is finished\n"
-strHelp += "\tWhen 3D renderer has the focus, pressing w key turns wireframe on\n"
-strHelp += "\tpressing s key returns to solidframe on\n"
-strHelp += "\tYou might see a preview of holographic phase or XMCD contrast in their respective panels\n"
-strHelp += "\n.out text files are tab separated value text files\n"
-strHelp += "images are unsigned int 16 bits grey pngs\n"
+strHelp = """Workflow:
+Select your .sol file from browse .sol button
+Adjust rotation angles and axis
+Adjust Sensor zoom and pixel size
+	zoom parameter is the ratio between the projected object and the sensor size.
+	It must be in (0,1]
+
+Press compute button
+	Both holographic phase and xmcd are computed
+	The 3D renderer updates with either holographic phase or XMCD contrast once computation is finished
+	When 3D renderer has the focus, pressing w key turns wireframe on
+	pressing s key returns to solidframe on
+	You might see a preview of holographic phase or XMCD contrast in their respective panels
+
+.out text files are tab separated value text files
+images are unsigned int 16 bits grey pngs"""
 
 def has_nvidia_gpu():
     ''' ask nvidia-smi if there is any nvidia GPU with proprietary driver, return true if any '''
@@ -568,7 +570,7 @@ try:
 
             zoomAndPixelSize_layout.addWidget(QLabel("Zoom:"))
             self.zoom_input = QLineEdit(str(self.yaml_config['detector']['zoom']))
-            self.zoom_input.setToolTip("aspect ratio: size(object)/size(sensor), between 0 and 1")
+            self.zoom_input.setToolTip("ratio: size(projected object)/size(sensor), between 0 and 1")
             zoomAndPixelSize_layout.addWidget(self.zoom_input)
             self.zoom_input.editingFinished.connect(self.onZoomChanged)
             self.zoom_input.editingFinished.connect(self.update_mesh)
