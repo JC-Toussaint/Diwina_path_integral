@@ -1,0 +1,50 @@
+name: tests
+
+on: [pull_request, push, repository_dispatch]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v6
+
+    - name: install APT packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install git cmake pkgconf g++ libgmsh-dev \
+            libeigen3-dev libtbb-dev libyaml-cpp-dev duktape-dev \
+            libfftw3-dev libopenblas-dev libpng-dev libcgal-dev \
+            python3-numpy python3-gmsh
+
+    - name: install ScalFMM
+      run: |
+        mkdir -p ~/src
+        cd ~/src
+        git clone --depth 1 --recurse-submodules \
+            https://gitlab.inria.fr/solverstack/ScalFMM.git
+        cd ScalFMM
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        make -j $(nproc)
+        sudo make install
+
+    - name: install feeLLGood Python modules
+      run: |
+        cd ~/src
+        git clone --branch v0.10.4 --depth 1 \
+            https://github.com/feellgood/FeeLLGood.git
+        py_version=$(python3 --version | sed -E 's/.* (3\.[0-9]+)\..*/\1/')
+        target="/usr/local/lib/python$py_version/dist-packages/feellgood"
+        sudo mkdir $target
+        sudo cp FeeLLGood/python-modules/* $target/
+
+    - name: build
+      run: |
+        cmake .
+        make -j $(nproc)
+
+    - name: run basic test
+      run: ./smoke-test.py
