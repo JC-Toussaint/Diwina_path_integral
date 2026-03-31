@@ -32,6 +32,8 @@ if(val.returncode == 0):
     with open("smoke-test_M_integrals.out",'r') as f:
         nb_lig = 0;
         for line in f:
+            if line.startswith("#"):
+                continue
             if (nb_lig <num_ref_line):
                 nb_lig += 1
                 pass
