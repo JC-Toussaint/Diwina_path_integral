@@ -23,6 +23,6 @@ filled: false
 electrostatics:
   CE: 0
   V : 0
-detector:
+sensor:
   zoom: 0.5
   meshSize: 5e-9

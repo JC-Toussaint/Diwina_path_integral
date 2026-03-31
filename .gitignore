@@ -16,7 +16,7 @@ glue.mod
 /examples/**/*.msh
 
 # Smoke test
-detector.msh
+sensor.msh
 smoke-test.msh
 smoke-test_HOLO_PHASE.png
 smoke-test_Holo.out

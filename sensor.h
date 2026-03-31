@@ -1,15 +1,15 @@
-#ifndef detector_h
-#define detector_h
+#ifndef sensor_h
+#define sensor_h
 
 #include <vector>
 #include "config.h"
 
-/** \struct DETECTOR
+/** \struct SENSOR
  */
 
-struct DETECTOR
+struct SENSOR
     {
-    /** \f$ zoomFactor \f$ for detector image  */
+    /** \f$ zoomFactor \f$ for image sensor */
     double zoomFactor;
 
     /** \f$ meshSize \f$ for 2d regular triangular mesh   */

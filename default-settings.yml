@@ -93,7 +93,7 @@ electrostatics:
   CE: 0.0
   V : 0.0
 
-# detector zoom and resolution
-detector:
+# sensor zoom and resolution
+sensor:
   zoom: 1
   meshSize: 1e-9

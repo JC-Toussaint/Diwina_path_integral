@@ -20,6 +20,6 @@ rotations:
   angle2: 0
   axe2: [0, 0, 1]
 filled: false
-detector:
+sensor:
   zoom: 0.5
   meshSize: 0.5e-9

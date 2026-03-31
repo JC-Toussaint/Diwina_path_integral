@@ -126,8 +126,8 @@ public:
 
     inline void infos(void) const
         {
-        std::cout << "Detector : " << std::endl;
-        std::cout << "-- detector mesh -- number of nodes : " << node.size() << std::endl;
+        std::cout << "Sensor : " << std::endl;
+        std::cout << "-- sensor mesh -- number of nodes : " << node.size() << std::endl;
         std::cout << "-- meshSize : " << meshSize << std::endl;
 	    std::cout << "-- zoom     : " << zoomFactor << std::endl;
         }

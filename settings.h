@@ -18,7 +18,7 @@ output file format wanted by the user. This is done mainly with the class Settin
 #include "facette.h"
 #include "rotation.h"
 #include "electrostatics.h"
-#include "detector.h"
+#include "sensor.h"
 #include "tetra.h"
 
 /** \class Settings
@@ -98,8 +98,8 @@ public:
     /** electrostatics parameters */
     ELECTROSTATICS p_electrostatics;
 
-    /** detector parameters */
-    DETECTOR p_detector;
+    /** sensor parameters */
+    SENSOR p_sensor;
     
     /** input file name for continuing a calculation (sol.in) */
     std::string restoreFileName;

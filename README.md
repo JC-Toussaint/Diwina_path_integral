@@ -167,7 +167,7 @@ rotations:
   angle2: 0
   axe2: [0, 0, 1]
 filled: false
-detector:
+sensor:
   zoom: 0.5
   meshSize: 1.0e-9
 ```
@@ -179,7 +179,7 @@ for left- and right-circular polarizations in nanometers.
 The micromagnetic system can be rotated along two axes (i.e., axis1 and axis2) by specifying the rotation angles (i.e., angle1 and angle2) in degrees.
 The filled flag is not relevant for a sphere entirely made of magnetic material. However, it is
 relevant for tubes filled with a non-magnetic material, such as copper (TO CHECK).
-Finally, the holographic phase image is calculated at any point on a grid called the detector. Since its dimensions must be larger than those of the projected system, the zoom parameter must be less than 1. The resolution is determined by the meshSize parameter.
+Finally, the holographic phase image is calculated at any point on a grid called the sensor. Since its dimensions must be larger than those of the projected system, the zoom parameter must be less than 1. The resolution is determined by the meshSize parameter.
 
 ## Launch pathIntegral graphic interface
 

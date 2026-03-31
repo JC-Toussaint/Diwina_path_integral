@@ -281,9 +281,9 @@ def check_input(yaml_config):
         checkSum += 1
     else:
         missingStuffs.append("filled")
-    if 'detector' in yaml_config:
+    if 'sensor' in yaml_config:
         checkSum += 1
-        det = yaml_config['detector']
+        det = yaml_config['sensor']
         if 'zoom' in det:
             checkSum += 1
         else:
@@ -293,7 +293,7 @@ def check_input(yaml_config):
         else:
             missingsStuffs.append("meshSize")
     else:
-        missingStuffs.append("detector")
+        missingStuffs.append("sensor")
     check_bool = (checkSum == 10)
 
     return missingStuffs, check_bool
@@ -403,7 +403,7 @@ try:
             self.inputFileName = yaml_file
             helloMessage, self.yaml_config = load_yaml_from_file(yaml_file)
             print(helloMessage)
-            self.zoom = self.yaml_config['detector']['zoom']
+            self.zoom = self.yaml_config['sensor']['zoom']
             self.outputFileName =  "noneYet"
             self.flagComputed = False
             self.whatSensor = "Holo"
@@ -569,13 +569,13 @@ try:
             zoomAndPixelSize_layout = QHBoxLayout()
 
             zoomAndPixelSize_layout.addWidget(QLabel("Zoom:"))
-            self.zoom_input = QLineEdit(str(self.yaml_config['detector']['zoom']))
+            self.zoom_input = QLineEdit(str(self.yaml_config['sensor']['zoom']))
             self.zoom_input.setToolTip("ratio: size(projected object)/size(sensor), between 0 and 1")
             zoomAndPixelSize_layout.addWidget(self.zoom_input)
             self.zoom_input.editingFinished.connect(self.onZoomChanged)
             self.zoom_input.editingFinished.connect(self.update_mesh)
 
-            self.meshsize_input = QLineEdit(str(self.yaml_config['detector']['meshSize']))
+            self.meshsize_input = QLineEdit(str(self.yaml_config['sensor']['meshSize']))
             self.meshsize_input.setToolTip("sensor pixel size in meters")
             zoomAndPixelSize_layout.addWidget(QLabel("pixel size [m]:"))
             zoomAndPixelSize_layout.addWidget(self.meshsize_input)
@@ -666,12 +666,12 @@ try:
             if self.zoom>1.0:
                 self.zoom=1.0
             self.zoom_input.setText(str(self.zoom))
-            self.yaml_config['detector']['zoom'] = self.zoom
+            self.yaml_config['sensor']['zoom'] = self.zoom
             self.update_yaml_display()
 
         def onMeshSizeChanged(self):
             lineEdit = self.sender()
-            self.yaml_config['detector']['meshSize'] = float(lineEdit.text())
+            self.yaml_config['sensor']['meshSize'] = float(lineEdit.text())
             self.update_yaml_display()
 
         def update_images(self, index):
@@ -740,8 +740,8 @@ try:
                 self.yaml_config['filled'] = False
             self.yaml_config['filled'] = self.filled_checkbox.isChecked()
 
-            if 'detector' not in self.yaml_config:
-                self.yaml_config['detector'] = {}
+            if 'sensor' not in self.yaml_config:
+                self.yaml_config['sensor'] = {}
             
             yaml_text = yaml_dump(self.yaml_config)
             self.yaml_display.setPlainText(yaml_text)
