@@ -625,6 +625,10 @@ try:
             xmcdContrast_layout = QVBoxLayout(xmcdContrast_panel)
             self.xmcd_label_image = QLabel(xmcdContrast_panel)
 
+            thickness_panel =QWidget()
+            thickness_layout = QVBoxLayout(thickness_panel)
+            self.thickness_image = QLabel(thickness_panel)
+
             help_panel = QWidget()
             help_layout = QVBoxLayout()
             self.help_label = QTextEdit(help_panel)
@@ -636,6 +640,7 @@ try:
             right_visualizations.addTab(right_panel,"3D")
             right_visualizations.addTab(holoPhase_panel,"Holographic phase")
             right_visualizations.addTab(xmcdContrast_panel,"XMCD contrast")
+            right_visualizations.addTab(thickness_panel,"Intersection(ray,object)")
             right_visualizations.addTab(help_panel,"Help")
             right_visualizations.tabBarClicked.connect(self.update_images)
 
@@ -692,6 +697,12 @@ try:
                         self.xmcd_label_image.setPixmap(xmcd_qpixmap)
                     else:
                         self.xmcd_label_image.setText("No png file")
+                elif index == 3: #PATH_LENGTH
+                    thickness_qpixmap = QPixmap("./sim_PATH_LENGTH.png")
+                    if not thickness_qpixmap.isNull():
+                        self.thickness_image.setGeometry(thickness_qpixmap.rect())
+                        self.thickness_image.setPixmap(thickness_qpixmap)
+
             else:
                 self.statusBar().showMessage("no computed pngs yet.")
 
