@@ -20,11 +20,12 @@ Adjust Sensor zoom and pixel size
 	It must be in (0,1]
 
 Press compute button
-	Both holographic phase and xmcd are computed
+	Both holographic phase, xmcd and thickness map are computed
 	The 3D renderer updates with either holographic phase or XMCD contrast once computation is finished
-	When 3D renderer has the focus, pressing w key turns wireframe on
-	pressing s key returns to solidframe on
-	You might see a preview of holographic phase or XMCD contrast in their respective panels
+	When 3D renderer has the focus
+        pressing w key turns wireframe on
+	    pressing s key returns to solidframe on
+	You might see a preview of holographic phase, XMCD contrast or thickness map in their respective panels
 
 .out text files are tab separated value text files
 images are unsigned int 16 bits grey pngs"""
@@ -640,7 +641,7 @@ try:
             right_visualizations.addTab(right_panel,"3D")
             right_visualizations.addTab(holoPhase_panel,"Holographic phase")
             right_visualizations.addTab(xmcdContrast_panel,"XMCD contrast")
-            right_visualizations.addTab(thickness_panel,"Intersection(ray,object)")
+            right_visualizations.addTab(thickness_panel,"Thickness map")
             right_visualizations.addTab(help_panel,"Help")
             right_visualizations.tabBarClicked.connect(self.update_images)
 
