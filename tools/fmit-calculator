@@ -594,6 +594,7 @@ try:
             basename_layout = QHBoxLayout()
             basename_layout.addWidget(QLabel("file base name:"))
             self.fileBaseName_input = QLineEdit(self.yaml_config['outputs']['file_basename'])
+            self.fileBaseName_input.setToolTip("output files will be prefixed with file_basename")
             basename_layout.addWidget(self.fileBaseName_input)
             self.fileBaseName_input.editingFinished.connect(self.onFileBaseNameChanged)
             outputFiles_layout.addLayout(basename_layout)
