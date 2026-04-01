@@ -621,7 +621,7 @@ try:
             left_layout.setSpacing(2)
 
             # === Right Panel: Tabbed visualizations: 3D,Holo,XMCD,Help ===
-            right_visualizations = QTabWidget()
+            self.right_visualizations = QTabWidget()
             right_panel = QWidget()
             right_layout = QVBoxLayout(right_panel)
 
@@ -649,15 +649,17 @@ try:
             self.help_label.setText(strHelp)
             help_panel.setLayout(help_layout)
 
-            right_visualizations.addTab(right_panel,"3D")
-            right_visualizations.addTab(holoPhase_panel,"Holographic phase")
-            right_visualizations.addTab(xmcdContrast_panel,"XMCD contrast")
-            right_visualizations.addTab(thickness_panel,"Thickness map")
-            right_visualizations.addTab(help_panel,"Help")
-            right_visualizations.tabBarClicked.connect(self.update_images)
+            self.right_visualizations.addTab(right_panel,"3D")
+            self.right_visualizations.addTab(holoPhase_panel,"Holographic phase")
+            self.right_visualizations.addTab(xmcdContrast_panel,"XMCD contrast")
+            self.right_visualizations.addTab(thickness_panel,"Thickness map")
+            for i in [1,2,3]:
+                self.right_visualizations.setTabEnabled(i,False)
+            self.right_visualizations.addTab(help_panel,"Help")
+            self.right_visualizations.tabBarClicked.connect(self.update_images)
 
             main_splitter.addWidget(left_panel)
-            main_splitter.addWidget(right_visualizations)
+            main_splitter.addWidget(self.right_visualizations)
             main_splitter.setSizes([minLeftPanelWidth, 900])
 
             self.update_yaml_display()
@@ -1019,6 +1021,8 @@ try:
             self.lastErr.close()
             self.flagComputed = True
             self.compute_btn.setEnabled(True)
+            for i in [1,2,3]:
+                self.right_visualizations.setTabEnabled(i,True)
             self.update_mesh()
 
         def handle_pathIntegral_stdout(self):
