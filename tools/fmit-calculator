@@ -587,13 +587,23 @@ try:
             sensor_layout.setSpacing(2)
             left_layout.addWidget(sensor_group)
 
-            # yaml text view
-            left_layout.addWidget(QLabel("YAML output file:"))
+            # output files group
+            outputFiles_group = QGroupBox("Output files")
+            outputFiles_layout = QVBoxLayout(outputFiles_group)
+
+            basename_layout = QHBoxLayout()
+            basename_layout.addWidget(QLabel("file base name:"))
+            self.fileBaseName_input = QLineEdit(self.yaml_config['outputs']['file_basename'])
+            basename_layout.addWidget(self.fileBaseName_input)
+            self.fileBaseName_input.editingFinished.connect(self.onFileBaseNameChanged)
+            outputFiles_layout.addLayout(basename_layout)
+            outputFiles_layout.addWidget(QLabel("YAML:"))
             self.yaml_display = QTextEdit()
             self.yaml_display.setToolTip("yaml that will be used to do the ray-tracing computation")
             self.yaml_display.setReadOnly(True)
+            outputFiles_layout.addWidget(self.yaml_display)
             self.highlighter = YAMLSyntaxHighlighter(self.yaml_display.document())
-            left_layout.addWidget(self.yaml_display, 1)
+            left_layout.addWidget(outputFiles_group, stretch = 1)#left_layout.addWidget(self.yaml_display, 1)
 
             button_layout = QHBoxLayout()
             self.save_yaml_btn = QPushButton("Save YAML")
@@ -651,6 +661,17 @@ try:
 
             self.update_yaml_display()
             self.load_mesh_from_config()
+
+        def onFileBaseNameChanged(self):
+            lineEdit = self.sender()
+            newBaseName = lineEdit.text()
+            if newBaseName == "":
+                newBaseName = "sim"
+                self.statusBar().showMessage("file base name should not be empty")
+            else:
+                self.statusBar().showMessage("")
+            self.yaml_config['outputs']['file_basename'] = newBaseName
+            self.update_yaml_display()
 
         def onFilledChanged(self):
             checkedBox = self.sender()
