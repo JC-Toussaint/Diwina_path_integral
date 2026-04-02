@@ -423,7 +423,9 @@ try:
             main_splitter = QSplitter(Qt.Horizontal)
             central_widget.setLayout(QHBoxLayout())
             central_widget.layout().addWidget(main_splitter)
+            central_widget.layout().setContentsMargins(2,2,2,2)
             minLeftPanelWidth = 333
+            spacing = 2
 
         # === Left Panel ===
             left_panel = QFrame()
@@ -442,6 +444,7 @@ try:
             self.sol_btn.clicked.connect(self.select_sol_file)
             sol_layout.addWidget(self.sol_btn)
             sol_layout.addWidget(self.sol_label)
+            sol_layout.setSpacing(spacing)
 
             #magnetization 3D view parameters
             vector_layout = QHBoxLayout()
@@ -464,7 +467,7 @@ try:
 
             magnetization_layout.addLayout(sol_layout)
             magnetization_layout.addLayout(vector_layout)
-            magnetization_layout.setSpacing(2)
+            magnetization_layout.setSpacing(spacing)
 
             left_layout.addWidget(magnetization_group)
 
@@ -524,7 +527,7 @@ try:
             axe2_layout.addLayout(axis_input_layout)
             rotation_layout.addLayout(axe2_layout)
         
-            rotation_layout.setSpacing(2)
+            rotation_layout.setSpacing(spacing)
 
             left_layout.addWidget(rotation_group)
 
@@ -546,7 +549,7 @@ try:
             self.filled_checkbox.stateChanged.connect(self.onFilledChanged)
             material_layout.addWidget(self.filled_checkbox)
 
-            material_layout.setSpacing(2)
+            material_layout.setSpacing(spacing)
 
             left_layout.addWidget(material_group)
 
@@ -584,7 +587,7 @@ try:
             self.meshsize_input.editingFinished.connect(self.onMeshSizeChanged)
             sensor_layout.addLayout(zoomAndPixelSize_layout)
 
-            sensor_layout.setSpacing(2)
+            sensor_layout.setSpacing(spacing)
             left_layout.addWidget(sensor_group)
 
             # output files group
@@ -603,9 +606,11 @@ try:
             self.yaml_display.setToolTip("yaml that will be used to do the ray-tracing computation")
             self.yaml_display.setReadOnly(True)
             outputFiles_layout.addWidget(self.yaml_display)
+            outputFiles_layout.setSpacing(spacing)
             self.highlighter = YAMLSyntaxHighlighter(self.yaml_display.document())
             left_layout.addWidget(outputFiles_group, stretch = 1)
 
+            # save yaml and compute buttons
             button_layout = QHBoxLayout()
             self.save_yaml_btn = QPushButton("Save YAML")
             self.save_yaml_btn.setToolTip("Save YAML to file")
@@ -617,8 +622,8 @@ try:
             button_layout.addWidget(self.compute_btn)
             left_layout.addLayout(button_layout)
 
-            left_layout.setContentsMargins(0,0,0,0)
-            left_layout.setSpacing(2)
+            left_layout.setContentsMargins(2,2,2,2)
+            left_layout.setSpacing(spacing)
 
             # === Right Panel: Tabbed visualizations: 3D,Holo,XMCD,Help ===
             self.right_visualizations = QTabWidget()
@@ -628,7 +633,9 @@ try:
             self.plotter = QtInteractor(self) # QtInteractor comes from pyvista
             self.plotter.enable_parallel_projection()
             self.plotter.set_background("white")
-            right_layout.addWidget(self.plotter.interactor)
+            right_layout.addWidget(self.plotter.interactor,stretch=1)
+            #right_layout.setContentsMargins(0,0,0,0)
+            right_layout.setSpacing(spacing)
 
             holoPhase_panel = QWidget()
             holoPhase_layout = QVBoxLayout(holoPhase_panel)
@@ -674,6 +681,7 @@ try:
             if newBaseName == "":
                 newBaseName = "sim"
                 self.statusBar().showMessage("file base name should not be empty")
+                lineEdit.setText("sim")
             else:
                 self.statusBar().showMessage("")
             self.yaml_config['outputs']['file_basename'] = newBaseName
@@ -711,22 +719,23 @@ try:
         def update_images(self, index):
             ''' update the clicked tabbed widget with pixmap of the corresponding png file '''
             if self.flagComputed:
+                fileBaseName = self.yaml_config['outputs']['file_basename']
                 if index == 1: #HOLO
-                    holo_qpixmap =  QPixmap("./sim_HOLO_PHASE.png")
+                    holo_qpixmap =  QPixmap("./" + fileBaseName + "_HOLO_PHASE.png")
                     if not holo_qpixmap.isNull():
                         self.holo_label_image.setGeometry(holo_qpixmap.rect())
                         self.holo_label_image.setPixmap(holo_qpixmap)
                     else:
                         self.holo_label_image.setText("No png file")
                 elif index == 2: #XMCD
-                    xmcd_qpixmap = QPixmap("./sim_STXM_XMCD.png")
+                    xmcd_qpixmap = QPixmap("./" + fileBaseName + "_STXM_XMCD.png")
                     if not xmcd_qpixmap.isNull():
                         self.xmcd_label_image.setGeometry(xmcd_qpixmap.rect())
                         self.xmcd_label_image.setPixmap(xmcd_qpixmap)
                     else:
                         self.xmcd_label_image.setText("No png file")
                 elif index == 3: #PATH_LENGTH
-                    thickness_qpixmap = QPixmap("./sim_PATH_LENGTH.png")
+                    thickness_qpixmap = QPixmap("./" + fileBaseName + "_PATH_LENGTH.png")
                     if not thickness_qpixmap.isNull():
                         self.thickness_image.setGeometry(thickness_qpixmap.rect())
                         self.thickness_image.setPixmap(thickness_qpixmap)
@@ -744,6 +753,8 @@ try:
                 import pathlib
                 fileName = pathlib.Path(path)
                 self.sol_label.setText(fileName.name)
+                self.yaml_config['initial_magnetization'] = fileName.name
+                self.update_yaml_display()
                 self.statusBar().showMessage("✓ .sol file " + path + " selected.")
                 try:
                     self.magnetization_data = load_sol_file(path)
@@ -985,10 +996,11 @@ try:
             """ Work In Progress """
             if self.flagComputed:
                 imageFileToRead = ""
+                fileBaseName = self.yaml_config['outputs']['file_basename']
                 if self.whatSensor == "XMCD":
-                    imageFileToRead = "./sim_STXM_XMCD.png"
+                    imageFileToRead = "./" + fileBaseName + "_STXM_XMCD.png"
                 else:
-                    imageFileToRead = "./sim_HOLO_PHASE.png"
+                    imageFileToRead = "./" + fileBaseName + "_HOLO_PHASE.png"
                 sim_image = pv.read(imageFileToRead)
                 actor = self.plotter.add_mesh(sim_image,cmap='grey',show_scalar_bar= False)
                 actor.position = (self.imageCenterX,self.imageCenterY,self.imageCenterZ)
