@@ -106,8 +106,8 @@ class Fem2d
 {
 public:
 	/** constructor */
-	Fem2d(Eigen::Vector3d &_c, Eigen::Vector3d &_l, double _CE, double _V, double _zoomFactor, double _meshSize):
-		zoomFactor(_zoomFactor), meshSize(_meshSize), CE(_CE), V(_V)
+	Fem2d(Eigen::Vector3d &_c, Eigen::Vector3d &_l, double _CE, double _V, double _zoomFactor, double _pixel_size):
+		zoomFactor(_zoomFactor), pixel_size(_pixel_size), CE(_CE), V(_V)
 	    {
 	    double xmin = _c[0] - _l[0]/(2.0*zoomFactor);
 	    double xmax = _c[0] + _l[0]/(2.0*zoomFactor);
@@ -120,7 +120,7 @@ public:
 		l = Eigen::Vector2d(xymax-xymin, xymax-xymin);
 		diam = l.maxCoeff();
 		c = Eigen::Vector2d(0.5 * (xymax + xymin), 0.5 * (xymax + xymin));
-		grid_generator(xymin, xymax, meshSize);
+		grid_generator(xymin, xymax, pixel_size);
 		chapeaux();
 	    }
 
@@ -128,7 +128,7 @@ public:
         {
         std::cout << "Sensor : " << std::endl;
         std::cout << "-- sensor mesh -- number of nodes : " << node.size() << std::endl;
-        std::cout << "-- meshSize : " << meshSize << std::endl;
+        std::cout << "-- pixel_size : " << pixel_size << std::endl;
 	    std::cout << "-- zoom     : " << zoomFactor << std::endl;
         }
 
@@ -192,7 +192,7 @@ public:
 	double zoomFactor;
 	
 	/** triangular mesh size */
-	double meshSize;
+	double pixel_size;
 	
 	double surf;
 	
@@ -215,18 +215,18 @@ private:
 	 * and triangles connecting the nodes to form a plane.
 	 * Nodes and triangle indices are stored in the corresponding containers.
 	 */
-	void grid_generator(double xymin, double xymax, double meshSize)
+	void grid_generator(double xymin, double xymax, double pixel_size)
 	    {
-		int Nx = static_cast<int>((xymax - xymin) / meshSize + 0.5) + 1;
-		int Ny = static_cast<int>((xymax - xymin) / meshSize + 0.5) + 1;		
+		int Nx = static_cast<int>((xymax - xymin) / pixel_size + 0.5) + 1;
+		int Ny = static_cast<int>((xymax - xymin) / pixel_size + 0.5) + 1;		
 		auto index = [&Nx](int i, int j) -> int { return j * Nx + i; };  // zero based numbering
 		
 		// Creation de nodes
 		for (int ix = 0; ix < Nx; ++ix) {
 			for (int iy = 0; iy < Ny; ++iy) {
 				Node2d node_{};
-				node_.p[0] = xymin + meshSize * ix;
-				node_.p[1] = xymin + meshSize * iy;
+				node_.p[0] = xymin + pixel_size * ix;
+				node_.p[1] = xymin + pixel_size * iy;
 				node_.p[2] = 0.0;
 				node.push_back(node_);
 			}

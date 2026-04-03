@@ -133,7 +133,7 @@ void Settings::infos()
     std::cout << "  V: "  << p_electrostatics.V  << "\n";
     std::cout << "sensor:\n";
     std::cout << "  zoom: " << p_sensor.zoomFactor << "\n";
-    std::cout << "  meshSize: " << p_sensor.meshSize << "\n";
+    std::cout << "  pixel_size: " << p_sensor.pixel_size << "\n";
     }
 
 void Settings::read(YAML::Node yaml)
@@ -267,7 +267,7 @@ void Settings::read(YAML::Node yaml)
     if (sensor)
        {
        assign(p_sensor.zoomFactor, sensor["zoom"]);
-       assign(p_sensor.meshSize, sensor["meshSize"]);
+       assign(p_sensor.pixel_size, sensor["pixel_size"]);
        }
 
     // outputs.file_basename defaults to base name of mesh.filename.

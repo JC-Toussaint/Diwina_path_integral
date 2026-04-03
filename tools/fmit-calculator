@@ -290,10 +290,10 @@ def check_input(yaml_config):
             checkSum += 1
         else:
             missingStuffs.append("zoom")
-        if 'meshSize' in det:
+        if 'pixel_size' in det:
             checkSum += 1
         else:
-            missingsStuffs.append("meshSize")
+            missingsStuffs.append("pixel_size")
     else:
         missingStuffs.append("sensor")
     check_bool = (checkSum == 10)
@@ -580,11 +580,11 @@ try:
             self.zoom_input.editingFinished.connect(self.onZoomChanged)
             self.zoom_input.editingFinished.connect(self.update_mesh)
 
-            self.meshsize_input = QLineEdit(str(self.yaml_config['sensor']['meshSize']))
-            self.meshsize_input.setToolTip("sensor pixel size in meters")
+            self.pixel_size_input = QLineEdit(str(self.yaml_config['sensor']['pixel_size']))
+            self.pixel_size_input.setToolTip("sensor pixel size in meters")
             zoomAndPixelSize_layout.addWidget(QLabel("pixel size [m]:"))
-            zoomAndPixelSize_layout.addWidget(self.meshsize_input)
-            self.meshsize_input.editingFinished.connect(self.onMeshSizeChanged)
+            zoomAndPixelSize_layout.addWidget(self.pixel_size_input)
+            self.pixel_size_input.editingFinished.connect(self.onPixelSizeChanged)
             sensor_layout.addLayout(zoomAndPixelSize_layout)
 
             sensor_layout.setSpacing(spacing)
@@ -711,9 +711,9 @@ try:
             self.yaml_config['sensor']['zoom'] = self.zoom
             self.update_yaml_display()
 
-        def onMeshSizeChanged(self):
+        def onPixelSizeChanged(self):
             lineEdit = self.sender()
-            self.yaml_config['sensor']['meshSize'] = float(lineEdit.text())
+            self.yaml_config['sensor']['pixel_size'] = float(lineEdit.text())
             self.update_yaml_display()
 
         def update_images(self, index):

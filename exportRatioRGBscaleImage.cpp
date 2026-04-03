@@ -106,7 +106,7 @@ int Fem2d::handleRGBexport(const Settings &settings, ExportType eType, const std
         .width = N,
         .height = N,
         .pixels = pixels,
-        .pixel_size = meshSize,
+        .pixel_size = pixel_size,
         .unit = unit,
         .metadata = {
             {"Software", "pathIntegral"},

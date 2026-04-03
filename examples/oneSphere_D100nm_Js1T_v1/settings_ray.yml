@@ -219,5 +219,5 @@ electrostatics:
 # sensor zoom and resolution
 sensor:
   zoom: 0.5
-  meshSize: 1e-9
+  pixel_size: 1e-9
 
