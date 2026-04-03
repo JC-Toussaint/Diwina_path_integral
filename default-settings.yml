@@ -93,7 +93,7 @@ electrostatics:
   CE: 0.0
   V : 0.0
 
-# sensor zoom and resolution
+# sensor size and resolution
 sensor:
-  zoom: 1
+  relative_size: 1
   pixel_size: 1e-9

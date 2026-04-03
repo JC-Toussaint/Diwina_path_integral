@@ -9,8 +9,8 @@
 
 struct SENSOR
     {
-    /** \f$ zoomFactor \f$ for image sensor */
-    double zoomFactor;
+    /** \f$ relative_size \f$ for image sensor */
+    double relative_size;
 
     /** \f$ pixel_size \f$ for 2d regular triangular mesh   */
     double pixel_size;

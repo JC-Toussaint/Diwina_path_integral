@@ -132,7 +132,7 @@ void Settings::infos()
     std::cout << "  CE: " << p_electrostatics.CE << "\n";
     std::cout << "  V: "  << p_electrostatics.V  << "\n";
     std::cout << "sensor:\n";
-    std::cout << "  zoom: " << p_sensor.zoomFactor << "\n";
+    std::cout << "  relative_size: " << p_sensor.relative_size << "\n";
     std::cout << "  pixel_size: " << p_sensor.pixel_size << "\n";
     }
 
@@ -266,7 +266,7 @@ void Settings::read(YAML::Node yaml)
     YAML::Node sensor = yaml["sensor"];
     if (sensor)
        {
-       assign(p_sensor.zoomFactor, sensor["zoom"]);
+       assign(p_sensor.relative_size, sensor["relative_size"]);
        assign(p_sensor.pixel_size, sensor["pixel_size"]);
        }
 
