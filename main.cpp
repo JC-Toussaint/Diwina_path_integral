@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
     PathInt::pathIntegral myStuff(fem.msh,mySettings.filled);
 
 	Fem2d fem2d(fem.msh.c, fem.msh.l, mySettings.p_electrostatics.CE,   mySettings.p_electrostatics.V, 
-					  mySettings.p_sensor.zoomFactor, mySettings.p_sensor.pixel_size);
+					  mySettings.p_sensor.relative_size, mySettings.p_sensor.pixel_size);
 	fem2d.infos();
 
 	std::vector<int> nodeIndices(fem2d.getNbNodes());

@@ -15,9 +15,9 @@ from typing import Any, Dict, List, Union
 strHelp = """Workflow:
 Select your .sol file from browse .sol button
 Adjust rotation angles and axis
-Adjust Sensor zoom and pixel size
-	zoom parameter is the ratio between the projected object and the sensor size.
-	It must be in (0,1]
+Adjust Sensor relative size and pixel size
+	relative_size parameter is the ratio between the sensor size and the projected object.
+	It must be larger than or equal to 1
 
 Press compute button
 	Both holographic phase, xmcd and thickness map are computed
@@ -286,10 +286,10 @@ def check_input(yaml_config):
     if 'sensor' in yaml_config:
         checkSum += 1
         det = yaml_config['sensor']
-        if 'zoom' in det:
+        if 'relative_size' in det:
             checkSum += 1
         else:
-            missingStuffs.append("zoom")
+            missingStuffs.append("relative_size")
         if 'pixel_size' in det:
             checkSum += 1
         else:
@@ -405,7 +405,7 @@ try:
             self.inputFileName = yaml_file
             helloMessage, self.yaml_config = load_yaml_from_file(yaml_file)
             print(helloMessage)
-            self.zoom = self.yaml_config['sensor']['zoom']
+            self.sensor_size = self.yaml_config['sensor']['relative_size']
             self.outputFileName =  "noneYet"
             self.flagComputed = False
             self.whatSensor = "Holo"
@@ -571,21 +571,21 @@ try:
             radioButton_layout.addWidget(radioButton)
             sensor_layout.addLayout(radioButton_layout)
 
-            zoomAndPixelSize_layout = QHBoxLayout()
+            sensorAndPixelSize_layout = QHBoxLayout()
 
-            zoomAndPixelSize_layout.addWidget(QLabel("Zoom:"))
-            self.zoom_input = QLineEdit(str(self.yaml_config['sensor']['zoom']))
-            self.zoom_input.setToolTip("ratio: size(projected object)/size(sensor), between 0 and 1")
-            zoomAndPixelSize_layout.addWidget(self.zoom_input)
-            self.zoom_input.editingFinished.connect(self.onZoomChanged)
-            self.zoom_input.editingFinished.connect(self.update_mesh)
+            sensorAndPixelSize_layout.addWidget(QLabel("relative size:"))
+            self.size_input = QLineEdit(str(self.yaml_config['sensor']['relative_size']))
+            self.size_input.setToolTip("ratio: size(sensor)/size(projected object), ≥ 1")
+            sensorAndPixelSize_layout.addWidget(self.size_input)
+            self.size_input.editingFinished.connect(self.onSensorSizeChanged)
+            self.size_input.editingFinished.connect(self.update_mesh)
 
             self.pixel_size_input = QLineEdit(str(self.yaml_config['sensor']['pixel_size']))
             self.pixel_size_input.setToolTip("sensor pixel size in meters")
-            zoomAndPixelSize_layout.addWidget(QLabel("pixel size [m]:"))
-            zoomAndPixelSize_layout.addWidget(self.pixel_size_input)
+            sensorAndPixelSize_layout.addWidget(QLabel("pixel size [m]:"))
+            sensorAndPixelSize_layout.addWidget(self.pixel_size_input)
             self.pixel_size_input.editingFinished.connect(self.onPixelSizeChanged)
-            sensor_layout.addLayout(zoomAndPixelSize_layout)
+            sensor_layout.addLayout(sensorAndPixelSize_layout)
 
             sensor_layout.setSpacing(spacing)
             left_layout.addWidget(sensor_group)
@@ -702,13 +702,13 @@ try:
                 if self.flagComputed:
                     self.update_mesh()
 
-        def onZoomChanged(self):
+        def onSensorSizeChanged(self):
             lineEdit = self.sender()
-            self.zoom = float(lineEdit.text())
-            if self.zoom>1.0:
-                self.zoom=1.0
-            self.zoom_input.setText(str(self.zoom))
-            self.yaml_config['sensor']['zoom'] = self.zoom
+            self.sensor_size = float(lineEdit.text())
+            if self.sensor_size<1.0:
+                self.sensor_size=1.0
+            self.size_input.setText(str(self.sensor_size))
+            self.yaml_config['sensor']['relative_size'] = self.sensor_size
             self.update_yaml_display()
 
         def onPixelSizeChanged(self):
@@ -951,7 +951,7 @@ try:
             Xc = 0.5*(Xmin + Xmax)
             Yc = 0.5*(Ymin + Ymax)
             epsilon = 0.01*(Zmax-Zmin)
-            g = 1.0/self.zoom
+            g = self.sensor_size
 
             rectangle = pv.Rectangle([[(Xc-0.5*s)*g,(Yc-0.5*s)*g,Zmin-epsilon],
                 [(Xc+0.5*s)*g,(Yc-0.5*s)*g,Zmin-epsilon],

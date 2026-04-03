@@ -21,5 +21,5 @@ rotations:
   axe2: [0, 0, 1]
 filled: false
 sensor:
-  zoom: 0.5
+  relative_size: 2
   pixel_size: 1.0e-9

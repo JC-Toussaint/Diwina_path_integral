@@ -106,13 +106,13 @@ class Fem2d
 {
 public:
 	/** constructor */
-	Fem2d(Eigen::Vector3d &_c, Eigen::Vector3d &_l, double _CE, double _V, double _zoomFactor, double _pixel_size):
-		zoomFactor(_zoomFactor), pixel_size(_pixel_size), CE(_CE), V(_V)
+	Fem2d(Eigen::Vector3d &_c, Eigen::Vector3d &_l, double _CE, double _V, double _relative_size, double _pixel_size):
+		relative_size(_relative_size), pixel_size(_pixel_size), CE(_CE), V(_V)
 	    {
-	    double xmin = _c[0] - _l[0]/(2.0*zoomFactor);
-	    double xmax = _c[0] + _l[0]/(2.0*zoomFactor);
-	    double ymin = _c[1] - _l[1]/(2.0*zoomFactor);
-	    double ymax = _c[1] + _l[1]/(2.0*zoomFactor);
+	    double xmin = _c[0] - 0.5*_l[0]*relative_size;
+	    double xmax = _c[0] + 0.5*_l[0]*relative_size;
+	    double ymin = _c[1] - 0.5*_l[1]*relative_size;
+	    double ymax = _c[1] + 0.5*_l[1]*relative_size;
 
 	    double xymin = std::min(xmin, ymin);
 	    double xymax = std::max(xmax, ymax);
@@ -128,8 +128,8 @@ public:
         {
         std::cout << "Sensor : " << std::endl;
         std::cout << "-- sensor mesh -- number of nodes : " << node.size() << std::endl;
-        std::cout << "-- pixel_size : " << pixel_size << std::endl;
-	    std::cout << "-- zoom     : " << zoomFactor << std::endl;
+	    std::cout << "-- relative_size : " << relative_size << std::endl;
+        std::cout << "-- pixel_size    : " << pixel_size << std::endl;
         }
 
     inline int getNbNodes(void) const { return node.size(); }
@@ -188,8 +188,8 @@ public:
 	/** diameter */
 	double diam;
 
-    /** a zoom factor relative to the plane where images are computed */
-	double zoomFactor;
+    /** size of the sensor relative to the bounding box of the projected sample */
+	double relative_size;
 	
 	/** triangular mesh size */
 	double pixel_size;
