@@ -25,4 +25,4 @@ electrostatics:
   V : 0
 sensor:
   zoom: 0.5
-  meshSize: 5e-9
+  pixel_size: 5e-9

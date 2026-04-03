@@ -76,7 +76,7 @@ int Fem2d::handleExport(const Settings &settings, ExportType eType, const std::f
         .width = N,
         .height = N,
         .pixels = pixels,
-        .pixel_size = meshSize,
+        .pixel_size = pixel_size,
         .unit = unit,
         .metadata = {
             {"Software", "pathIntegral"},
