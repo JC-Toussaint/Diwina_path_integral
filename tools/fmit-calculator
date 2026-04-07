@@ -912,7 +912,6 @@ try:
                 axes_angles = self.get_rotations_from_inputs()
                 rotated_points = apply_sequential_quaternion_rotations(self.original_points, axes_angles)
                 mesh = create_pyvista_mesh(rotated_points, self.triangles)
-
                 self.plotter.clear_actors()
                 self.plotter.add_mesh(mesh,smooth_shading=True,split_sharp_edges=True,color="lightblue")
                 self.add_bounding_box_and_sensor(self.original_points, axes_angles)
@@ -926,14 +925,11 @@ try:
             # Grid and ticks X Y Z, grid and location are crucial
                 self.plotter.show_bounds(
                     grid="back", location="outer",  ticks="both", all_edges=True,
-                    xtitle="X", ytitle="Y", ztitle="Z", font_size=12
-                )
-
+                    xtitle="X", ytitle="Y", ztitle="Z", font_size=12)
                 self.plotter.add_axes() # visible XYZ trihedral vectors
 
             except Exception as e:
                 self.statusBar().showMessage(f"✗ Error while updating mesh: {e}")
-
 
         def add_magnetization_vectors(self, axes_angles):
             """ Add magnetization vectors to surface nodes using glyphs """
@@ -998,23 +994,8 @@ try:
             
             rot_corners = apply_sequential_quaternion_rotations(corners, axes_angles)
             
-            Xmin = np.min([rot_corners[0][0], rot_corners[1][0], rot_corners[2][0], rot_corners[3][0],
-                rot_corners[4][0], rot_corners[5][0], rot_corners[6][0], rot_corners[7][0]])
-
-            Ymin = np.min([rot_corners[0][1], rot_corners[1][1], rot_corners[2][1], rot_corners[3][1],
-                rot_corners[4][1], rot_corners[5][1], rot_corners[6][1], rot_corners[7][1]])
-
-            Zmin = np.min([rot_corners[0][2], rot_corners[1][2], rot_corners[2][2], rot_corners[3][2],
-                rot_corners[4][2], rot_corners[5][2], rot_corners[6][2], rot_corners[7][2]])
-
-            Xmax = np.max([rot_corners[0][0], rot_corners[1][0], rot_corners[2][0], rot_corners[3][0],
-                rot_corners[4][0], rot_corners[5][0], rot_corners[6][0], rot_corners[7][0]])
-
-            Ymax = np.max([rot_corners[0][1], rot_corners[1][1], rot_corners[2][1], rot_corners[3][1],
-                rot_corners[4][1], rot_corners[5][1], rot_corners[6][1], rot_corners[7][1]])
-
-            Zmax = np.max([rot_corners[0][2], rot_corners[1][2], rot_corners[2][2], rot_corners[3][2],
-                rot_corners[4][2], rot_corners[5][2], rot_corners[6][2], rot_corners[7][2]])
+            Xmin,Ymin,Zmin = np.min(rot_corners,axis=0)
+            Xmax,Ymax,Zmax = np.max(rot_corners,axis=0)
 
             s = np.max([Xmax-Xmin,Ymax-Ymin])#sensor is a square of side s, center Xc,Yc in Zmin plane
             Xc = 0.5*(Xmin + Xmax)
@@ -1028,7 +1009,7 @@ try:
                                           [(Xc+0.5*s)*g,(Yc+0.5*s)*g,Zmin-epsilon]])
                 self.plotter.add_mesh(rectangle, show_edges=True, opacity=0.5, color="grey", line_width=4)
             else:
-                self.add_sim_image((Xc-0.5*s)*g,(Yc-0.5*s)*g,Zmin-epsilon)
+                self.add_sim_image((Xc-0.5*s)*g, (Yc-0.5*s)*g, Zmin-epsilon)
 
             self.add_wireframed_bbox(rot_corners)
 
@@ -1046,8 +1027,8 @@ try:
                                     rot_corners[edges[4]], rot_corners[edges[5]]])
             self.plotter.add_lines(line_points,color=str_color,width=w)
 
-        def add_sim_image(self,x,y,z):
-            """ Work In Progress """
+        def add_sim_image(self,corner_x,corner_y,corner_z):
+            """ add a simulated image to 3D of dichroism or holography """
             if self.flagComputed:
                 imageFileToRead = ""
                 fileBaseName = self.yaml_config['outputs']['file_basename']
@@ -1056,8 +1037,12 @@ try:
                 else:
                     imageFileToRead = "./" + fileBaseName + "_HOLO_PHASE.png"
                 sim_image = pv.read(imageFileToRead)
-                actor = self.plotter.add_mesh(sim_image,cmap='grey',show_scalar_bar= False)
-                actor.position = (x,y,z)
+                l_s= self.yaml_config['mesh']['length_unit']
+                px_s= self.yaml_config['sensor']['pixel_size']
+                ratio = px_s/l_s
+                sim_image.scale([ratio,ratio,1.],inplace=True)
+                sim_image.translate((corner_x,corner_y,corner_z),inplace=True)
+                actor = self.plotter.add_mesh(sim_image,cmap='grey',show_scalar_bar=False)
 
         def compute(self):
             """Save YAML configuration and launch pathIntegral executable """
