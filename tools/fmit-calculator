@@ -508,6 +508,14 @@ try:
             solFileAction.triggered.connect(self.select_sol_file)
             file_menu.addAction(solFileAction)
 
+            file_menu.addSeparator()
+
+            yamlFileAction = QAction("&Open .yml", self)
+            yamlFileAction.setStatusTip('Open a yaml input file')
+            yamlFileAction.setShortcut('Ctrl+Y')
+            yamlFileAction.triggered.connect(self.select_yml_file)
+            file_menu.addAction(yamlFileAction)
+
             saveFileAction = QAction("&Save yaml",self)
             saveFileAction.setStatusTip('Save settings to yaml')
             saveFileAction.setShortcut('Ctrl+S')
@@ -559,7 +567,7 @@ try:
             self.angle1_input = QLineEdit(str(self.yaml_config['rotations']['angle1']))
             self.angle1_input.setToolTip("angle 1 in degrees")
             self.angle1_input.editingFinished.connect(self.update_mesh)
-            self.angle1_input.editingFinished.connect(self.update_yaml_display)
+            self.angle1_input.editingFinished.connect(self.onRotationsChanged)
             angle1_layout.addWidget(angle1_label)
             angle1_layout.addWidget(self.angle1_input)
             rotation_layout.addLayout(angle1_layout)
@@ -575,7 +583,7 @@ try:
             self.axe1_inputs[2].setToolTip("axis1[z]")
             for inp in self.axe1_inputs:
                 inp.editingFinished.connect(self.update_mesh)
-                inp.editingFinished.connect(self.update_yaml_display)
+                inp.editingFinished.connect(self.onRotationsChanged)
                 axis_input_layout.addWidget(inp)
             axe1_layout.addLayout(axis_input_layout)
             rotation_layout.addLayout(axe1_layout)
@@ -585,7 +593,7 @@ try:
             self.angle2_input = QLineEdit(str(self.yaml_config['rotations']['angle2']))
             self.angle2_input.setToolTip("angle 2 in degrees")
             self.angle2_input.editingFinished.connect(self.update_mesh)
-            self.angle2_input.editingFinished.connect(self.update_yaml_display)
+            self.angle2_input.editingFinished.connect(self.onRotationsChanged)
             angle2_layout.addWidget(angle2_label)
             angle2_layout.addWidget(self.angle2_input)
             rotation_layout.addLayout(angle2_layout)
@@ -601,7 +609,7 @@ try:
             self.axe2_inputs[2].setToolTip("axis2[z]")
             for inp in self.axe2_inputs:
                 inp.editingFinished.connect(self.update_mesh)
-                inp.editingFinished.connect(self.update_yaml_display)
+                inp.editingFinished.connect(self.onRotationsChanged)
                 axis_input_layout.addWidget(inp)
             axe2_layout.addLayout(axis_input_layout)
             rotation_layout.addLayout(axe2_layout)
@@ -748,6 +756,14 @@ try:
             self.update_yaml_display()
             self.load_mesh_from_config()
 
+        def onRotationsChanged(self):
+            """ update yaml_config rotations parameters """
+            self.yaml_config['rotations']['angle1'] = float(self.angle1_input.text())
+            self.yaml_config['rotations']['axe1'] = [float(inp.text()) for inp in self.axe1_inputs]
+            self.yaml_config['rotations']['angle2'] = float(self.angle2_input.text())
+            self.yaml_config['rotations']['axe2'] = [float(inp.text()) for inp in self.axe2_inputs]
+            self.update_yaml_display()
+
         def onFileBaseNameChanged(self):
             lineEdit = self.sender()
             newBaseName = lineEdit.text()
@@ -814,7 +830,7 @@ try:
                 self.statusBar().showMessage("no computed pngs yet.")
 
         def select_sol_file(self):
-            """ slot triggered by the clicking on browse .sol button
+            """ slot triggered by clicking on Open .sol menu
             launch file browser and read input sol file
             """
             path, _ = QFileDialog.getOpenFileName(self, "Select a .sol file", "", "SOL files (*.sol)")
@@ -833,6 +849,21 @@ try:
                     QMessageBox.critical(self, "Error", f"Error loading .sol file: {e}")
                     self.magnetization_data = None
 
+        def select_yml_file(self):
+            """ slot triggered by clicking on Open .yml menu 
+            launch file browser and read input yaml file, parse and update
+            """
+            path,_ = QFileDialog.getOpenFileName(self, "Select a .yml file", "", "YAML files (*.yml)")
+            if path:
+                import pathlib
+                yamlInputFile = pathlib.Path(path)
+                helloMessage, self.yaml_config = load_yaml_from_file(yamlInputFile)
+                print(helloMessage)
+                self.inputFileName = yamlInputFile
+                self.updateUI_from_yaml()
+                self.statusBar().showMessage("✓ .yml file " + path + " selected.")
+                self.load_mesh_from_config()
+
         def load_mesh_from_config(self):
             """ load a mesh file from input file name found within the yaml input file """
             if 'mesh' in self.yaml_config and 'filename' in self.yaml_config['mesh']:
@@ -844,32 +875,31 @@ try:
                 except Exception as e:
                     self.statusBar().showMessage(f"✗ Error loading mesh: {e}")
 
+        def updateUI_from_yaml(self):
+            """ this function updates the whole UI, it is called after reading a yaml file
+            triggered by the file/open .yml menu
+            """
+            self.flagComputed = False
+            self.sol_label.setText("✗ no .sol file selected.")
+            self.angle1_input.setText(str(self.yaml_config['rotations']['angle1']))
+            self.angle2_input.setText(str(self.yaml_config['rotations']['angle2']))
+            for idx in [0,1,2]:
+               self.axe1_inputs[idx].setText(str(self.yaml_config['rotations']['axe1'][idx]))
+               self.axe2_inputs[idx].setText(str(self.yaml_config['rotations']['axe2'][idx]))
+            self.filled_checkbox.setChecked(self.yaml_config['filled'])
+            self.sensor_size = self.yaml_config['sensor']['relative_size']
+            self.size_input.setText(str(self.sensor_size))
+            self.pixel_size_input.setText(str(self.yaml_config['sensor']['pixel_size']))
+            self.fileBaseName_input.setText(self.yaml_config['outputs']['file_basename'])
+            self.update_yaml_display()
+
         def update_yaml_display(self):
-            """ update yaml_config dictionary """
-            if not self.yaml_config:
-                print("you should not be there...")
-                sys.exit()
-
-            if 'rotations' not in self.yaml_config:
-                self.yaml_config['rotations'] = {}
-            self.yaml_config['rotations']['angle1'] = float(self.angle1_input.text())
-            self.yaml_config['rotations']['axe1'] = [float(inp.text()) for inp in self.axe1_inputs]
-            self.yaml_config['rotations']['angle2'] = float(self.angle2_input.text())
-            self.yaml_config['rotations']['axe2'] = [float(inp.text()) for inp in self.axe2_inputs]
-            
-            if 'filled' not in self.yaml_config:
-                self.yaml_config['filled'] = False
-            self.yaml_config['filled'] = self.filled_checkbox.isChecked()
-
-            if 'sensor' not in self.yaml_config:
-                self.yaml_config['sensor'] = {}
-            
+            """ update yaml textEdit box """
             yaml_text = yaml_dump(self.yaml_config)
             self.yaml_display.setPlainText(yaml_text)
 
         def save_yaml_config(self):
-            """ save yaml as a text file """
-
+            """ save yaml file """
             if self.inputFileName:
                 base, ext = os.path.splitext(self.inputFileName)
                 self.outputFileName = f"{base}_ray{ext}"
@@ -879,7 +909,6 @@ try:
                     return
                 else:
                     self.outputFileName = filename
-
             try:
                 save_yaml_file(self.yaml_config, self.outputFileName)
                 self.statusBar().showMessage(f"✓ YAML file saved: {self.outputFileName}")
@@ -893,7 +922,6 @@ try:
                 angle1 = float(self.angle1_input.text())
                 axis1 = [float(inp.text()) for inp in self.axe1_inputs]
                 axes_angles.append((axis1, angle1))
-
                 angle2 = float(self.angle2_input.text())
                 axis2 = [float(inp.text()) for inp in self.axe2_inputs]
                 axes_angles.append((axis2, angle2))
@@ -1153,6 +1181,6 @@ def main():
         finally:
             sys.exit()
 
-__version__ = '0.2.0'
+__version__ = '1.0.0'
 if __name__ == "__main__":
     main()
