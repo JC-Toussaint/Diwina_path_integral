@@ -13,7 +13,7 @@ from pyvistaqt import QtInteractor
 from typing import Any, Dict, List, Union
 
 strHelp = """Workflow:
-Select your .sol file from browse .sol button
+Select your .sol file from menu File/Open .sol
 Adjust rotation angles and axis
 Adjust Sensor relative size and pixel size
 	relative_size parameter is the ratio between the sensor size and the projected object.
@@ -424,7 +424,7 @@ try:
     from PyQt5.QtWidgets import (
     QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFileDialog, QLineEdit, QMessageBox, QCheckBox, QMainWindow, QFrame,
-    QSplitter, QTextEdit, QGroupBox, QDoubleSpinBox, QRadioButton )
+    QSplitter, QTextEdit, QGroupBox, QDoubleSpinBox, QRadioButton, QAction )
 
     from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter, QPixmap
     from PyQt5.QtCore import Qt, QRegExp, QLocale, QProcess
@@ -499,24 +499,32 @@ try:
             minLeftPanelWidth = 333
             spacing = 2
 
-        # === Left Panel ===
+            # File menu
+            menu = self.menuBar()
+            file_menu = menu.addMenu("&File")
+            solFileAction = QAction("&Open .sol", self)
+            solFileAction.setStatusTip('Open a simulation .sol file')
+            solFileAction.setShortcut('Ctrl+O')
+            solFileAction.triggered.connect(self.select_sol_file)
+            file_menu.addAction(solFileAction)
+
+            saveFileAction = QAction("&Save yaml",self)
+            saveFileAction.setStatusTip('Save settings to yaml')
+            saveFileAction.setShortcut('Ctrl+S')
+            saveFileAction.triggered.connect(self.save_yaml_config)
+            file_menu.addAction(saveFileAction)
+
+            # === Left Panel ===
             left_panel = QFrame()
             left_panel.setFrameShape(QFrame.StyledPanel)
             left_panel.setMinimumWidth(minLeftPanelWidth)
             left_layout = QVBoxLayout(left_panel)
 
-        # Magnetization display controls
+            # Magnetization display controls
             magnetization_group = QGroupBox("Magnetization")
             magnetization_layout = QVBoxLayout(magnetization_group)
-
-            # Sol file selection
-            sol_layout = QHBoxLayout()
-            self.sol_btn = QPushButton("Browse .sol")
             self.sol_label = QLabel("✗ no .sol file selected.")
-            self.sol_btn.clicked.connect(self.select_sol_file)
-            sol_layout.addWidget(self.sol_btn)
-            sol_layout.addWidget(self.sol_label)
-            sol_layout.setSpacing(spacing)
+            magnetization_layout.addWidget(self.sol_label)
 
             #magnetization 3D view parameters
             vector_layout = QHBoxLayout()
@@ -537,7 +545,6 @@ try:
             scale_layout.addWidget(self.vector_scale_spinbox)
             vector_layout.addLayout(scale_layout)
 
-            magnetization_layout.addLayout(sol_layout)
             magnetization_layout.addLayout(vector_layout)
             magnetization_layout.setSpacing(spacing)
 
@@ -682,17 +689,11 @@ try:
             self.highlighter = YAMLSyntaxHighlighter(self.yaml_display.document())
             left_layout.addWidget(outputFiles_group, stretch = 1)
 
-            # save yaml and compute buttons
-            button_layout = QHBoxLayout()
-            self.save_yaml_btn = QPushButton("Save YAML")
-            self.save_yaml_btn.setToolTip("Save YAML to file")
-            self.save_yaml_btn.clicked.connect(self.save_yaml_config)
+            # save and compute button
             self.compute_btn = QPushButton("Save YAML and Compute")
             self.compute_btn.setToolTip("Save YAML to file, compute images, and store images in .png files")
             self.compute_btn.clicked.connect(self.compute)
-            button_layout.addWidget(self.save_yaml_btn)
-            button_layout.addWidget(self.compute_btn)
-            left_layout.addLayout(button_layout)
+            left_layout.addWidget(self.compute_btn)
 
             left_layout.setContentsMargins(2,2,2,2)
             left_layout.setSpacing(spacing)
