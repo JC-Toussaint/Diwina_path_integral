@@ -765,6 +765,7 @@ try:
             self.update_yaml_display()
 
         def onFileBaseNameChanged(self):
+            """ update yaml_config file base name, preventing empty string """
             lineEdit = self.sender()
             newBaseName = lineEdit.text()
             if newBaseName == "":
@@ -777,6 +778,7 @@ try:
             self.update_yaml_display()
 
         def onFilledChanged(self):
+            """ update yaml_config filled boolean """
             checkedBox = self.sender()
             if checkedBox.isChecked():
                 self.yaml_config['filled'] = True
@@ -785,6 +787,7 @@ try:
             self.update_yaml_display()
 
         def onSensorSelectorClicked(self):
+            """ select what kind of simulated image to display within 3D renderer """
             radioButton = self.sender()
             if radioButton.isChecked():
                 self.whatSensor = radioButton.whatSensor
@@ -792,6 +795,7 @@ try:
                     self.update_mesh()
 
         def onSensorSizeChanged(self):
+            """ update yaml_config relative_size sensor, preventing smaller values than one """
             lineEdit = self.sender()
             self.sensor_size = float(lineEdit.text())
             if self.sensor_size<1.0:
@@ -801,6 +805,7 @@ try:
             self.update_yaml_display()
 
         def onPixelSizeChanged(self):
+            """ update yaml_config pixel_size sensor """
             lineEdit = self.sender()
             self.yaml_config['sensor']['pixel_size'] = float(lineEdit.text())
             self.update_yaml_display()
