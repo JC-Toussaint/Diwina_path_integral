@@ -132,7 +132,7 @@ source .venv/bin/activate
 
 ** Install meshio pyyaml scipy PyQt5 pyvista pyvistaqt python modules **
 ```bash
-pip3 install meshio pyyaml scipy PyQt5 pyvista pyvistaqt
+pip3 install meshio pyyaml scipy PyQt5 pyvista pyvistaqt pypng
 ```
 
 # Getting started
