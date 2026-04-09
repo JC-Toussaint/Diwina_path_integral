@@ -801,7 +801,7 @@ try:
             if self.sensor_size<1.0:
                 self.sensor_size=1.0
             self.size_input.setText(str(self.sensor_size))
-            self.yaml_config['sensor']['relative_size'] = self.sensor_size
+            self.yaml_config['sensor']['relative_size'] = float(self.sensor_size)
             self.update_yaml_display()
 
         def onPixelSizeChanged(self):
@@ -826,11 +826,11 @@ try:
             if self.flagComputed:
                 fileBaseName = self.yaml_config['outputs']['file_basename']
                 if index == 1: #HOLO
-                    self.rawPngPlot("./" + fileBaseName + "_HOLO_PHASE.png",self.holo_label_image)
+                    self.rawPngPlot(fileBaseName + "_HOLO_PHASE.png",self.holo_label_image)
                 elif index == 2: #XMCD
-                    self.rawPngPlot("./" + fileBaseName + "_STXM_XMCD.png", self.xmcd_label_image)
+                    self.rawPngPlot(fileBaseName + "_STXM_XMCD.png", self.xmcd_label_image)
                 elif index == 3: #PATH_LENGTH
-                    self.rawPngPlot("./" + fileBaseName + "_PATH_LENGTH.png", self.thickness_image)
+                    self.rawPngPlot(fileBaseName + "_PATH_LENGTH.png", self.thickness_image)
             else:
                 self.statusBar().showMessage("no computed pngs yet.")
 
@@ -862,6 +862,7 @@ try:
             if path:
                 import pathlib
                 yamlInputFile = pathlib.Path(path)
+                os.chdir(yamlInputFile.parent)
                 helloMessage, self.yaml_config = load_yaml_from_file(yamlInputFile)
                 print(helloMessage)
                 self.inputFileName = yamlInputFile
@@ -1064,14 +1065,13 @@ try:
         def add_sim_image(self,corner_x,corner_y,corner_z):
             """ add a simulated image to 3D of dichroism or holography """
             if self.flagComputed:
-                imageFileToRead = ""
-                fileBaseName = self.yaml_config['outputs']['file_basename']
+                imageFileToRead = self.yaml_config['outputs']['file_basename']
                 if self.whatSensor == "XMCD":
-                    imageFileToRead = "./" + fileBaseName + "_STXM_XMCD.png"
+                    imageFileToRead += "_STXM_XMCD.png"
                 else:
-                    imageFileToRead = "./" + fileBaseName + "_HOLO_PHASE.png"
+                    imageFileToRead += "_HOLO_PHASE.png"
                 sim_image = pv.read(imageFileToRead)
-                l_s= self.yaml_config['mesh']['length_unit']
+                l_s= float(self.yaml_config['mesh']['length_unit']) # in some situations the cast is usefull
                 px_s= self.yaml_config['sensor']['pixel_size']
                 ratio = px_s/l_s
                 sim_image.scale([ratio,ratio,1.],inplace=True)
