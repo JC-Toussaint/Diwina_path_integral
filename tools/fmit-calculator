@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import os
+import pathlib
 import yaml
 import json
 import sys
-import subprocess
 import numpy as np
 import re
 from scipy.spatial.transform import Rotation as R
@@ -32,6 +32,7 @@ images are unsigned int 16 bits grey pngs"""
 
 def has_nvidia_gpu():
     ''' ask nvidia-smi if there is any nvidia GPU with proprietary driver, return true if any '''
+    import subprocess
     try:
         subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
         return True
@@ -44,7 +45,6 @@ def load_sol_file(filename):
     Returns a dictionary: node_index -> (mx, my, mz)
     """
     magnetization = {}
-    
     try:
         with open(filename, 'r') as f:
             for line in f:
@@ -751,7 +751,6 @@ try:
             main_splitter.addWidget(self.right_visualizations)
             main_splitter.setSizes([minLeftPanelWidth, 900])
 
-            #self.statusBar().setStyleSheet("color: blue")
             self.statusBar().setFont(QFont('Times',12))
             self.update_yaml_display()
             self.load_mesh_from_config()
@@ -841,7 +840,6 @@ try:
             path, _ = QFileDialog.getOpenFileName(self, "Select a .sol file", "", "SOL files (*.sol)")
             if path:
                 self.sol_file_path = path
-                import pathlib
                 fileName = pathlib.Path(path)
                 self.sol_label.setText(fileName.name)
                 self.yaml_config['initial_magnetization'] = fileName.name
@@ -860,7 +858,6 @@ try:
             """
             path,_ = QFileDialog.getOpenFileName(self, "Select a .yml file", "", "YAML files (*.yml)")
             if path:
-                import pathlib
                 yamlInputFile = pathlib.Path(path)
                 os.chdir(yamlInputFile.parent)
                 helloMessage, self.yaml_config = load_yaml_from_file(yamlInputFile)
@@ -905,9 +902,10 @@ try:
             self.yaml_display.setPlainText(yaml_text)
 
         def save_yaml_config(self):
-            """ save yaml file """
+            """ save yaml file for pathIntegral executable """
             if self.inputFileName:
-                base, ext = os.path.splitext(self.inputFileName)
+                base = pathlib.Path(self.inputFileName).stem
+                ext = pathlib.Path(self.inputFileName).suffix
                 self.outputFileName = f"{base}_ray{ext}"
             else:
                 filename, _ = QFileDialog.getSaveFileName(self, "Save YAML file", "", "YAML files (*.yml *.yaml)")
