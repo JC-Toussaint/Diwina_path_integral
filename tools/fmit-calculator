@@ -424,10 +424,18 @@ try:
     from PyQt5.QtWidgets import (
     QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFileDialog, QLineEdit, QMessageBox, QCheckBox, QMainWindow, QFrame,
-    QSplitter, QTextEdit, QGroupBox, QDoubleSpinBox, QRadioButton, QAction )
+    QSplitter, QTextEdit, QGroupBox, QDoubleSpinBox, QRadioButton, QAction)
 
     from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter, QPixmap
     from PyQt5.QtCore import Qt, QRegExp, QLocale, QProcess
+
+    class helpText(QWidget):
+        def __init__(self, parent=None):
+            super().__init__(parent)
+            layout = QVBoxLayout()
+            layout.addWidget(QLabel(strHelp))
+            self.setLayout(layout)
+            self.setWindowTitle("Help")
 
     class YAMLSyntaxHighlighter(QSyntaxHighlighter):
         def __init__(self, parent=None):
@@ -485,6 +493,7 @@ try:
             self.sol_file_path = None
             self.magnetization_data = None
             self.surface_nodes = None
+            self.help = None
             self.setup_ui()
 
         def setup_ui(self):
@@ -500,13 +509,19 @@ try:
             spacing = 2
 
             # File menu
-            menu = self.menuBar()
-            file_menu = menu.addMenu("&File")
+            file_menu = self.menuBar().addMenu("&File")
+            help_menu = self.menuBar().addMenu("&Help")
+
             solFileAction = QAction("&Open .sol", self)
             solFileAction.setStatusTip('Open a simulation .sol file')
             solFileAction.setShortcut('Ctrl+O')
             solFileAction.triggered.connect(self.select_sol_file)
             file_menu.addAction(solFileAction)
+
+            helpAction = QAction("&Help",self)
+            helpAction.setShortcut('Ctrl+H')
+            helpAction.triggered.connect(self.help_viewer)
+            help_menu.addAction(helpAction)
 
             file_menu.addSeparator()
 
@@ -730,21 +745,12 @@ try:
             thickness_layout = QVBoxLayout(thickness_panel)
             self.thickness_image = QLabel(thickness_panel)
 
-            help_panel = QWidget()
-            help_layout = QVBoxLayout()
-            self.help_label = QTextEdit(help_panel)
-            help_layout.addWidget(self.help_label,stretch=1)
-            self.help_label.setReadOnly(True)
-            self.help_label.setText(strHelp)
-            help_panel.setLayout(help_layout)
-
             self.right_visualizations.addTab(right_panel,"3D")
             self.right_visualizations.addTab(holoPhase_panel,"Holographic phase")
             self.right_visualizations.addTab(xmcdContrast_panel,"XMCD contrast")
             self.right_visualizations.addTab(thickness_panel,"Thickness map")
             for i in [1,2,3]:
                 self.right_visualizations.setTabEnabled(i,False)
-            self.right_visualizations.addTab(help_panel,"Help")
             self.right_visualizations.tabBarClicked.connect(self.update_images)
 
             main_splitter.addWidget(left_panel)
@@ -754,6 +760,12 @@ try:
             self.statusBar().setFont(QFont('Times',12))
             self.update_yaml_display()
             self.load_mesh_from_config()
+
+        def closeEvent(self, event):
+            """ handle close event to close help window if opened """
+            if self.help != None:
+                self.help.close()
+            self.close()
 
         def onRotationsChanged(self):
             """ update yaml_config rotations parameters """
@@ -819,6 +831,10 @@ try:
                 whereToPlot.setPixmap(qpixmap)
             else:
                 whereToPlot("No png file")
+
+        def help_viewer(self):
+            self.help = helpText()
+            self.help.show()
 
         def update_images(self, index):
             ''' update the clicked tabbed widget with pixmap of the corresponding png file '''
