@@ -340,6 +340,12 @@ def yaml_dump(data, context=None, prefix=""):
         text += f"{str(data).lower()}\n"
     elif data is None:
         text += "null\n"
+    elif isinstance(data, str):
+        if "\n" in data:
+            data = ("\n" + data.strip()).replace("\n", f"\n{prefix}")
+            text += f'|{data}\n'
+        else:
+            text += f'"{data}"\n'
     else:
         text += f"{str(data)}\n"
     return text
