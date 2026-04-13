@@ -18,6 +18,8 @@ Adjust rotation angles and axis
 Adjust Sensor relative size and pixel size
 	relative_size parameter is the ratio between the sensor size and the projected object.
 	It must be larger than or equal to 1
+Filled parameter will affect holographic phase calculation by artificially filling hollow parts of
+the object.
 
 Press compute button
 	Both holographic phase, xmcd and thickness map are computed
@@ -899,7 +901,9 @@ try:
             triggered by the file/open .yml menu
             """
             self.flagComputed = False
+            self.magnetization_data = None
             self.sol_label.setText("✗ no .sol file selected.")
+            self.show_vectors_checkbox.setChecked(False)
             self.angle1_input.setText(str(self.yaml_config['rotations']['angle1']))
             self.angle2_input.setText(str(self.yaml_config['rotations']['angle2']))
             for idx in [0,1,2]:
