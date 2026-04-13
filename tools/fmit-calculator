@@ -1090,7 +1090,7 @@ try:
                     imageFileToRead += "_HOLO_PHASE.png"
                 sim_image = pv.read(imageFileToRead)
                 l_s= float(self.yaml_config['mesh']['length_unit']) # in some situations the cast is usefull
-                px_s= self.yaml_config['sensor']['pixel_size']
+                px_s= float(self.yaml_config['sensor']['pixel_size'])
                 ratio = px_s/l_s
                 sim_image.scale([ratio,ratio,1.],inplace=True)
                 sim_image.translate((corner_x,corner_y,corner_z),inplace=True)
