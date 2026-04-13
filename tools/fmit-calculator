@@ -12,7 +12,7 @@ import pyvista as pv
 from pyvistaqt import QtInteractor
 from typing import Any, Dict, List, Union
 
-strHelp = """Workflow:
+strHelp = """Basic workflow:
 Select your .sol file from menu File/Open .sol
 Adjust rotation angles and axis
 Adjust Sensor relative size and pixel size
@@ -437,7 +437,7 @@ try:
             layout = QVBoxLayout()
             layout.addWidget(QLabel(strHelp))
             self.setLayout(layout)
-            self.setWindowTitle("Help")
+            self.setWindowTitle("fmit-calculator v"+ __version__ +" help")
 
     class YAMLSyntaxHighlighter(QSyntaxHighlighter):
         def __init__(self, parent=None):
@@ -1204,6 +1204,6 @@ def main():
         finally:
             sys.exit()
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 if __name__ == "__main__":
     main()
