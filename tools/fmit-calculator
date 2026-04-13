@@ -414,18 +414,17 @@ def chunk_parser(fileName):
                         str_unit = "arbitrary units"
                 someMetaData["Pixel unit"] = str_unit
                 idx = balise[1].find(b'\x00')
-                someMetaData["Pixel width"] = balise[1][1:idx].decode('ascii')
+                someMetaData["Pixel width"] = float(balise[1][1:idx].decode('ascii'))
                 idx += 1
-                someMetaData["Pixel height"] = balise[1][idx:].decode('ascii')
+                someMetaData["Pixel height"] = float(balise[1][idx:].decode('ascii'))
     return someMetaData, comments
 
 def metadataFromPngFile(fileName):
     ''' return some of the png metadata in a string '''
     metaData, comments = chunk_parser(fileName)
-    str_metadata = comments + ", min: " + str(metaData['Value min'])
-    str_metadata += ", max: " + str(metaData['Value max'])
-    str_metadata += ", px width: " + metaData['Pixel width']
-    str_metadata += ", px height: " + metaData['Pixel height']
+    str_metadata = f"{comments}, "
+    str_metadata += f"min: {metaData['Value min']:.6g}, max: {metaData['Value max']:.6g}, "
+    str_metadata += f"px width: {metaData['Pixel width']:.6g}, px height: {metaData['Pixel height']:.6g}"
     return str_metadata
 
 try:
