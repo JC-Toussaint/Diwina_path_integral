@@ -1182,33 +1182,39 @@ def get_params():
     args = parser.parse_args()
     return args
 
+def launchGUI(ymlFileName):
+    try:
+        from PyQt5.QtWidgets import QApplication
+        app = QApplication(sys.argv)
+        window = CombinedInterface(ymlFileName)
+        window.show()
+        sys.exit(app.exec_())
+    finally:
+        sys.exit()
+
 def main():
     '''
     launch the parsing of the command line
-    if some NVIDIA GPU is found change some environnment variables for VTK to benefit from GPU
-    then launch the GUI if PYQt5 is usable else exit 
+    detect if on windows or unix-like platform
+    On windows, try to launch the GUI, on unix-like, try to fix some environnment variables for
+    nvidia GPU if any. Then it tries to launch the GUI if PyQt5 is available else exit
     '''
     args = get_params()
-    display = os.environ.get('DISPLAY') #might not run correctly on WayLand, see WAYLAND_DISPLAY environment variable
-    if ((display == "") or (display is None)):
-        print("Error: no display.")
-        sys.exit()
-    else:
-        if has_nvidia_gpu():
-            os.environ["__NV_PRIME_RENDER_OFFLOAD"] = "1"
-            os.environ["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia"
-        else:
-            print("Warning: no NVIDIA GPU detected.")
-
-        try:
-            from PyQt5.QtWidgets import QApplication
-            app = QApplication(sys.argv)
-            window = CombinedInterface(args.ymlFileName)
-            window.show()
-            sys.exit(app.exec_())
-        finally:
+    if (os.name == "nt"):
+        launchGUI(args.ymlFileName)
+    elif (os.name == "posix"):
+        display = os.environ.get('DISPLAY') #might not run correctly on WayLand, see WAYLAND_DISPLAY environment variable
+        if ((display == "") or (display is None)):
+            print("Error: no display.")
             sys.exit()
+        else:
+            if has_nvidia_gpu():
+                os.environ["__NV_PRIME_RENDER_OFFLOAD"] = "1"
+                os.environ["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia"
+            else:
+                print("Warning: no NVIDIA GPU detected.")
+            launchGUI(args.ymlFileName)
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 if __name__ == "__main__":
     main()
