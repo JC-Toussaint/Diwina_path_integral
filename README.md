@@ -58,7 +58,8 @@ sudo apt upgrade
 
 ```bash
 sudo apt install wget git cmake pkgconf g++ gfortran python3-venv
-sudo apt install libgmsh-dev libeigen3-dev libtbb-dev libyaml-cpp-dev duktape-dev libfftw3-dev libopenblas-dev libpng-dev libcgal-dev
+sudo apt install libgmsh-dev libeigen3-dev libtbb-dev libyaml-cpp-dev duktape-dev
+sudo apt install libfftw3-dev libopenblas-dev libpng-dev libcgal-dev
 ```
 
 ## ScalFMM Installation
@@ -72,7 +73,6 @@ cd ScalFMM
 Create a build directory and navigate to it - All compilation will happen in this isolated directory
 ```bash
 mkdir build
-```bash
 cd build
 ```
 
