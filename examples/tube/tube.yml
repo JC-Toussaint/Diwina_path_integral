@@ -1,0 +1,35 @@
+outputs:
+  directory: .
+  file_basename: tube
+  final_time: 0
+
+mesh:
+  filename: tube.msh
+  length_unit: 1.0e-9
+  volume_regions:
+    volume:
+      Js: 1
+      lbp: 0.01
+      lbm: 0.018
+  surface_regions:
+    surface:
+
+initial_magnetization: |
+  function(x, y, z) {
+    var delta = 20e-9,
+        r = sqrt(x**2 + y**2),
+        u = z/delta;
+    return [-y/r*tanh(u), x/r*tanh(u), 1/cosh(u)];
+  }
+
+rotations:
+  angle1: 60
+  axe1: [1, 0, 0]
+  angle2: 0
+  axe2: [0, 0, 1]
+
+filled: false
+
+sensor:
+  relative_size: 2
+  pixel_size: 1.0e-9

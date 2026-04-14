@@ -40,14 +40,14 @@ The libraries used by pathIntegral are distributed under different licenses, and
 
 ## For Windows only, installation of WSL2 (Windows Subsystem for Linux)
 
-** Install Windows Subsystem for Linux (WSL) - This enables running a Linux environment directly on Windows **
+Install Windows Subsystem for Linux (WSL) - This enables running a Linux environment directly on Windows
 ```bash
 wsl --install
 ```
 
 ## For Linux or WSL2, initial Setup 
 
-** Update the list of available packages and upggrade to their latest versions **
+Update the list of available packages and upggrade to their latest versions
 ```bash
 sudo apt update
 sudo apt upgrade
@@ -63,30 +63,30 @@ sudo apt install libgmsh-dev libeigen3-dev libtbb-dev libyaml-cpp-dev duktape-de
 
 ## ScalFMM Installation
 
-** Clone ScalFMM repository with all its submodules - ScalFMM is a Fast Multipole Method library developed by INRIA (French National Institute for Research in Digital Science and Technology) for N-body simulations, widely used in computational physics and engineering. The --recursive flag ensures all dependent submodules are also downloaded **
+Clone ScalFMM repository with all its submodules - ScalFMM is a Fast Multipole Method library developed by INRIA (French National Institute for Research in Digital Science and Technology) for N-body simulations, widely used in computational physics and engineering. The --recursive flag ensures all dependent submodules are also downloaded
 ```bash
 git clone --recursive https://gitlab.inria.fr/solverstack/ScalFMM.git
 cd ScalFMM
 ```
 
-** Create a build directory and navigate to it - All compilation will happen in this isolated directory  **
+Create a build directory and navigate to it - All compilation will happen in this isolated directory
 ```bash
 mkdir build
 ```bash
 cd build
 ```
 
-** Configure compilation in Release mode (optimized) - CMake generates the necessary build files with optimization flags enabled for maximum performance in production use **
+Configure compilation in Release mode (optimized) - CMake generates the necessary build files with optimization flags enabled for maximum performance in production use
 ```bash
 cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
 
-** Compile the ScalFMM project - This builds all the libraries and executables using GNU Make (part of the GNU Project by the Free Software Foundation), which may take several minutes depending on your system's performance **
+Compile the ScalFMM project - This builds all the libraries and executables using GNU Make (part of the GNU Project by the Free Software Foundation)
 ```bash
 make -j $(nproc)
 ```
 
-** Install ScalFMM headers **
+Install ScalFMM headers
 ```bash
 sudo make install
 cd ../..
@@ -94,17 +94,17 @@ cd ../..
 
 ## Diwina Path Integral Project Installation
 
-** Clone the main branch of the Diwina Path Integral project specifically adapted to work with the ScalFMM library from INRIA **
+Clone the main branch of the Diwina Path Integral project specifically adapted to work with the ScalFMM library from INRIA
 ```bash
 git clone https://github.com/JC-Toussaint/Diwina_path_integral.git
 ```
 
-** Navigate to the Diwina_path directory - Enter the project directory to begin configuration and compilation **
+Navigate to the Diwina_path directory - Enter the project directory to begin configuration and compilation
 ```bash
 cd Diwina_path_integral
 ```
 
-** Configure compilation of the Diwina project in Release mode - This sets up the build system using CMake for optimal performance, linking against the previously compiled ScalFMM libraries **
+Configure compilation of the Diwina project in Release mode - This sets up the build system using CMake for optimal performance, linking against the previously compiled ScalFMM libraries
 ```bash
 cmake . -DCMAKE_BUILD_TYPE=Release
 ```
@@ -120,17 +120,17 @@ sudo make install
 
 ## Python Environment Setup
 
-** Create a Python virtual environment - This uses Python's built-in venv module (part of the Python standard library developed by the Python Software Foundation) to isolate Python packages for this project, preventing conflicts with system Python packages **
+Create a Python virtual environment. This uses Python's built-in venv module
 ```bash
 python3 -m venv .venv
 ```
 
-** Activate the virtual environment - This modifies your shell environment to use the isolated Python installation and package directory **
+Activate the virtual environment
 ```bash
 source .venv/bin/activate
 ```
 
-** Install meshio pyyaml scipy PyQt5 pyvista pyvistaqt python modules **
+Install meshio pyyaml scipy PyQt5 pyvista pyvistaqt python modules
 ```bash
 pip3 install meshio pyyaml scipy PyQt5 pyvista pyvistaqt pypng
 ```
@@ -218,6 +218,24 @@ The user might visualize them typing:
 ```bash
 fmit-png-viewer
 ```
+
+Metadatas stored in the png files can be found back using fmit-calculator, or from command line
+using imagemagick package.
+To install imagemagick on ubuntu:
+```bash
+sudo apt-get install imagemagick
+```
+then type
+```bash
+identify sim_HOLO_PHASE.png
+```
+this should give you the following informations (or something similar)
+```bash
+sim_HOLO_PHASE.png PNG 487x487 487x487+0+0 16-bit Grayscale Gray 190620B 0.000u 0:00.000
+```
+Option -verbose allows one to get many more informations, including the yaml script that was
+provided to pathIntegral to generate the png file.
+
 
 **Warning**: fmit-calculator uses the default values from the `default-settings.yml` file if it does not
  find them in the yaml input file. The absorption coefficient values are set to 0.01 and 0.018 (nm⁻¹). 
