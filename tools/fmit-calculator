@@ -1114,7 +1114,10 @@ try:
                 self.process.readyReadStandardError.connect(self.handle_pathIntegral_stderr)
                 self.process.errorOccurred.connect(self.process_failed_to_start)
                 self.process.finished.connect(self.process_finished)
-                self.process.start("pathIntegral",[self.outputFileName])
+                if os.name == "nt":
+                    self.process.start("wsl.exe",["pathIntegral",self.outputFileName])
+                elif os.name == "posix":
+                    self.process.start("pathIntegral",[self.outputFileName])
             else:
                 self.statusBar().showMessage("Error: .sol not yet selected.")
                 self.compute_btn.setEnabled(True)
