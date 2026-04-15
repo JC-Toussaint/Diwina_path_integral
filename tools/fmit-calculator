@@ -780,7 +780,9 @@ try:
             self.yaml_config['rotations']['axe1'] = [float(inp.text()) for inp in self.axe1_inputs]
             self.yaml_config['rotations']['angle2'] = float(self.angle2_input.text())
             self.yaml_config['rotations']['axe2'] = [float(inp.text()) for inp in self.axe2_inputs]
+            self.flagComputed = False
             self.update_yaml_display()
+            self.update_mesh()
 
         def onFileBaseNameChanged(self):
             """ update yaml_config file base name, preventing empty string """
@@ -820,13 +822,17 @@ try:
                 self.sensor_size=1.0
             self.size_input.setText(str(self.sensor_size))
             self.yaml_config['sensor']['relative_size'] = float(self.sensor_size)
+            self.flagComputed = False
             self.update_yaml_display()
+            self.update_mesh()
 
         def onPixelSizeChanged(self):
             """ update yaml_config pixel_size sensor """
             lineEdit = self.sender()
             self.yaml_config['sensor']['pixel_size'] = float(lineEdit.text())
+            self.flagComputed = False
             self.update_yaml_display()
+            self.update_mesh()
 
         def rawPngPlot(self, fileName, whereToPlot):
             ''' plot an image and print some metadata '''
