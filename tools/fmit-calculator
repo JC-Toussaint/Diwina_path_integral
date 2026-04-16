@@ -12,8 +12,9 @@ import pyvista as pv
 from pyvistaqt import QtInteractor
 from typing import Any, Dict, List, Union
 
-strHelp = """Basic workflow:
-Select your .sol file from menu File/Open .sol
+strHelp = """Workflow:
+If fmit-calculator was launched without a yaml input file, open a yaml file through file menu.
+Then select your .sol file from menu File/Open .sol or use initial_magnetization as it is.
 Adjust rotation angles and axis
 Adjust Sensor relative size and pixel size
 	relative_size parameter is the ratio between the sensor size and the projected object.
@@ -427,6 +428,21 @@ def metadataFromPngFile(fileName):
     str_metadata += f"px width: {metaData['Pixel width']:.6g}, px height: {metaData['Pixel height']:.6g}"
     return str_metadata
 
+def default_settings():
+    def_settings = dict( outputs = dict(directory = ".", file_basename = "sim"),
+                         mesh = dict( filename = None,
+                                      length_unit = 1.0e-9,
+                                      volume_regions = None,
+                                      surface_regions = None),
+                         initial_magnetization = [1,0,0],
+                         rotations = dict(angle1 = 0,
+                                          axe1 = [1,0,0],
+                                          angle2 = 0,
+                                          axe2 = [0,0,1]),
+                         filled = False,
+                         sensor = dict(relative_size = 2, pixel_size = 1.e-9) )
+    return def_settings
+
 try:
     from PyQt5.QtWidgets import (
     QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
@@ -483,14 +499,18 @@ try:
                 index = value_pattern.indexIn(text, index + value_pattern.matchedLength())
 
     class CombinedInterface(QMainWindow):
-        def __init__(self, yaml_file="settings.yml"):
+        def __init__(self, yaml_file):
             super().__init__()
             self.setWindowTitle("FeeLLGood Micromagnetic Image Toolbox - Calculator")
             self.showMaximized()
 
             # Variables
             self.inputFileName = yaml_file
-            helloMessage, self.yaml_config = load_yaml_from_file(yaml_file)
+            helloMessage = ""
+            if yaml_file != None:
+                helloMessage, self.yaml_config = load_yaml_from_file(yaml_file)
+            else:
+                self.yaml_config = default_settings()
             print(helloMessage)
             self.sensor_size = self.yaml_config['sensor']['relative_size']
             self.outputFileName =  "noneYet"
@@ -900,12 +920,15 @@ try:
             """ load a mesh file from input file name found within the yaml input file """
             if 'mesh' in self.yaml_config and 'filename' in self.yaml_config['mesh']:
                 self.mesh_filename = self.yaml_config['mesh']['filename']
-                try:
-                    msg, self.surface_nodes, self.original_points, self.triangles = load_mesh(self.mesh_filename)
-                    self.statusBar().showMessage(msg)
-                    self.update_mesh()
-                except Exception as e:
-                    self.statusBar().showMessage(f"✗ Error loading mesh: {e}")
+                if self.mesh_filename == None:
+                    self.statusBar().showMessage("No mesh file to 3D render.")
+                else:
+                    try:
+                        msg, self.surface_nodes, self.original_points, self.triangles = load_mesh(self.mesh_filename)
+                        self.statusBar().showMessage(msg)
+                        self.update_mesh()
+                    except Exception as e:
+                        self.statusBar().showMessage(f"✗ Error loading mesh: {e}")
 
         def updateUI_from_yaml(self):
             """ this function updates the whole UI, it is called after reading a yaml file
@@ -1178,7 +1201,7 @@ except:
 def get_params():
     ''' parse command line '''
     import argparse
-    description = 'pathIntegral GUI frontend'
+    description = 'fmit-calculator: pathIntegral GUI frontend'
     epilogue = '''
     lauch a graphic user interface as a front-end to pathIntegral command line executable
     save a yaml file from the inputs within the graphic user interface
@@ -1186,7 +1209,10 @@ def get_params():
     3D renderer and raw view of the output png's in a basic viewer
     '''
     parser = argparse.ArgumentParser(description=description, epilog=epilogue, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('ymlFileName',help='a yaml settings input file')
+    parser.add_argument('ymlFileName',nargs='?',
+        help= """Optional yaml settings input file. If not provided fmit-calculator starts with some default parameters,
+        and the user may open a yaml file from file menu""", 
+        default=None)
     parser.add_argument('--version',action='version',version= __version__,help='show the version number')
     args = parser.parse_args()
     return args
@@ -1224,6 +1250,6 @@ def main():
                 print("Warning: no NVIDIA GPU detected.")
             launchGUI(args.ymlFileName)
 
-__version__ = '1.0.2'
+__version__ = '1.1.0'
 if __name__ == "__main__":
     main()
