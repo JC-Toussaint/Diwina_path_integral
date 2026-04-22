@@ -33,6 +33,7 @@ def find_meta_value(meta, patterns):
     return None, None
 
 def safe_float(x):
+    ''' return a float '''
     try:
         if isinstance(x, bytes):
             x = x.decode('utf-8', errors='ignore')
@@ -41,6 +42,7 @@ def safe_float(x):
         return None
 
 def load_phase_png_with_metadata(path_png):
+    ''' load a png container of a magnetic phase  '''
     im = Image.open(path_png)
     meta = dict(im.info)  # métadonnées PNG
 
@@ -95,6 +97,7 @@ def load_phase_png_with_metadata(path_png):
     return phase, dx, dy
 
 def load_thickness_png_with_metadata(path_png):
+    ''' load a png container of thickness map '''
     im = Image.open(path_png)
     meta = dict(im.info)  # métadonnées PNG
     
@@ -147,7 +150,9 @@ def load_thickness_png_with_metadata(path_png):
     return length
 
 def apply_window(phase, window_type='hann', width_fraction=0.1):
-    """Applique une fenêtre sur les bords de l'image"""
+    """Applique une fenêtre sur les bords de l'image
+    work in progress: to check
+    """
     Ny, Nx = phase.shape
     
     # Largeur de la zone de transition
@@ -169,9 +174,11 @@ def apply_window(phase, window_type='hann', width_fraction=0.1):
     
     return phase * window
 
-# Zero-padding
-# Augmenter la taille du tableau en ajoutant des zéros autour 
 def simulate_fresnel_padded(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, pad_factor=2):
+    ''' compute a simulation of a fresnel contrast using padding
+    it might be interesting to increase the number of zeros
+    work in progress: is zero-padding efficient ? 
+    '''
     Ny, Nx = phase.shape
     lam = relativistic_wavelength(E0_eV)
     
@@ -206,10 +213,10 @@ def simulate_fresnel_padded(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3,
     
     return np.abs(psi_def_crop)**2
 
-# Soustraction de tendance (Detrending)
-# Retirer la pente moyenne de la phase avant FFT 
 def detrend_phase(phase):
-    """Retire les tendances linéaires de la phase"""
+    """substract a baseline with a slope from phase
+    """
+    # not yet used anywhere
     Ny, Nx = phase.shape
     y, x = np.mgrid[0:Ny, 0:Nx]
     
@@ -220,9 +227,11 @@ def detrend_phase(phase):
     plane = coef[0]*x + coef[1]*y + coef[2]
     return phase - plane
 
-# Approche combinée (recommandée)
 def simulate_fresnel_improved(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, 
                               use_window=True, pad_factor=1.5):
+    ''' combination of windowing and padding 
+    work in progress: check and test
+    '''
     Ny, Nx = phase.shape
     lam = relativistic_wavelength(E0_eV)
     
@@ -262,6 +271,7 @@ def simulate_fresnel_improved(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-
     return np.abs(psi_def_crop)**2
 
 def simulate_fresnel_enveloppe(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, convergence=0):
+    ''' convolution of an envelope and exp(j * chi) '''
     Ny, Nx = phase.shape
     lam = relativistic_wavelength(E0_eV)
     
@@ -328,14 +338,14 @@ def cosine_edge_apodization(phase, edge_width=0.15):
     return phase_mean + (phase - phase_mean) * window
 
 def simulate_fresnel_mirrored(phase, dx, dy, cropp, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
+    ''' compute fresnel contrast with mirror padding
+    Mirror padding 2×2 — boundary conditions C⁰ on the image edges
+    [ flip_xy | flip_y ]
+    [ flip_x  |  φ     ]
+    optionaly cropp boolean might be turned True to center-crop by 2 the image
+    '''
     Ny, Nx = phase.shape
-    lam = relativistic_wavelength(E0_eV) #lambda
-    
-    # Padding miroir 2×2 — conditions aux limites C⁰ sur tous les bords
-    #
-    #  [ flip_xy | flip_y ]
-    #  [ flip_x  |  φ     ]
-    #
+    lam = relativistic_wavelength(E0_eV)
     top_left  = np.flipud(np.fliplr(phase))   # flip horizontal + vertical
     top_right = np.flipud(phase)              # flip vertical seulement
     bot_left  = np.fliplr(phase)              # flip horizontal seulement
@@ -346,9 +356,7 @@ def simulate_fresnel_mirrored(phase, dx, dy, cropp, E0_eV=200e3, defocus=2e-6, C
         [bot_left,  bot_right]
     ])
     # Taille résultante : (2*Ny, 2*Nx)
-    
     Ny_pad, Nx_pad = phase_pad.shape
-    
     psi0 = np.exp(1j * phase_pad)
     
     # Grille de fréquences spatiales
@@ -359,7 +367,7 @@ def simulate_fresnel_mirrored(phase, dx, dy, cropp, E0_eV=200e3, defocus=2e-6, C
     
     # Fonction d'aberration : défocus + aberration sphérique
     chi = np.pi * lam * defocus * k2 + 0.5 * np.pi * Cs * (lam**3) * (k2**2)
-    H = np.exp(1j * chi) #transfer function - renommer ?
+    H = np.exp(1j * chi) #transfer function - renommer vers T ?
     
     # Propagation dans l'espace de Fourier
     Psi0    = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psi0)))
@@ -378,7 +386,9 @@ def simulate_fresnel_mirrored(phase, dx, dy, cropp, E0_eV=200e3, defocus=2e-6, C
     return np.abs(psi_def_crop)**2 
 
 def remove_edge_discontinuity(phase):
-    """Retire les discontinuités de bord par résolution de Poisson"""
+    """Retire les discontinuités de bord par résolution de Poisson
+    To check (is it finished?)
+    """
     from scipy.ndimage import laplace
     from scipy.sparse import diags, csr_matrix
     from scipy.sparse.linalg import spsolve
@@ -454,6 +464,7 @@ def simulate_fresnel_robust(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3)
     return np.abs(psi_def_crop)**2
 
 def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_profile.png"):
+    ''' plot a cross section (y=0) of the Fresnel contrast image and save '''
     Ny, Nx = I.shape
     print("Nx=", Nx, "Ny=", Ny, "dx(nm)=", int(dx*1e9))
     y0=Ny//2
@@ -469,24 +480,29 @@ def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_
     print(f"✔  Profil sauvegardé dans : {name_fig}")
 
 def coherence(I, dx, dy, alpha=0):
+    ''' I is the intensity, computation in real space with gaussian function
+    work in progress: it might be interesting to change alpha
+    '''
     Ny, Nx = I.shape
     x = (np.arange(Nx) - (Nx - 1) / 2)
     y = (np.arange(Ny) - (Ny - 1) / 2)
     X, Y = np.meshgrid(x, y)
     #R=np.sqrt(X**2+Y**2)
     R=np.sqrt(X**2)
-    #alpha à definir, fonction de lamda et theta_c ? : 
+    #alpha à definir, fonction de lambda et theta_c ? : 
     f = np.exp(-alpha*R**2) #gaussienne
     I_coherent=I*f 
     return I_coherent
 
 def amplitude(I, length, elec=1): #elec = nb d'electrons pour match experiemental image, data
+    ''' attempt of fitting experimental image amplitude '''
     norm_length=length/np.max(length)
     Id = np.ones_like(I)
     ampl=Id*elec-0.5*elec*norm_length
     return I*ampl
 
 def add_elec_phase(phase, length, phasecomp, Ce= 7.288E6, V0=20): #1E6 car 1E-3/1E-9 voir formule
+    ''' add electrostatic component to the phase '''
     phase = phase + length*Ce*V0
     #phase = phase 
     #phase = length*Ce*V0
@@ -495,6 +511,7 @@ def add_elec_phase(phase, length, phasecomp, Ce= 7.288E6, V0=20): #1E6 car 1E-3/
     return phase, phasecomp
 
 def str2bool(v):    
+    ''' convert string to boolean '''
     if isinstance(v, bool):
         return v
     if v.lower() in ("yes", "true", "t", "1"):
@@ -505,6 +522,7 @@ def str2bool(v):
         raise argparse.ArgumentTypeError("Boolean value expected.")
     
 def parse_args(): #ajouter option alpha pour la coherence du faisceau
+    ''' parsing of the command line '''
     p = argparse.ArgumentParser()
     p.add_argument("--png", required=True, help="PNG 16-bit contenant la phase")
     p.add_argument("--pnglength", required=True, help="PNG 16-bit contenant l\' epaisseur")
