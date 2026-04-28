@@ -570,7 +570,6 @@ def main():
     I_ampl= amplitude(I, length, elec=1)
     I_used=I
     profile_fresnel(I_used, dx, dy, color='blue', label="profile", name_fig=f"fresnel_new_profile_defoc_{args.defocus}m_{phasecomp}_{args.mode}.png")
-    #profile_fresnel(I_mod, dx, dy, color='blue', label="profile", name_fig=f"fresnel_new_profile_defoc_{args.defocus}m_{phasecomp}_div_{alpha}.png")
     Ny, Nx = I.shape
     extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
     
@@ -581,7 +580,6 @@ def main():
     plt.ylabel("y (nm)")
     plt.title("Contraste de Fresnel")
     plt.colorbar(label="Intensité")
-    #phasecomp="PhiE"
     nameplot=f"fresnel_new_defoc_{args.defocus}m_{phasecomp}_{args.mode}.png"
     #nameplot=f"fresnel_new_defoc_{args.defocus}m_{phasecomp}_div_{alpha}.png"
     plt.savefig(nameplot, dpi=150)
