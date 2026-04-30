@@ -219,23 +219,23 @@ The user might visualize them typing:
 fmit-png-viewer
 ```
 
-Metadatas stored in the png files can be found back using fmit-calculator, or from command line
-using imagemagick package.
-To install imagemagick on ubuntu:
+Basic information about the PNG files can be obtained with the standard `file` utility:
 ```bash
-sudo apt-get install imagemagick
+file sim_HOLO_PHASE.png
 ```
-then type
+This should print a line similar to the following:
+```
+sim_HOLO_PHASE.png: PNG image data, 487 x 487, 16-bit grayscale, non-interlaced
+```
+The metadata within these files is show by `fmit-calculator`. It can also be retrieved from the command line using the `pngmeta` utility, which has to be installed first:
 ```bash
-identify sim_HOLO_PHASE.png
+sudo apt install pngmeta
 ```
-this should give you the following informations (or something similar)
-```bash
-sim_HOLO_PHASE.png PNG 487x487 487x487+0+0 16-bit Grayscale Gray 190620B 0.000u 0:00.000
+Then run:
 ```
-Option -verbose allows one to get many more informations, including the yaml script that was
-provided to pathIntegral to generate the png file.
-
+pngmeta sim_HOLO_PHASE.png
+```
+This prints the information needed for getting the physical quantities from the image (pixel size and mapping from pixel values to the imaged quantity), as well as the YAML file that was fed to `pathIntegral` in order to build the images.
 
 **Warning**: fmit-calculator uses the default values from the `default-settings.yml` file if it does not
  find them in the yaml input file. The absorption coefficient values are set to 0.01 and 0.018 (nm⁻¹). 
