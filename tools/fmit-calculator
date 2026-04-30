@@ -429,19 +429,30 @@ def metadataFromPngFile(fileName):
     return str_metadata
 
 def default_settings():
-    def_settings = dict( outputs = dict(directory = ".", file_basename = "sim"),
-                         mesh = dict( filename = None,
-                                      length_unit = 1.0e-9,
-                                      volume_regions = None,
-                                      surface_regions = None),
-                         initial_magnetization = [1,0,0],
-                         rotations = dict(angle1 = 0,
-                                          axe1 = [1,0,0],
-                                          angle2 = 0,
-                                          axe2 = [0,0,1]),
-                         filled = False,
-                         sensor = dict(relative_size = 2, pixel_size = 1.e-9) )
-    return def_settings
+    return {
+        "outputs": {
+            "directory": ".",
+            "file_basename": "sim"
+        },
+        "mesh": {
+            "filename": None,
+            "length_unit": 1.0e-9,
+            "volume_regions": None,
+            "surface_regions": None
+        },
+        "initial_magnetization": [1, 0, 0],
+        "rotations": {
+            "angle1": 0,
+            "axe1": [1, 0, 0],
+            "angle2": 0,
+            "axe2": [0, 0, 1]
+        },
+        "filled": False,
+        "sensor": {
+            "relative_size": 2,
+            "pixel_size": 1.e-9
+        }
+    }
 
 try:
     from PyQt5.QtWidgets import (
