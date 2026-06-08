@@ -33,3 +33,4 @@ html/
 
 # build directory
 build
+*:Zone.Identifier
