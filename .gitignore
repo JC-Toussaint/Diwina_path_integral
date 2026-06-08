@@ -11,6 +11,7 @@ install_manifest.txt
 # examples
 /examples/**/*.png
 /examples/**/*.msh
+/examples/**/*.out
 
 # Smoke test
 smoke-test.msh
@@ -30,3 +31,5 @@ html/
 # Pycharm 
 .idea
 
+# build directory
+build
