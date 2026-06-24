@@ -499,9 +499,18 @@ def coherence(I, dx, dy, alpha=0):
     I_coherent=I*f 
     return I_coherent
 
-def amplitude(I, length, elec=1): #elec = nb d'electrons pour match experiemental image, data
+def amplitude(I, length, cropp, elec=1): #elec = nb d'electrons pour match experimental image, data
     ''' attempt of fitting experimental image amplitude '''
-    norm_length=length/np.max(length)
+    Nx, Ny = length.shape
+    if cropp==True:
+     y1 = Ny + math.ceil(Ny/4)
+     y2 = 2*Ny - math.ceil(Ny/4)
+     x1 = Nx + math.ceil(Nx/4)
+     x2 = 2*Nx - math.ceil(Nx/4)
+     length_ampl=length[y1:y2,x1:x2]
+    else:
+     length_ampl=length
+    norm_length=length_ampl/np.max(length_ampl) #error here to be corrected
     Id = np.ones_like(I)
     ampl=Id*elec-0.5*elec*norm_length
     return I*ampl
@@ -570,9 +579,8 @@ def main():
         print("Intensity computed using Default computation method")
     alpha=0
     
-    #I_mod = coherence(I, dx, dy, alpha=alpha) #Iampl si on veut les 2 effets
-    I_mod = coherence(I, dx, dy, alpha=alpha)
-    I_ampl= amplitude(I, length, elec=1)
+    #I_mod = coherence(I, dx, dy, alpha=alpha)
+    #I_ampl= amplitude(I, length, cropp=args.cropp, elec=1)
     I_used=I
     profile_fresnel(I_used, dx, dy, color='blue', label="profile", name_fig=f"fresnel_new_profile_defoc_{args.defocus}m_{phasecomp}_{args.mode}.png")
     Ny, Nx = I.shape
