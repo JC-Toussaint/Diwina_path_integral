@@ -474,8 +474,13 @@ def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_
     x = (np.arange(Nx) - (Nx - 1) / 2) * int(dx*1e9)
     plt.figure()
     plt.plot(x, profile, label=label, color=color)
-    plt.xlabel("x (nm)")
-    plt.ylabel("Intensity (a.u.)")
+    #added x and y limits to profile to match cropped region in Intensity image
+    plt.ylim(-0.1, 4)
+    plt.xlim(-200, 200)
+    plt.xlabel("x (nm)", fontsize=16)
+    plt.ylabel("Intensity (a.u.)", fontsize=16)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
     plt.savefig(name_fig, dpi=300)
     print(f"✔  Profil sauvegardé dans : {name_fig}")
 
