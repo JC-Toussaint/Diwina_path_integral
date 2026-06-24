@@ -585,7 +585,7 @@ def main():
     plt.ylabel("y (nm)")
     plt.title("Contraste de Fresnel")
     plt.colorbar(label="Intensité")
-    nameplot=f"fresnel_new_defoc_{args.defocus}m_{phasecomp}_{args.mode}.png"
+    nameplot=f"fresnel_image_cropped_defoc_{args.defocus}m.png"
     #nameplot=f"fresnel_new_defoc_{args.defocus}m_{phasecomp}_div_{alpha}.png"
     plt.savefig(nameplot, dpi=150)
     plt.close()
