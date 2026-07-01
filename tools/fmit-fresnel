@@ -476,7 +476,7 @@ def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_
     plt.plot(x, profile, label=label, color=color)
     #added x and y limits to profile to match cropped region in Intensity image
     plt.ylim(-0.1, 4)
-    plt.xlim(-200, 200)
+    #plt.xlim(-200, 200) #pas necessaire ?
     plt.xlabel("x (nm)", fontsize=16)
     plt.ylabel("Intensity (a.u.)", fontsize=16)
     plt.xticks(fontsize=14)
@@ -582,7 +582,7 @@ def main():
     #I_mod = coherence(I, dx, dy, alpha=alpha)
     #I_ampl= amplitude(I, length, cropp=args.cropp, elec=1)
     I_used=I
-    profile_fresnel(I_used, dx, dy, color='blue', label="profile", name_fig=f"fresnel_new_profile_defoc_{args.defocus}m_{phasecomp}_{args.mode}.png")
+    profile_fresnel(I_used, dx, dy, color='blue', label="profile", name_fig=f"fresnel_profile_cropp_{args.cropp}_defoc_{args.defocus}m.png")
     Ny, Nx = I.shape
     extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
     
@@ -591,9 +591,9 @@ def main():
     plt.imshow(I_used, cmap="gray", extent=extent_nm) #possible d'ajouter en option de imshow vmin et vmax pour fixer les valeurs min/max d'intensité.
     plt.xlabel("x (nm)")
     plt.ylabel("y (nm)")
-    plt.title("Contraste de Fresnel")
-    plt.colorbar(label="Intensité")
-    nameplot=f"fresnel_image_cropped_defoc_{args.defocus}m.png"
+    plt.title("Fresnel Contrast")
+    plt.colorbar(label="Intensity")
+    nameplot=f"fresnel_image_cropp_{args.cropp}_defoc_{args.defocus}m.png"
     #nameplot=f"fresnel_new_defoc_{args.defocus}m_{phasecomp}_div_{alpha}.png"
     plt.savefig(nameplot, dpi=150)
     plt.close()
