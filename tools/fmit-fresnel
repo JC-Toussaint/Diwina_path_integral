@@ -11,6 +11,7 @@ from PIL import Image
 import argparse
 import re
 import math
+from scipy.signal import fftconvolve
 
 # Constantes
 h = 6.62607015e-34
@@ -484,20 +485,21 @@ def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_
     plt.savefig(name_fig, dpi=300)
     print(f"✔  Profil sauvegardé dans : {name_fig}")
 
-def coherence(I, dx, dy, alpha=0):
-    ''' I is the intensity, computation in real space with gaussian function
+def coherence(I, dx, dy, defocus=2E-6, convergence=0.001E-3):
+    ''' I is the intensity, convolution in real space with gaussian function
     work in progress: it might be interesting to change alpha
     '''
     Ny, Nx = I.shape
-    x = (np.arange(Nx) - (Nx - 1) / 2)
-    y = (np.arange(Ny) - (Ny - 1) / 2)
+    x = (np.arange(Nx) - (Nx - 1) / 2)*dx
+    y = (np.arange(Ny) - (Ny - 1) / 2)*dy
     X, Y = np.meshgrid(x, y)
-    #R=np.sqrt(X**2+Y**2)
-    R=np.sqrt(X**2)
-    #alpha à definir, fonction de lambda et theta_c ? : 
-    f = np.exp(-alpha*R**2) #gaussienne
-    I_coherent=I*f 
-    return I_coherent
+
+    alpha_F = (np.pi*defocus*convergence)**2/np.log(2)
+    alpha_R = 1/(4*alpha_F)
+    print("aplha for divergence in image plane (m^-2)= ", alpha_R, "for convergence (rad) ", convergence)
+    G = np.exp(-alpha_R*(X**2 + Y**2)) #gaussienne exp(-alpha*r^2)
+    G /= G.sum()          # normalisation
+    return fftconvolve(I, G, mode='same')
 
 def amplitude(I, length, cropp, elec=1): #elec = nb d'electrons pour match experimental image, data
     ''' attempt of fitting experimental image amplitude '''
@@ -577,11 +579,10 @@ def main():
     else:
         I= simulate_fresnel_enveloppe(phase, dx, dy, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs) # E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, convergence=0
         print("Intensity computed using Default computation method")
-    alpha=0
     
-    #I_mod = coherence(I, dx, dy, alpha=alpha)
+    I_mod = coherence(I, dx, dy, defocus=args.defocus) #alpha calculé dans la fonction
     #I_ampl= amplitude(I, length, cropp=args.cropp, elec=1)
-    I_used=I
+    I_used=I_mod
     profile_fresnel(I_used, dx, dy, color='blue', label="profile", name_fig=f"fresnel_profile_cropp_{args.cropp}_defoc_{args.defocus}m.png")
     Ny, Nx = I.shape
     extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
