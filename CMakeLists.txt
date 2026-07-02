@@ -1,6 +1,4 @@
-#
 cmake_minimum_required(VERSION 3.13)
-cmake_policy(SET CMP0115 NEW)
 PROJECT(pathIntegral CXX)
 
 # settings to add -std=c++17 option, and avoid -std=gnu++17
@@ -141,58 +139,10 @@ if(${ENABLE_LTO})
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fopenmp")
-
-set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
-
-SET(HEADERS ${SRC_DIR}/config.h ${SRC_DIR}/node.h ${SRC_DIR}/expression_parser.h ${SRC_DIR}/mesh.h
-    ${SRC_DIR}/termcolor.h ${SRC_DIR}/settings.h ${SRC_DIR}/tetra.h ${SRC_DIR}/facette.h ${SRC_DIR}/tags.h
-    ${SRC_DIR}/chronometer.h ${SRC_DIR}/element.h ${SRC_DIR}/geo.h ${SRC_DIR}/fem2d.h ${SRC_DIR}/write_png.h ${SRC_DIR}/pathIntegral.h
-    ${SRC_DIR}/scalfmm_2d.hpp ${SRC_DIR}/scalfmm3.hpp )
-
-SET(SOURCES ${SRC_DIR}/settings.cpp ${SRC_DIR}/read.cpp ${SRC_DIR}/tetra.cpp ${SRC_DIR}/expression_parser.cpp ${SRC_DIR}/chronometer.cpp
-    ${SRC_DIR}/tags.cpp ${SRC_DIR}/write_png.cpp ${SRC_DIR}/exportRatioGrayScaleImage.cpp ${SRC_DIR}/exportMagIntegrals.cpp ${SRC_DIR}/chapeaux.cpp 
-    ${SRC_DIR}/scalfmm2d_sum.cpp ${SRC_DIR}/direct2d_sum.cpp
-    ${SRC_DIR}/femutil.cpp ${SRC_DIR}/correction.cpp ${SRC_DIR}/exportHoloPhase.cpp ${SRC_DIR}/exportMagIntegrals_nd_HoloPhase.cpp ${SRC_DIR}/pathIntegral.cpp)
-
-configure_file(${SRC_DIR}/config.h.in ./config.h)
-
-add_custom_command(
-    OUTPUT default-settings.o
-    COMMAND ld -r -b binary -z noexecstack default-settings.yml -o default-settings.o
-    DEPENDS default-settings.yml)
-    
-#===========================================================================
-# Compiler options
-#===========================================================================
-# -ffast-math -msse4.2 -mfpmath=sse (on X86 -mfpmath=sse set by default) or -mavx
-# -fsanitize=address leak null undefined # both compiler and linker
-#===========================================================================
-
-include_directories (${CMAKE_SOURCE_DIR} ${SRC_DIR})
-ADD_EXECUTABLE(pathIntegral ${SRC_DIR}/main.cpp ${HEADERS} ${SOURCES} ${SOURCES_FORTRAN} default-settings.o)
-target_compile_options( pathIntegral PUBLIC -Wall -Wextra -O3 -march=native )
-target_compile_definitions(pathIntegral PUBLIC CGAL_HAS_THREADS NDEBUG TBB_SUPPRESS_DEPRECATED_MESSAGES)
-target_include_directories(pathIntegral PRIVATE ${PROJECT_SOURCE_DIR} ${SRC_DIR})
-
-# Liaison des bibliothèques - ordre important pour les dépendances
-target_link_libraries(pathIntegral 
-    yaml-cpp 
-    duktape 
-    ${TBB_LINK} 
-    Eigen3::Eigen 
-    gmsh_target  # Utilisation de la cible GMSH créée
-    scalfmm 
-    LAPACK::LAPACK 
-    BLAS::BLAS 
-    ${FFTW_TARGET} 
-    OpenMP::OpenMP_CXX 
-    -ltbb
-    -lm 
-    -lboost_program_options
-)
+add_subdirectory(src)
 
 #===========================================================================
+# installation of executable and python scripts
 
 install(TARGETS pathIntegral RUNTIME DESTINATION bin)
 install(PROGRAMS ./tools/fmit-calculator DESTINATION bin)
