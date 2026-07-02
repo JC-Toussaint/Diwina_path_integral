@@ -12,7 +12,7 @@ meshSize = 4
 sphere = meshMaker.Ellipsoid(r,r,meshSize,"sphere_surface","sphere_volume")
 sphere.make("smoke-test.msh")
 
-val = subprocess.run(["./pathIntegral","smoke-test.yml"], text=True)
+val = subprocess.run(["src/pathIntegral","smoke-test.yml"], text=True)
 
 # Use ANSI colors if printing to a terminal.
 if sys.stdout.isatty():
