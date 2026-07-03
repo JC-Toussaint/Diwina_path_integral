@@ -1,0 +1,67 @@
+	┌────────────────────────────────┐
+	│          pathIntegral          │
+	│      CNRS Grenoble – INP       │
+	└────────────────────────────────┘
+pathIntegral version: e77b2e6
+parallel mode:     on
+process ID:        1247
+random seed:       2405104721
+settings file:     unisphere_ray.yml
+mesh file:         sphere.msh
+output directory:  . (already exists)
+starting on:       2026-07-02T18:41:48+0200
+Axe1   : 1;0;0
+Angle1 : 0deg
+Axe2   : 0;0;1
+Angle2 : 0deg
+sizes  : 1.99977e-07
+1.99983e-07
+      2e-07
+filled : false
+Sensor : 
+-- sensor mesh -- number of nodes : 641601
+-- relative_size : 2
+-- pixel_size    : 5e-10
+Start Ray Tracing
+End Ray Tracing
+Start Export
+Integrals saved in sim_M_integrals.out
+Image saved in sim_STXM_XMCD.png
+Image saved in sim_MZ.png
+Image saved in sim_PATH_LENGTH.png
+End Export
+
+Computing time: 36.5673 s
+Fast Multipole Calculation
+ scalfmm2d_sum start
+ nb of sources & targets : 757647 641601
+Calcul de la boite englobante 
+[-1.99985e-07, -1.99985e-07] [2.00015e-07, 2.00015e-07]
+  box_type box(S_min, S_max)   [[-2.39985e-07, -2.39985e-07],[2.40015e-07, 2.40015e-07]] ; periodicity:  none 
+
+      initialization time ........................ 839.457 [ms]
+tree source
+[stats][group number] : 234
+[stats][min:max]      : 1:338
+[stats][mean]         : 323
+[stats][stdev]        : 3502.84
+[stats][number leaf]  : 2340
+tree trarget
+[stats][group number] : 1167
+[stats][min:max]      : 9:64
+[stats][mean]         : 55
+[stats][stdev]        : 68.6256
+[stats][number leaf]  : 11664
+[34mFmm with kernels: 
+       near      holographic
+       far       holographic
+[0m[31mWARNING the task priorities are not (fully) available. set OMP_MAX_TASK_PRIORITY to 11[0m
+
+      fmm sum .................................... 217.132 [ms]
+
+      get pot .................................... 2.6124 [ms]
+
+      fast multipole time ........................ 307.034 [ms]
+fmm2D returned 0
+Integrals & Holo Phase saved in sim_STXM_HOLO.out
+Image saved in sim_HOLO_PHASE.png
