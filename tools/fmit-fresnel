@@ -462,13 +462,10 @@ def amplitude(I, length, crop, elec=1): #elec = nb d'electrons pour match experi
     ampl=Id*elec-0.5*elec*norm_length
     return I*ampl
 
-def add_elec_phase(phase, length, phasecomp, Ce= 7.288E6, V0=20): #1E6 car 1E-3/1E-9 voir formule
+def add_elec_phase(phase, length, phasecomp, Ce, V0):
     ''' add electrostatic component to the phase '''
     phase = phase + length*Ce*V0
-    #phase = phase 
-    #phase = length*Ce*V0
     phasecomp="PhiE+Phimag"
-    
     return phase, phasecomp
 
 def str2bool(v):    
@@ -509,7 +506,6 @@ def main():
         dx = dy = 1e-9
         print(f"⚠ missing dx/  or dy → default value dx = dy = {dx} m used\n")
 
-    # Affichage des paramètres de simulation
     print("→ Simulation parameters:\n")
     print(f"   Voltage E0 = {args.E0} eV\n")
     print(f"   Defocus    = {args.defocus} m\n")
