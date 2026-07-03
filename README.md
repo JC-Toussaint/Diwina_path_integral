@@ -135,6 +135,24 @@ Install meshio pyyaml scipy PyQt5 pyvista pyvistaqt python modules
 pip3 install meshio pyyaml scipy PyQt5 pyvista pyvistaqt pypng
 ```
 
+### Using fmit-calculator from Windows 11
+
+It is also possible to use the application fmit-calculator directly from Windows. It might solve
+some graphic issues on WSL2. In a Windows terminal, you have to create a virtual environment:
+```bash
+python3 -m venv .venv
+```
+
+Then activate the virtual environment:
+```bash
+.venv\Scripts\activate.bat
+```
+Then start fmit-calculator
+```bash
+cd tools
+py fmit-calculator
+```
+
 # Getting started
 
 A configuration template file can be generated, giving you all the fields you need to fill in to run a simulation.
