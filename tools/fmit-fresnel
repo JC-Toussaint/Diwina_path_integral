@@ -430,21 +430,22 @@ def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_
     plt.savefig(name_fig, dpi=300)
     print(f"✔  Profil sauvegardé dans : {name_fig}")
 
-def coherence(I, dx, dy, defocus=2E-6, convergence=0.001E-3):
+def coherence(I, dx, dy, alpha):
     ''' I is the intensity, convolution in real space with gaussian function
-    work in progress: it might be interesting to change alpha
     '''
     Ny, Nx = I.shape
     x = (np.arange(Nx) - (Nx - 1) / 2)*dx
     y = (np.arange(Ny) - (Ny - 1) / 2)*dy
     X, Y = np.meshgrid(x, y)
 
-    alpha_F = (np.pi*defocus*convergence)**2/np.log(2)
-    alpha_R = 1/(4*alpha_F)
-    print("aplha for divergence in image plane (m^-2)= ", alpha_R, "for convergence (rad) ", convergence)
-    G = np.exp(-alpha_R*(X**2 + Y**2)) #gaussienne exp(-alpha*r^2)
-    G /= G.sum()          # normalisation
-    return fftconvolve(I, G, mode='same')
+    if alpha==0:
+        return I
+    else:
+        alpha_R = 1/(4*alpha)
+        print("alpha for divergence in image plane (m^-2)= ", alpha_R)
+        G = np.exp(-alpha_R*(X**2 + Y**2)) #gaussian exp(-alpha*r^2)
+        G /= G.sum()          # normalisation
+        return fftconvolve(I, G, mode='same')
 
 def amplitude(I, length, crop, elec=1): #elec = nb d'electrons pour match experimental image, data
     ''' attempt of fitting experimental image amplitude '''
@@ -521,7 +522,12 @@ def main():
         I= simulate_fresnel_enveloppe(phase, dx, dy, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs) # E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, convergence=0
         print("Intensity computed using Default computation method")
     
-    I_mod = coherence(I, dx, dy, defocus=args.defocus) #alpha calculé dans la fonction
+    defocus = args.defocus
+    convergence = 0.001E-3
+    print("convergence (rad)=", convergence)
+
+    alpha_F = (np.pi*defocus*convergence)**2/np.log(2)
+    I_mod = coherence(I, dx, dy, alpha_F)
     #I_ampl= amplitude(I, length, crop=args.crop, elec=1)
     I_used=I_mod
     profile_fresnel(I_used, dx, dy, color='blue', label="profile", name_fig=f"fresnel_profile_crop_{args.crop}_defoc_{args.defocus}m.png")
