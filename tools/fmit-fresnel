@@ -485,11 +485,11 @@ def str2bool(v):
 def parse_args(): #ajouter option alpha pour la coherence du faisceau
     ''' parsing of the command line '''
     p = argparse.ArgumentParser()
-    p.add_argument("--png", required=True, help="PNG 16-bit contenant la phase")
-    p.add_argument("--pnglength", required=True, help="PNG 16-bit contenant l\' epaisseur")
-    p.add_argument("--defocus", type=float, default=0.5E-3)
-    p.add_argument("--E0", type=float, default=200e3)
-    p.add_argument("--Cs", type=float, default=1.2e-3)
+    p.add_argument("--png", required=True, help="phase map in a PNG 16-bit")
+    p.add_argument("--pnglength", required=True, help="thickness map in a PNG 16-bit")
+    p.add_argument("--defocus", type=float, default=0.5E-3, help="defocusing parameter in m")
+    p.add_argument("--E0", type=float, default=200e3,help="Voltage E0 in eV")
+    p.add_argument("--Cs", type=float, default=1.2e-3,help="Constant Cs in m")
     p.add_argument("--cropp", type=str2bool, default=False, help="Enable cropping (true/false), default=True") #change cropp to false if full image
     p.add_argument("--mode", type=str, default="mirrored", help="available options : mirrored") #mettre plutot default="default" : not mirrored
     return p.parse_args()
@@ -505,15 +505,14 @@ def main():
     # Fallback si dx/dy absents
     if dx is None or dy is None:
         dx = dy = 1e-9
-        print(f"⚠ dx/dy manquants → utilisation de dx = dy = {dx} m\n")
+        print(f"⚠ missing dx/  or dy → default value dx = dy = {dx} m used\n")
 
     # Affichage des paramètres de simulation
-    print("→ Paramètres de simulation :")
-    print(f"   Tension E0 = {args.E0} eV")
-    print(f"   Défocus    = {args.defocus} m")
-    print(f"   Constante Cs = {args.Cs} m\n")
-    print(f"   Cropp of image (by 2) = {args.cropp}\n") 
-    
+    print("→ Simulation parameters:\n")
+    print(f"   Voltage E0 = {args.E0} eV\n")
+    print(f"   Defocus    = {args.defocus} m\n")
+    print(f"   Constant Cs = {args.Cs} m\n")
+    print(f"   Image crop (by 2) = {args.cropp}\n")
 
     phase, phasecomp = add_elec_phase(phase, length, phasecomp='Phi', Ce= 7.288E6, V0=20) # Ce=6.53E6 at 300kV
     # Simulation Fresnel
@@ -543,7 +542,7 @@ def main():
     plt.savefig(nameplot, dpi=150)
     plt.close()
 
-    print(f"✔  Image sauvegardée dans : {nameplot}")
+    print(f"✔  Image saved in file {nameplot}")
     #print ( f"defocus={args.defocus} m, V0={V0}, alpha={alpha} ")
 
 if __name__ == "__main__":
