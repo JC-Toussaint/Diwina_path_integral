@@ -8,6 +8,12 @@ from matplotlib.colors import LinearSegmentedColormap
 def read_holo_file(filename):
     """
     Lit le fichier sim_Holo.out et retourne les données
+    ## columns
+    ##   1                    2                    3  4                    5                    6                    7                    8
+       9                   10
+    ## idx                    x                    y in          path_length          Mx_integral          My_integral          Mz_integral
+    contrast                phase
+
     """
     data = []
     
@@ -19,24 +25,30 @@ def read_holo_file(filename):
             
             # Lire les données
             values = line.split()
-            if len(values) == 6:
+            if len(values) == 10:
                 idx = int(values[0])
                 x = float(values[1])
                 y = float(values[2])
                 in_val = int(values[3])
                 path_length = float(values[4])
-                phase = float(values[5])
-                data.append([idx, x, y, in_val, path_length, phase])
+                Mx_integral = float(values[5])
+                My_integral = float(values[6])
+                Mz_integral = float(values[7])
+                contrast    = float(values[8])
+                phase       = float(values[9])
+                data.append([idx, x, y, in_val, path_length, Mx_integral, My_integral, Mz_integral, contrast, phase])
     
     return np.array(data)
 
 # Lire le fichier
-data = read_holo_file('sim_Holo.out')
+data = read_holo_file('sim_STXM_HOLO.out')
+
+print(data)
 
 # Extraire les colonnes
 x = data[:, 1]
 y = data[:, 2]
-phase = data[:, 5]
+phase = data[:, 9]
 
 # Déterminer la grille
 nx = int(np.sqrt(len(x) + 0.5))
