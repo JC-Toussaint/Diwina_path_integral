@@ -42,113 +42,58 @@ def safe_float(x):
     except Exception:
         return None
 
-def load_phase_png_with_metadata(path_png):
-    ''' load a png container of a magnetic phase  '''
+def load_png(path_png,isAngle):
+    ''' load data from a png container and its metadata, if isAngle is True datas are mapped to [-π, π] '''
     im = Image.open(path_png)
-    meta = dict(im.info)  # métadonnées PNG
+    meta = dict(im.info)  # PNG metadatas
 
-    # Recherche des valeurs utiles
-    pxw_key, pxw_val = find_meta_value(meta, [r'pixel *width', r'pixel.*x', r'physical.*pixel.*width'])
-    pxh_key, pxh_val = find_meta_value(meta, [r'pixel *height', r'pixel.*y', r'physical.*pixel.*height'])
-    pxunit_key, pxunit_val = find_meta_value(meta, [r'pixel *unit', r'pixel.*unit', r'unit *pixel'])
+    # Metadata parsing
+    _, pxw_val = find_meta_value(meta, [r'pixel *width', r'pixel.*x', r'physical.*pixel.*width'])
+    _, pxh_val = find_meta_value(meta, [r'pixel *height', r'pixel.*y', r'physical.*pixel.*height'])
+    _, pxunit_val = find_meta_value(meta, [r'pixel *unit', r'pixel.*unit', r'unit *pixel'])
 
-    vmin_key, vmin_val = find_meta_value(meta, [r'value *min', r'min *value', r'phase *min'])
-    vmax_key, vmax_val = find_meta_value(meta, [r'value *max', r'max *value', r'phase *max'])
-    vunit_key, vunit_val = find_meta_value(meta, [r'value *unit', r'unit *value', r'phase *unit'])
+    _, vmin_val = find_meta_value(meta, [r'value *min', r'min *value', r'phase *min'])
+    _, vmax_val = find_meta_value(meta, [r'value *max', r'max *value', r'phase *max'])
+    _, vunit_val = find_meta_value(meta, [r'value *unit', r'unit *value', r'phase *unit'])
 
     dx = safe_float(pxw_val)
     dy = safe_float(pxh_val)
     px_unit = str(pxunit_val).strip() if pxunit_val else None
 
-    phase_min = safe_float(vmin_val)
-    phase_max = safe_float(vmax_val)
+    val_min = safe_float(vmin_val)
+    val_max = safe_float(vmax_val)
     value_unit = str(vunit_val).strip() if vunit_val else None
 
-    # Chargement image
+    # image array converted tu unsigned 16 bit integer
     arr = np.array(im)
     if arr.dtype != np.uint16:
         arr = arr.astype(np.uint16)
-        print("conversion to 16-bit done on phase image array")
+        print("conversion to 16-bit done on image array")
     arr = arr.astype(np.float64)
 
-    # Mapping en phase
-    if (phase_min is not None) and (phase_max is not None):
-        phase = phase_min + (arr / 65535.0) * (phase_max - phase_min)
-        note = f"Mapping linéaire 0..65535 -> [{phase_min}, {phase_max}] {value_unit or ''}"
-    else:
-        phase = (arr / 65535.0) * (2*np.pi) - np.pi
-        note = "Aucune Value Min/Max : mapping 0..65535 -> [-π, π]"
+    # Mapping
+    if (val_min is not None) and (val_max is not None):
+        val = val_min + (arr / 65535.0) * (val_max - val_min)
+        note = f"Linear mapping 0..65535 -> [{val_min}, {val_max}] {value_unit or ''}"
+    elif isAngle:
+        val = (arr / 65535.0) * (2*np.pi) - np.pi
+        note = "No Value Min/Max : mapping 0..65535 -> [-π, π]"
 
-    # Affichage résumé
-    print("→ Métadonnées utilisées pour phase:")
+    print("→ Metadata:")
     if dx is not None and dy is not None:
         print(f"   Pixel Width  (dx) = {dx} {px_unit or ''}")
         print(f"   Pixel Height (dy) = {dy} {px_unit or ''}")
     else:
-        print("   Pixel Width/Height non trouvés")
+        print("   Pixel Width/Height not found")
 
-    if phase_min is not None and phase_max is not None:
-        print(f"   Value Min = {phase_min} {value_unit or ''}")
-        print(f"   Value Max = {phase_max} {value_unit or ''}")
+    if val_min is not None and val_max is not None:
+        print(f"   Value Min = {val_min} {value_unit or ''}")
+        print(f"   Value Max = {val_max} {value_unit or ''}")
     else:
-        print("   Value Min/Max non trouvés")
-
+        print("   Value Min/Max not found")
     print(f"   Note : {note}\n")
 
-    return phase, dx, dy
-
-def load_thickness_png_with_metadata(path_png):
-    ''' load a png container of thickness map '''
-    im = Image.open(path_png)
-    meta = dict(im.info)  # métadonnées PNG
-    
-    # Recherche des valeurs utiles
-    pxw_key, pxw_val = find_meta_value(meta, [r'pixel *width', r'pixel.*x', r'physical.*pixel.*width'])
-    pxh_key, pxh_val = find_meta_value(meta, [r'pixel *height', r'pixel.*y', r'physical.*pixel.*height'])
-    pxunit_key, pxunit_val = find_meta_value(meta, [r'pixel *unit', r'pixel.*unit', r'unit *pixel'])
-
-    vmin_key, vmin_val = find_meta_value(meta, [r'value *min', r'min *value'])
-    vmax_key, vmax_val = find_meta_value(meta, [r'value *max', r'max *value'])
-    vunit_key, vunit_val = find_meta_value(meta, [r'value *unit', r'unit *value', r'phase *unit'])
-
-    dx = safe_float(pxw_val)
-    dy = safe_float(pxh_val)
-    px_unit = str(pxunit_val).strip() if pxunit_val else None
-
-    t_min = safe_float(vmin_val)
-    t_max = safe_float(vmax_val)
-    value_unit = str(vunit_val).strip() if vunit_val else None
-
-    # Chargement image
-    arr = np.array(im)
-    if arr.dtype != np.uint16:
-        arr = arr.astype(np.uint16)
-        print("conversion to 16-bit done on path_length image array")
-    arr = arr.astype(np.float64)
-
-    # Mapping en phase
-    if (t_min is not None) and (t_max is not None):
-        length = t_min + (arr / 65535.0) * (t_max - t_min)
-        note = f"Mapping linéaire 0..65535 -> [{t_min}, {t_max}] {value_unit or ''}"
-
-
-    # Affichage résumé
-    print("→ Métadonnées utilisées pour path_length:")
-    if dx is not None and dy is not None:
-        print(f"   Pixel Width  (dx) = {dx} {px_unit or ''}")
-        print(f"   Pixel Height (dy) = {dy} {px_unit or ''}")
-    else:
-        print("   Pixel Width/Height non trouvés")
-
-    if t_min is not None and t_max is not None:
-        print(f"   Value Min = {t_min} {value_unit or ''}")
-        print(f"   Value Max = {t_max} {value_unit or ''}")
-    else:
-        print("   Value Min/Max non trouvés")
-
-    print(f"   Note : {note}\n")
-
-    return length
+    return val, dx, dy
 
 def apply_window(phase, window_type='hann', width_fraction=0.1):
     """Applique une fenêtre sur les bords de l'image
@@ -552,10 +497,9 @@ def parse_args(): #ajouter option alpha pour la coherence du faisceau
 def main():
     args = parse_args()
 
-    # Charger phase + métadonnées utiles
-    phase, dx, dy = load_phase_png_with_metadata(args.png)
-    
-    length = load_thickness_png_with_metadata(args.pnglength)
+    # Load phase + metadata
+    phase, dx, dy = load_png(args.png,True)
+    length,_,_ = load_png(args.pnglength,False)
     
     #phase=remove_edge_discontinuity(phase)
     # Fallback si dx/dy absents
