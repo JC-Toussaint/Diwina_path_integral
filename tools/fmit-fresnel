@@ -451,23 +451,21 @@ def amplitude(I, length, crop, elec=1): #elec = nb d'electrons pour match experi
     ''' attempt of fitting experimental image amplitude '''
     Nx, Ny = length.shape
     if crop==True:
-     y1 = Ny + math.ceil(Ny/4)
-     y2 = 2*Ny - math.ceil(Ny/4)
-     x1 = Nx + math.ceil(Nx/4)
-     x2 = 2*Nx - math.ceil(Nx/4)
-     length_ampl=length[y1:y2,x1:x2]
+        y1 = Ny + math.ceil(Ny/4)
+        y2 = 2*Ny - math.ceil(Ny/4)
+        x1 = Nx + math.ceil(Nx/4)
+        x2 = 2*Nx - math.ceil(Nx/4)
+        length_ampl=length[y1:y2,x1:x2]
     else:
-     length_ampl=length
+        length_ampl=length
     norm_length=length_ampl/np.max(length_ampl) #error here to be corrected
     Id = np.ones_like(I)
-    ampl=Id*elec-0.5*elec*norm_length
+    ampl = Id*elec-0.5*elec*norm_length
     return I*ampl
 
-def add_elec_phase(phase, length, phasecomp, Ce, V0):
+def add_elec_phase(phase, length, Ce, V0):
     ''' add electrostatic component to the phase '''
-    phase = phase + length*Ce*V0
-    phasecomp="PhiE+Phimag"
-    return phase, phasecomp
+    return phase + length*Ce*V0
 
 def str2bool(v):    
     ''' convert string to boolean '''
@@ -515,7 +513,7 @@ def main():
     print(f"   Constant Cs = {args.Cs} m\n")
     print(f"   Image crop (by 2) = {args.crop}\n")
 
-    phase, phasecomp = add_elec_phase(phase, length, phasecomp='Phi', args.Ce, args.V0) # Ce=6.53E6 at 300kV
+    phase = add_elec_phase(phase, length, args.Ce, args.V0) # Ce=6.53E6 at 300kV
     # Simulation Fresnel
     if args.mode=="mirrored":
         I = simulate_fresnel_mirrored(phase, dx, dy, crop=args.crop, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs)
@@ -526,7 +524,6 @@ def main():
     
     defocus = args.defocus
     convergence = args.convergence
-
     alpha_F = (np.pi*defocus*convergence)**2/np.log(2)
     I_mod = coherence(I, dx, dy, alpha_F)
     #I_ampl= amplitude(I, length, crop=args.crop, elec=1)
@@ -535,7 +532,7 @@ def main():
     Ny, Nx = I.shape
     extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
     
-    # Sauvegarde de l’image 
+    # plot and save fresnel contrast image 
     plt.figure(figsize=(7,6))
     plt.imshow(I_used, cmap="gray", extent=extent_nm) #possible d'ajouter en option de imshow vmin et vmax pour fixer les valeurs min/max d'intensité.
     plt.xlabel("x (nm)")
@@ -543,12 +540,9 @@ def main():
     plt.title("Fresnel Contrast")
     plt.colorbar(label="Intensity")
     nameplot=f"fresnel_image_crop_{args.crop}_defoc_{args.defocus}m.png"
-    #nameplot=f"fresnel_new_defoc_{args.defocus}m_{phasecomp}_div_{alpha}.png"
     plt.savefig(nameplot, dpi=150)
     plt.close()
-
     print(f"✔  Image saved in file {nameplot}")
-    #print ( f"defocus={args.defocus} m, V0={V0}, alpha={alpha} ")
 
 if __name__ == "__main__":
     main()
