@@ -481,24 +481,25 @@ def str2bool(v):
 def parse_args(): #ajouter option alpha pour la coherence du faisceau
     ''' parsing of the command line '''
     p = argparse.ArgumentParser()
-    p.add_argument("--png", required=True, help="phase map in a PNG 16-bit")
-    p.add_argument("--pnglength", required=True, help="thickness map in a PNG 16-bit")
-    p.add_argument("--defocus", type=float, default=0.5E-3, help="defocusing parameter in m")
-    p.add_argument("--convergence", type=float, default=0.001E-3,help="convergence in rad")
-    p.add_argument("--E0", type=float, default=200e3,help="Voltage E0 in eV")
-    p.add_argument("--Cs", type=float, default=1.2e-3,help="Constant Cs in m")
-    p.add_argument("--V0", type=float, default=20,help="Voltage V0 in V")
-    p.add_argument("--Ce", type=float, default=7.288e6,help="another constant")
-    p.add_argument("--crop", type=str2bool, default=False, help="Enable cropping (true/false), default=True") #change crop to false if full image
-    p.add_argument("--mode", type=str, default="mirrored", help="available options : mirrored") #mettre plutot default="default" : not mirrored
+    p.add_argument("phaseFileName", help="phase map file in a PNG container unsigned 16-bit")
+    p.add_argument("thicknessMapFileName", help="thickness map file in a PNG container unsigned 16-bit")
+    p.add_argument("--version",action='version',version=__version__, help="show the version number")
+    p.add_argument("--defocus", type=float, default=0.5E-3, help="defocusing parameter in m, default= 0.5e-3 m")
+    p.add_argument("--convergence", type=float, default=0.001E-3, help="convergence in rad, default= 1e-6 rad")
+    p.add_argument("--E0", type=float, default=200e3, help="Voltage E0 in eV, default= 2e5 eV")
+    p.add_argument("--Cs", type=float, default=1.2e-3, help="Constant Cs in m, default= 1.2e-3 m")
+    p.add_argument("--V0", type=float, default=20, help="Voltage V0 in V, default= 20 V")
+    p.add_argument("--Ce", type=float, default=7.288e6, help="another constant")
+    p.add_argument("--crop", type=str2bool, default=False, help="Enable cropping (true/false), default= False") #change crop to false if full image
+    p.add_argument("--mode", type=str, default="default", help="Available options: mirrored|default, default= default")
     return p.parse_args()
 
 def main():
     args = parse_args()
 
     # Load phase + metadata
-    phase, dx, dy = load_png(args.png,True)
-    length,_,_ = load_png(args.pnglength,False)
+    phase, dx, dy = load_png(args.phaseFileName,True)
+    length,_,_ = load_png(args.thicknessMapFileName,False)
     
     #phase=remove_edge_discontinuity(phase)
     # Fallback si dx/dy absents
@@ -544,6 +545,7 @@ def main():
     plt.close()
     print(f"✔  Image saved in file {nameplot}")
 
+__version__ = '1.0.0'
 if __name__ == "__main__":
     main()
 
