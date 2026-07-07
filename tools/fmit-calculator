@@ -10,7 +10,12 @@ import re
 from scipy.spatial.transform import Rotation as R
 import pyvista as pv
 from pyvistaqt import QtInteractor
+from PIL import Image
 from typing import Any, Dict, List, Union
+
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qtagg import FigureCanvas
+
 
 strHelp = """Workflow:
 If fmit-calculator was launched without a yaml input file, open a yaml file through file menu.
@@ -454,9 +459,184 @@ def default_settings():
         }
     }
 
+# Constants in SI units
+from scipy.constants import h # Planck constant
+from scipy.constants import e # elementary charge
+from scipy.constants import m_e # electron mass
+from scipy.constants import c #speed of light in vacuum
+
+def relativistic_wavelength(eV):
+    E = eV * e
+    p = np.sqrt(E**2 + 2*E*m_e*c**2) / c
+    return h / p
+
+def electrical_constant(eV):
+    lam=relativistic_wavelength(eV)
+    E = eV * e #microscope acceleration, in eV
+    gamma = 1.0 + E/(m_e*c**2) #relativistic Lorentz factor
+    U_s = eV*(1.0 + gamma)/2 #relativistic corrected potential
+    return (np.pi*gamma)/(lam*U_s)
+
+def add_elec_phase(phase, length, Ce, V0):
+    ''' add electrostatic component to the phase '''
+    return phase + length*Ce*V0
+
+def find_meta_value(meta, patterns):
+    ''' return key,value according to patterns in meta '''
+    for key in meta:
+        key_norm = key.lower().strip()
+        for pat in patterns:
+            if re.search(pat, key_norm):
+                return key, meta[key]
+    return None, None
+
+def safe_float(x):
+    ''' return a float '''
+    try:
+        if isinstance(x, bytes):
+            x = x.decode('utf-8', errors='ignore')
+        return float(str(x).strip())
+    except Exception:
+        return None
+
+def load_png(path_png,isAngle):
+    ''' load data from a png container and its metadata, if isAngle is True datas are mapped to [-π, π] '''
+    im = Image.open(path_png)
+    meta = dict(im.info)  # PNG metadatas
+
+    # Metadata parsing
+    _, pxw_val = find_meta_value(meta, [r'pixel *width', r'pixel.*x', r'physical.*pixel.*width'])
+    _, pxh_val = find_meta_value(meta, [r'pixel *height', r'pixel.*y', r'physical.*pixel.*height'])
+    _, pxunit_val = find_meta_value(meta, [r'pixel *unit', r'pixel.*unit', r'unit *pixel'])
+
+    _, vmin_val = find_meta_value(meta, [r'value *min', r'min *value', r'phase *min'])
+    _, vmax_val = find_meta_value(meta, [r'value *max', r'max *value', r'phase *max'])
+    _, vunit_val = find_meta_value(meta, [r'value *unit', r'unit *value', r'phase *unit'])
+
+    dx = safe_float(pxw_val)
+    dy = safe_float(pxh_val)
+    px_unit = str(pxunit_val).strip() if pxunit_val else None
+
+    val_min = safe_float(vmin_val)
+    val_max = safe_float(vmax_val)
+    value_unit = str(vunit_val).strip() if vunit_val else None
+
+    # image array converted tu unsigned 16 bit integer
+    arr = np.array(im)
+    if arr.dtype != np.uint16:
+        arr = arr.astype(np.uint16)
+        print("conversion to 16-bit done on image array")
+    arr = arr.astype(np.float64)
+
+    # Mapping
+    if (val_min is not None) and (val_max is not None):
+        val = val_min + (arr / 65535.0) * (val_max - val_min)
+        note = f"Linear mapping 0..65535 -> [{val_min}, {val_max}] {value_unit or ''}"
+    elif isAngle:
+        val = (arr / 65535.0) * (2*np.pi) - np.pi
+        note = "No Value Min/Max : mapping 0..65535 -> [-π, π]"
+
+    print("→ Metadata:")
+    if dx is not None and dy is not None:
+        print(f"   Pixel Width  (dx) = {dx} {px_unit or ''}")
+        print(f"   Pixel Height (dy) = {dy} {px_unit or ''}")
+    else:
+        print("   Pixel Width/Height not found")
+
+    if val_min is not None and val_max is not None:
+        print(f"   Value Min = {val_min} {value_unit or ''}")
+        print(f"   Value Max = {val_max} {value_unit or ''}")
+    else:
+        print("   Value Min/Max not found")
+    print(f"   Note : {note}\n")
+    return val, dx, dy
+
+def coherence(I, dx, dy, alpha):
+    ''' I is the intensity, convolution in real space with gaussian function
+    '''
+    from scipy.signal import fftconvolve
+    Ny, Nx = I.shape
+    x = (np.arange(Nx) - (Nx - 1) / 2)*dx
+    y = (np.arange(Ny) - (Ny - 1) / 2)*dy
+    X, Y = np.meshgrid(x, y)
+
+    if alpha==0:
+        return I
+    else:
+        alpha_R = 1/(4*alpha)
+        #print("alpha for divergence in image plane (m^-2)= ", alpha_R)
+        G = np.exp(-alpha_R*(X**2 + Y**2)) #gaussian exp(-alpha*r^2)
+        G /= G.sum()          # normalisation
+        return fftconvolve(I, G, mode='same')
+
+def fresnel_enveloppe(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, convergence=0):
+    ''' convolution of an envelope and exp(j * chi) '''
+    Ny, Nx = phase.shape
+    lam = relativistic_wavelength(E0_eV)
+    
+    psi0 = np.exp(1j * phase)
+    kx = np.fft.fftshift(np.fft.fftfreq(Nx, d=dx))
+    ky = np.fft.fftshift(np.fft.fftfreq(Ny, d=dy))
+    KX, KY = np.meshgrid(kx, ky)
+    k2 = KX**2 + KY**2
+    envelope = np.exp(-(np.pi*convergence*defocus)**2 / np.log(2) * k2)
+    
+    chi = np.pi*lam*defocus*k2 + 0.5*np.pi*Cs*(lam**3)*(k2**2)
+    H = np.exp(1j * chi) * envelope
+
+    Psi0 = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psi0)))
+    Psi_def = Psi0 * H
+    psi_def = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(Psi_def)))
+    return np.abs(psi_def)**2
+
+def fresnel_mirrored(phase, dx, dy, crop, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
+    ''' compute fresnel contrast with mirror padding
+    Mirror padding 2×2 — boundary conditions C⁰ on the image edges
+    [ flip_xy | flip_y ]
+    [ flip_x  |  φ     ]
+    optionaly crop boolean might be turned True to center-crop by 2 the image
+    '''
+    Ny, Nx = phase.shape
+    lam = relativistic_wavelength(E0_eV)
+    top_left  = np.flipud(np.fliplr(phase))   # flip horizontal + vertical
+    top_right = np.flipud(phase)              # flip vertical seulement
+    bot_left  = np.fliplr(phase)              # flip horizontal seulement
+    bot_right = phase                         # image originale
+    
+    phase_pad = np.block([ [top_left,  top_right], [bot_left,  bot_right]])
+    # Taille résultante : (2*Ny, 2*Nx)
+    Ny_pad, Nx_pad = phase_pad.shape
+    psi0 = np.exp(1j * phase_pad)
+    
+    # Grille de fréquences spatiales
+    kx = np.fft.fftshift(np.fft.fftfreq(Nx_pad, d=dx)) #corrected
+    ky = np.fft.fftshift(np.fft.fftfreq(Ny_pad, d=dy))
+    KX, KY = np.meshgrid(kx, ky)
+    k2 = KX**2 + KY**2
+    
+    # Fonction d'aberration : défocus + aberration sphérique
+    chi = np.pi * lam * defocus * k2 + 0.5 * np.pi * Cs * (lam**3) * (k2**2)
+    H = np.exp(1j * chi) #transfer function - renommer vers T ?
+    
+    # Propagation dans l'espace de Fourier
+    Psi0    = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psi0)))
+    Psi_def = Psi0 * H
+    psi_def = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(Psi_def)))
+    
+    # Extraire le quadrant original (bot_right → [Ny:2Ny, Nx:2Nx])
+    psi_def_crop = psi_def[Ny:2*Ny, Nx:2*Nx]
+
+    if crop==True: #possible de faire a part une fonction avec def d'un dictionnaire
+        y1 = Ny + math.ceil(Ny/4)
+        y2 = 2*Ny - math.ceil(Ny/4)
+        x1 = Nx + math.ceil(Nx/4)
+        x2 = 2*Nx - math.ceil(Nx/4)
+        psi_def_crop = psi_def[y1:y2, x1:x2]
+    return np.abs(psi_def_crop)**2 
+
 try:
     from PyQt5.QtWidgets import (
-    QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QWidget, QTabWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFileDialog, QLineEdit, QMessageBox, QCheckBox, QMainWindow, QFrame,
     QSplitter, QTextEdit, QGroupBox, QDoubleSpinBox, QRadioButton, QAction)
 
@@ -470,6 +650,129 @@ try:
             layout.addWidget(QLabel(strHelp))
             self.setLayout(layout)
             self.setWindowTitle("fmit-calculator v"+ __version__ +" help")
+
+    class Fresnel(QWidget):
+        def __init__(self,phaseFileName,thicknessMapFileName,parent=None):
+            super().__init__(parent)
+            self.phaseFileName = phaseFileName
+            self.thicknessMapFileName = thicknessMapFileName
+            self.defocus = 0.5e-3 #m
+            self.convergence = 0.001e-3 #rad
+            self.E0 = 2e5    #eV
+            self.Cs = 1.2e-3 #m
+            self.V0 = 20.0   #V
+            self.crop = False
+            self.whatMode = "default"
+            layout = QGridLayout()
+            self.defocus_input = QLineEdit(str(self.defocus))
+            layout.addWidget(QLabel("defocus:"),0,0)
+            layout.addWidget(self.defocus_input,0,1)
+            layout.addWidget(QLabel("m"),0,2)
+
+            self.convergence_input = QLineEdit(str(self.convergence))
+            layout.addWidget(QLabel("convergence:"),1,0)
+            layout.addWidget(self.convergence_input,1,1)
+            layout.addWidget(QLabel("rad"),1,2)
+
+            self.E0_input = QLineEdit(str(self.E0))
+            layout.addWidget(QLabel("E0:"),2,0)
+            layout.addWidget(self.E0_input,2,1)
+            layout.addWidget(QLabel("eV"),2,2)
+
+            self.Cs_input = QLineEdit(str(self.Cs))
+            layout.addWidget(QLabel("Cs:"),3,0)
+            layout.addWidget(self.Cs_input,3,1)
+            layout.addWidget(QLabel("m"),3,2)
+
+            self.V0_input = QLineEdit(str(self.V0))
+            layout.addWidget(QLabel("V0:"),4,0)
+            layout.addWidget(self.V0_input,4,1)
+            layout.addWidget(QLabel("V"),4,2)
+
+            self.crop_input = QCheckBox("crop")
+            layout.addWidget(self.crop_input,5,0)
+
+            layout.addWidget(QLabel("mode:"),6,0)
+
+            radioButton = QRadioButton("default")
+            radioButton.setChecked(True)
+            radioButton.whatMode = "default"
+            radioButton.toggled.connect(self.onModeSelectorClicked)
+            layout.addWidget(radioButton,6,1)
+
+            radioButton = QRadioButton("mirrored")
+            radioButton.whatMode = "mirrored"
+            radioButton.toggled.connect(self.onModeSelectorClicked)
+            layout.addWidget(radioButton,6,2)
+
+            self.contrast = QPushButton("compute Fresnel contrast")
+            layout.addWidget(self.contrast,7,0)
+            self.contrast.setToolTip("Compute Fresnel contrast, and store result in .png files")
+            self.contrast.clicked.connect(self.computeContrast)
+
+            self.myCanvas = FigureCanvas(Figure(figsize=(7, 6)))
+            layout.addWidget(self.myCanvas,8,0,1,3)
+            self.myPlt = self.myCanvas.figure.subplots()
+            #self.myCanvas.mpl_connect("button_press_event",self.canvasClicked)
+
+            self.setLayout(layout)
+            self.setWindowTitle("Fresnel contrast")
+
+        def onModeSelectorClicked(self):
+            radioButton = self.sender()
+            if radioButton.isChecked():
+                self.whatMode = radioButton.whatMode
+
+        def computeContrast(self):
+            self.defocus = float(self.defocus_input.text())
+            self.convergence = float(self.convergence_input.text())
+            self.E0 = float(self.E0_input.text())
+            self.Cs = float(self.Cs_input.text())
+            self.V0 = float(self.V0_input.text())
+            self.crop = self.crop_input.isChecked()
+
+            print("→ Simulation parameters:")
+            print(f"   Defocus    = {self.defocus} m")
+            print(f"   convergence = {self.convergence} rad")
+            print(f"   Voltage E0 = {self.E0} eV")
+            print(f"   Constant Cs = {self.Cs} m")
+            print(f"   Voltage V0 = {self.V0} V")
+            print(f"   Image crop (by 2) = {self.crop}")
+            print("   mode:", self.whatMode)
+            C_e = electrical_constant(self.E0)
+            print("Ce computed from E0, in (V*m)^-1 : ", C_e)
+
+            # Load phase + metadata
+            phase, dx, dy = load_png(self.phaseFileName,True)
+            length,_,_ = load_png(self.thicknessMapFileName,False)
+
+            phase = add_elec_phase(phase, length, C_e, self.V0)
+            # Simulation Fresnel
+            if self.whatMode=="mirrored":
+                I = fresnel_mirrored(phase, dx, dy, crop=self.crop, E0_eV=self.E0,defocus= self.defocus, Cs= self.Cs)
+            else:
+                I= fresnel_enveloppe(phase, dx, dy, E0_eV=self.E0, defocus=self.defocus, Cs=self.Cs)
+
+            defocus = self.defocus
+            convergence = self.convergence
+            alpha_F = (np.pi*defocus*convergence)**2/np.log(2)
+            I_mod = coherence(I, dx, dy, alpha_F)
+            #I_ampl= amplitude(I, length, crop=args.crop, elec=1)
+            
+            I_used=I_mod
+            #profile_fresnel(I_used, dx, dy, color='blue', label="profile", name_fig=f"fresnel_profile_crop_{self.crop}_defoc_{self.defocus}m.png")
+            Ny, Nx = I.shape
+            extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
+            
+            self.myPlt.imshow(I_used, cmap="gray", extent=extent_nm)
+            self.myCanvas.draw()
+            #self.myPlt.xlabel("x (nm)")
+            #self.myPlt.ylabel("y (nm)")
+            #self.myPlt.title("Fresnel Contrast")
+            #self.myPlt.colorbar(label="Intensity")
+            
+            #nameplot=f"fresnel_image_crop_{args.crop}_defoc_{args.defocus}m.png"
+            #self.myPlt.savefig(nameplot, dpi=150)
 
     class YAMLSyntaxHighlighter(QSyntaxHighlighter):
         def __init__(self, parent=None):
@@ -532,6 +835,7 @@ try:
             self.magnetization_data = None
             self.surface_nodes = None
             self.help = None
+            self.fresnelWindow = None
             self.setup_ui()
 
         def setup_ui(self):
@@ -752,11 +1056,17 @@ try:
             self.highlighter = YAMLSyntaxHighlighter(self.yaml_display.document())
             left_layout.addWidget(outputFiles_group, stretch = 1)
 
-            # save and compute button
+            # fresnel checkbox, save and compute button
+            compute_layout = QHBoxLayout()
+            self.fresnel_checkBox = QCheckBox("Fresnel contrast")
+            self.fresnel_checkBox.setToolTip("if checked, open Fresnel contrast window when clicking on holographic phase tab")
+            compute_layout.addWidget(self.fresnel_checkBox)
             self.compute_btn = QPushButton("Save YAML and Compute")
             self.compute_btn.setToolTip("Save YAML to file, compute images, and store images in .png files")
             self.compute_btn.clicked.connect(self.compute)
-            left_layout.addWidget(self.compute_btn)
+            compute_layout.addWidget(self.compute_btn)
+
+            left_layout.addLayout(compute_layout)
 
             left_layout.setContentsMargins(2,2,2,2)
             left_layout.setSpacing(spacing)
@@ -781,7 +1091,7 @@ try:
             xmcdContrast_layout = QVBoxLayout(xmcdContrast_panel)
             self.xmcd_label_image = QLabel(xmcdContrast_panel)
 
-            thickness_panel =QWidget()
+            thickness_panel = QWidget()
             thickness_layout = QVBoxLayout(thickness_panel)
             self.thickness_image = QLabel(thickness_panel)
 
@@ -802,9 +1112,11 @@ try:
             self.load_mesh_from_config()
 
         def closeEvent(self, event):
-            """ handle close event to close help window if opened """
+            """ handle close event to close help window and/or Fresnel window if opened """
             if self.help != None:
                 self.help.close()
+            if self.fresnelWindow != None:
+                self.fresnelWindow.close()
             self.close()
 
         def onRotationsChanged(self):
@@ -886,12 +1198,18 @@ try:
             ''' update the clicked tabbed widget with pixmap of the corresponding png file '''
             if self.flagComputed:
                 fileBaseName = self.yaml_config['outputs']['file_basename']
+                phaseFileName = fileBaseName + "_HOLO_PHASE.png"
+                thicknessMapFileName = fileBaseName + "_PATH_LENGTH.png"
+
                 if index == 1: #HOLO
-                    self.rawPngPlot(fileBaseName + "_HOLO_PHASE.png",self.holo_label_image)
+                    self.rawPngPlot(phaseFileName, self.holo_label_image)
+                    if self.fresnel_checkBox.isChecked(): 
+                        self.fresnelWindow = Fresnel(phaseFileName,thicknessMapFileName)
+                        self.fresnelWindow.show()
                 elif index == 2: #XMCD
                     self.rawPngPlot(fileBaseName + "_STXM_XMCD.png", self.xmcd_label_image)
                 elif index == 3: #PATH_LENGTH
-                    self.rawPngPlot(fileBaseName + "_PATH_LENGTH.png", self.thickness_image)
+                    self.rawPngPlot(thicknessMapFileName, self.thickness_image)
             else:
                 self.statusBar().showMessage("no computed pngs yet.")
 
