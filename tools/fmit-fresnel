@@ -12,6 +12,7 @@ import argparse
 import re
 import math
 from scipy.signal import fftconvolve
+from datetime import datetime  # <--- Conserve l'importation pour la date et l'heure
 
 # Constants in SI units
 from scipy.constants import h # Planck constant
@@ -39,7 +40,7 @@ def find_meta_value(meta, patterns):
         key_norm = key.lower().strip()
         for pat in patterns:
             if re.search(pat, key_norm):
-                return key, meta[key]
+                 return key, meta[key]
     return None, None
 
 def safe_float(x):
@@ -52,7 +53,8 @@ def safe_float(x):
         return None
 
 def load_png(path_png,isAngle):
-    ''' load data from a png container and its metadata, if isAngle is True datas are mapped to [-π, π] '''
+    ''' load data from a png container and its metadata, if isAngle is True datas are mapped 
+    to [-π, π] '''
     im = Image.open(path_png)
     meta = dict(im.info)  # PNG metadatas
 
@@ -132,7 +134,7 @@ def apply_window(phase, window_type='hann', width_fraction=0.1):
 def simulate_fresnel_padded(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, pad_factor=2):
     ''' compute a simulation of a fresnel contrast using padding
     it might be interesting to increase the number of zeros
-    work in progress: is zero-padding efficient ? 
+    work in progress: is zero-padding efficient ?
     '''
     Ny, Nx = phase.shape
     lam = relativistic_wavelength(E0_eV)
@@ -323,7 +325,6 @@ def simulate_fresnel_mirrored(phase, dx, dy, crop, E0_eV=200e3, defocus=2e-6, Cs
     # Fonction d'aberration : défocus + aberration sphérique
     chi = np.pi * lam * defocus * k2 + 0.5 * np.pi * Cs * (lam**3) * (k2**2)
     H = np.exp(1j * chi) #transfer function - renommer vers T ?
-    
     # Propagation dans l'espace de Fourier
     Psi0    = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psi0)))
     Psi_def = Psi0 * H
@@ -418,7 +419,7 @@ def simulate_fresnel_robust(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3)
     
     return np.abs(psi_def_crop)**2
 
-def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_profile.png"):
+def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_profile.png", name_data='fresnel_profile.csv'):
     ''' plot a cross section (y=0) of the Fresnel contrast image and save '''
     Ny, Nx = I.shape
     print("Nx=", Nx, "Ny=", Ny, "dx(nm)=", int(dx*1e9))
@@ -431,13 +432,26 @@ def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_
     plt.plot(x, profile, label=label, color=color)
     #added x and y limits to profile to match cropped region in Intensity image
     plt.ylim(-0.1, 4)
-    #plt.xlim(-200, 200) #pas necessaire ?
+    plt.xlim(-500, 500) #pas necessaire ?
     plt.xlabel("x (nm)", fontsize=16)
     plt.ylabel("Intensity (a.u.)", fontsize=16)
     plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
     plt.savefig(name_fig, dpi=300)
-    print(f"✔  Profil sauvegardé dans : {name_fig}")
+    print(f"✔  Profile plot saved in: {name_fig}")
+
+    # Export data
+    data = np.column_stack((x, profile))
+
+    np.savetxt(
+        name_data,
+        data,
+        delimiter=",",
+        header="x (nm),Intensity (a.u.)",
+        comments=""
+    )
+
+    print(f"✔  Profile data saved in: {name_data}")
 
 def coherence(I, dx, dy, alpha):
     ''' I is the intensity, convolution in real space with gaussian function
@@ -451,6 +465,7 @@ def coherence(I, dx, dy, alpha):
         return I
     else:
         alpha_R = 1/(4*alpha)
+        # alpha_R=1.7557623193170718e16
         print("alpha for divergence in image plane (m^-2)= ", alpha_R)
         G = np.exp(-alpha_R*(X**2 + Y**2)) #gaussian exp(-alpha*r^2)
         G /= G.sum()          # normalisation
@@ -540,10 +555,36 @@ def main():
     I_mod = coherence(I, dx, dy, alpha_F)
     #I_ampl= amplitude(I, length, crop=args.crop, elec=1)
     I_used=I_mod
-    profile_fresnel(I_used, dx, dy, color='blue', label="profile", name_fig=f"fresnel_profile_crop_{args.crop}_defoc_{args.defocus}m.png")
+    profile_fresnel(I_used, dx, dy, color='blue', label="profile", name_fig=f"fresnel_profile_defoc_{args.defocus}m.png", name_data=f"fresnel_profile_data_defoc_{args.defocus}m.csv")
     Ny, Nx = I.shape
     extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
     
+    # --- Génération dynamique des métadonnées physiques et géométriques ---
+    maintenant = datetime.now()
+    dict_metadata = {
+        "Creation Time": maintenant.strftime("%Y-%m-%d %H:%M:%S"),
+        "Simulation type": "Fresnel Contrast Simulation Map",
+        # Métadonnées Géométriques (Dimensions)
+        "Pixel width": str(dx),
+        "Pixel height": str(dy),
+        "Pixel unit": "m",
+        "Image crop enabled": str(args.crop),
+        "Computation mode": str(args.mode),
+        # Métadonnées Physiques
+        "Parameter: E0": str(args.E0),
+        "Parameter: E0 unit": "eV",
+        "Parameter: defocus": str(args.defocus),
+        "Parameter: defocus unit": "m",
+        "Parameter: convergence": str(args.convergence),
+        "Parameter: convergence unit": "rad",
+        "Parameter: Cs": str(args.Cs),
+        "Parameter: Cs unit": "m",
+        "Parameter: V0": str(args.V0),
+        "Parameter: V0 unit": "V",
+        "Computed: Ce": str(C_e),
+        "Computed: Ce unit": "(V*m)^-1"
+    }
+
     # plot and save fresnel contrast image 
     plt.figure(figsize=(7,6))
     plt.imshow(I_used, cmap="gray", extent=extent_nm) #possible d'ajouter en option de imshow vmin et vmax pour fixer les valeurs min/max d'intensité.
@@ -552,11 +593,11 @@ def main():
     plt.title("Fresnel Contrast")
     plt.colorbar(label="Intensity")
     nameplot=f"fresnel_image_crop_{args.crop}_defoc_{args.defocus}m.png"
-    plt.savefig(nameplot, dpi=150)
+    
+    plt.savefig(nameplot, dpi=150, metadata=dict_metadata)
     plt.close()
     print(f"✔  Image saved in file {nameplot}")
 
 __version__ = '1.0.0'
 if __name__ == "__main__":
     main()
-
