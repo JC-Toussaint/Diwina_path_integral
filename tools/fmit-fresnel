@@ -419,7 +419,7 @@ def simulate_fresnel_robust(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3)
     
     return np.abs(psi_def_crop)**2
 
-def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_profile.png"):
+def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_profile.png", name_data='fresnel_profile.csv'):
     ''' plot a cross section (y=0) of the Fresnel contrast image and save '''
     Ny, Nx = I.shape
     print("Nx=", Nx, "Ny=", Ny, "dx(nm)=", int(dx*1e9))
@@ -432,13 +432,26 @@ def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_
     plt.plot(x, profile, label=label, color=color)
     #added x and y limits to profile to match cropped region in Intensity image
     plt.ylim(-0.1, 4)
-    #plt.xlim(-200, 200) #pas necessaire ?
+    plt.xlim(-500, 500) #pas necessaire ?
     plt.xlabel("x (nm)", fontsize=16)
     plt.ylabel("Intensity (a.u.)", fontsize=16)
     plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
     plt.savefig(name_fig, dpi=300)
-    print(f"✔  Profil sauvegardé dans : {name_fig}")
+    print(f"✔  Profile plot saved in: {name_fig}")
+
+    # Export data
+    data = np.column_stack((x, profile))
+
+    np.savetxt(
+        name_data,
+        data,
+        delimiter=",",
+        header="x (nm),Intensity (a.u.)",
+        comments=""
+    )
+
+    print(f"✔  Profile data saved in: {name_data}")
 
 def coherence(I, dx, dy, alpha):
     ''' I is the intensity, convolution in real space with gaussian function
@@ -452,6 +465,7 @@ def coherence(I, dx, dy, alpha):
         return I
     else:
         alpha_R = 1/(4*alpha)
+        # alpha_R=1.7557623193170718e16
         print("alpha for divergence in image plane (m^-2)= ", alpha_R)
         G = np.exp(-alpha_R*(X**2 + Y**2)) #gaussian exp(-alpha*r^2)
         G /= G.sum()          # normalisation
@@ -541,8 +555,7 @@ def main():
     I_mod = coherence(I, dx, dy, alpha_F)
     #I_ampl= amplitude(I, length, crop=args.crop, elec=1)
     I_used=I_mod
-    profile_fresnel(I_used, dx, dy, color='blue', label="profile", name_fig=f"fresnel_profile_crop_{args.crop}_defoc_{args.defocus}m.png")
-    
+    profile_fresnel(I_used, dx, dy, color='blue', label="profile", name_fig=f"fresnel_profile_defoc_{args.defocus}m.png", name_data=f"fresnel_profile_data_defoc_{args.defocus}m.csv")
     Ny, Nx = I.shape
     extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
     
