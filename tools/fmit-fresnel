@@ -562,28 +562,27 @@ def main():
     # --- Génération dynamique des métadonnées physiques et géométriques ---
     maintenant = datetime.now()
     dict_metadata = {
-        "Creation_Date": maintenant.strftime("%Y-%m-%d"),
-        "Creation_Time": maintenant.strftime("%H:%M:%S"),
-        "Simulation_Type": "Fresnel Contrast Simulation Map",
+        "Creation Time": maintenant.strftime("%Y-%m-%d %H:%M:%S"),
+        "Simulation type": "Fresnel Contrast Simulation Map",
         # Métadonnées Géométriques (Dimensions)
-        "Pixel Width": str(dx),
-        "Pixel Height": str(dy),
-        "Pixel Unit": "m",
-        "Image_Crop_Enabled": str(args.crop),
-        "Computation_Mode": str(args.mode),
+        "Pixel width": str(dx),
+        "Pixel height": str(dy),
+        "Pixel unit": "m",
+        "Image crop enabled": str(args.crop),
+        "Computation mode": str(args.mode),
         # Métadonnées Physiques
-        "Param_E0": str(args.E0),
-        "Param_E0_Unit": "eV",
-        "Param_Defocus": str(args.defocus),
-        "Param_Defocus_Unit": "m",
-        "Param_Convergence": str(args.convergence),
-        "Param_Convergence_Unit": "rad",
-        "Param_Cs": str(args.Cs),
-        "Param_Cs_Unit": "m",
-        "Param_V0": str(args.V0),
-        "Param_V0_Unit": "V",
-        "Computed_Ce": str(C_e),
-        "Computed_Ce_Unit": "(V*m)^-1"
+        "Parameter: E0": str(args.E0),
+        "Parameter: E0 unit": "eV",
+        "Parameter: defocus": str(args.defocus),
+        "Parameter: defocus unit": "m",
+        "Parameter: convergence": str(args.convergence),
+        "Parameter: convergence unit": "rad",
+        "Parameter: Cs": str(args.Cs),
+        "Parameter: Cs unit": "m",
+        "Parameter: V0": str(args.V0),
+        "Parameter: V0 unit": "V",
+        "Computed: Ce": str(C_e),
+        "Computed: Ce unit": "(V*m)^-1"
     }
 
     # plot and save fresnel contrast image 
@@ -595,7 +594,6 @@ def main():
     plt.colorbar(label="Intensity")
     nameplot=f"fresnel_image_crop_{args.crop}_defoc_{args.defocus}m.png"
     
-    # --- MODIFICATION : Injection de dict_metadata via le paramètre optionnel de savefig ---
     plt.savefig(nameplot, dpi=150, metadata=dict_metadata)
     plt.close()
     print(f"✔  Image saved in file {nameplot}")
