@@ -596,15 +596,17 @@ def fresnel_mirrored(phase, dx, dy, crop, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
     [ flip_x  |  φ     ]
     optionaly crop boolean might be turned True to center-crop by 2 the image
     '''
+    from math import ceil
+
     Ny, Nx = phase.shape
     lam = relativistic_wavelength(E0_eV)
-    top_left  = np.flipud(np.fliplr(phase))   # flip horizontal + vertical
-    top_right = np.flipud(phase)              # flip vertical seulement
-    bot_left  = np.fliplr(phase)              # flip horizontal seulement
-    bot_right = phase                         # image originale
+    top_left  = np.flipud(np.fliplr(phase)) # horizontal and vertical flip
+    top_right = np.flipud(phase)            # vertical flip
+    bot_left  = np.fliplr(phase)            # horizontal flip
+    bot_right = phase                       # original phase image
     
     phase_pad = np.block([ [top_left,  top_right], [bot_left,  bot_right]])
-    # Taille résultante : (2*Ny, 2*Nx)
+    # resulting shape: (2*Ny, 2*Nx)
     Ny_pad, Nx_pad = phase_pad.shape
     psi0 = np.exp(1j * phase_pad)
     
@@ -626,11 +628,11 @@ def fresnel_mirrored(phase, dx, dy, crop, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
     # Extraire le quadrant original (bot_right → [Ny:2Ny, Nx:2Nx])
     psi_def_crop = psi_def[Ny:2*Ny, Nx:2*Nx]
 
-    if crop==True: #possible de faire a part une fonction avec def d'un dictionnaire
-        y1 = Ny + math.ceil(Ny/4)
-        y2 = 2*Ny - math.ceil(Ny/4)
-        x1 = Nx + math.ceil(Nx/4)
-        x2 = 2*Nx - math.ceil(Nx/4)
+    if crop: #possible de faire a part une fonction avec def d'un dictionnaire
+        y1 = Ny + ceil(Ny/4)
+        y2 = 2*Ny - ceil(Ny/4)
+        x1 = Nx + ceil(Nx/4)
+        x2 = 2*Nx - ceil(Nx/4)
         psi_def_crop = psi_def[y1:y2, x1:x2]
     return np.abs(psi_def_crop)**2 
 
