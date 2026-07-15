@@ -739,14 +739,15 @@ try:
                 self.whatMode = radioButton.whatMode
 
         def canvasClicked(self,pos):
-            ''' plot a cross section along Ox direction at position y of the Fresnel contrast image '''
+            ''' plot a cross section along Ox direction at position y in nanometers of the Fresnel contrast image
+            pos input is a mouse event, we only need ydata position to compute the corresponding y
+            for the cross-section to compute. Then the cross sectin is computed onto self.I_used image
+            '''
             Ny, Nx = self.I_used.shape
-            #print("Nx=", Nx, "Ny=", Ny, "dx(nm)=", int(self.dx*1e9))
-            ymax = Ny*self.dy*1e9
             y = pos.ydata
             if y!=None:
-                y0=(int) ((1.0 + y/ymax)*0.5*Ny)
-                self.updateLog("cross-section at y= " + str(y) + "\n")
+                y0 = (int) (0.5*(Ny + 1e-9 * y/self.dy))
+                self.updateLog("cross-section at y= " + str(y) + " nm\n")
                 profile = self.I_used[y0, :]
                 x = (np.arange(Nx) - (Nx - 1) / 2) * int(self.dx*1e9)
                 self.myPlt.axhline(y,color='green')
