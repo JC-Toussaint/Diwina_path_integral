@@ -654,6 +654,7 @@ try:
 
     class Fresnel(QWidget):
         def __init__(self,phaseFileName,thicknessMapFileName,parent=None):
+            ''' constructor '''
             super().__init__(parent)
             import matplotlib.pyplot as plt
             self.phaseFileName = phaseFileName
@@ -734,6 +735,7 @@ try:
             self.log_display.setText(self.logStr)
 
         def onModeSelectorClicked(self):
+            ''' slot: update selected mode (input parameter to compute the Fresnel contrast) '''
             radioButton = self.sender()
             if radioButton.isChecked():
                 self.whatMode = radioButton.whatMode
@@ -741,7 +743,7 @@ try:
         def canvasClicked(self,pos):
             ''' plot a cross section along Ox direction at position y in nanometers of the Fresnel contrast image
             pos input is a mouse event, we only need ydata position to compute the corresponding y
-            for the cross-section to compute. Then the cross sectin is computed onto self.I_used image
+            for the cross-section to compute. Then the cross section is computed onto self.I_used image
             '''
             Ny, Nx = self.I_used.shape
             y = pos.ydata
@@ -762,6 +764,11 @@ try:
                 #plt.yticks(fontsize=14)
 
         def computeContrast(self):
+            '''
+            slot that compute the Fresnel contrast image. It uses the holographic image contrast as
+            an input, and add the electrostatic contribution. Then it applies defocussing and takes
+            into account some aberration(s), and plot the corresponding image
+            '''
             self.defocus = float(self.defocus_input.text())
             self.convergence = float(self.convergence_input.text())
             self.E0 = float(self.E0_input.text())
@@ -804,6 +811,10 @@ try:
             #self.myPlt.savefig(nameplot, dpi=150)
 
         def updateLog(self,textToAdd=""):
+            '''
+            refresh function to update the text log widget.
+            Warning: It is not a slot, manual handling in the code
+            '''
             self.logStr += textToAdd
             self.log_display.setText(self.logStr)
 
