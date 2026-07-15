@@ -746,6 +746,7 @@ try:
             y = pos.ydata
             if y!=None:
                 y0=(int) ((1.0 + y/ymax)*0.5*Ny)
+                self.updateLog("cross-section at y= " + str(y) + "\n")
                 profile = self.I_used[y0, :]
                 x = (np.arange(Nx) - (Nx - 1) / 2) * int(self.dx*1e9)
                 self.myPlt.axhline(y,color='green')
@@ -773,8 +774,7 @@ try:
             # Load phase + metadata
             phase,dx,dy,note = load_png(self.phaseFileName,True)
             length,_,_,note = load_png(self.thicknessMapFileName,False)
-            self.logStr += note + "\n"
-            self.log_display.setText(self.logStr)
+            self.updateLog(note + "\n")
 
             phase = add_elec_phase(phase, length, C_e, self.V0)
             # Simulation Fresnel
@@ -801,6 +801,10 @@ try:
             #self.myPlt.colorbar(label="Intensity")
             #nameplot=f"fresnel_image_crop_{args.crop}_defoc_{args.defocus}m.png"
             #self.myPlt.savefig(nameplot, dpi=150)
+
+        def updateLog(self,textToAdd=""):
+            self.logStr += textToAdd
+            self.log_display.setText(self.logStr)
 
     class YAMLSyntaxHighlighter(QSyntaxHighlighter):
         def __init__(self, parent=None):
