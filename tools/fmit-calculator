@@ -744,19 +744,20 @@ try:
             #print("Nx=", Nx, "Ny=", Ny, "dx(nm)=", int(self.dx*1e9))
             ymax = Ny*self.dy*1e9
             y = pos.ydata
-            y0=(int) ((1.0 + y/ymax)*Ny/2.0)
-            profile = self.I_used[y0, :]
-            x = (np.arange(Nx) - (Nx - 1) / 2) * int(self.dx*1e9)
-            self.myPlt.axhline(y,color='green')
-            self.canvasImage.draw()
-            self.curve.plot(x, profile, label='cross-section', color='blue')
-            self.canvasCurve.draw()
-            #added x and y limits to profile to match cropped region in Intensity image
-            #plt.ylim(-0.1, 4)
-            #plt.xlabel("x (nm)", fontsize=16)
-            #plt.ylabel("Intensity (a.u.)", fontsize=16)
-            #plt.xticks(fontsize=14)
-            #plt.yticks(fontsize=14)
+            if y!=None:
+                y0=(int) ((1.0 + y/ymax)*0.5*Ny)
+                profile = self.I_used[y0, :]
+                x = (np.arange(Nx) - (Nx - 1) / 2) * int(self.dx*1e9)
+                self.myPlt.axhline(y,color='green')
+                self.canvasImage.draw()
+                self.curve.plot(x, profile, label='cross-section', color='blue')
+                self.canvasCurve.draw()
+                #added x and y limits to profile to match cropped region in Intensity image
+                #plt.ylim(-0.1, 4)
+                #plt.xlabel("x (nm)", fontsize=16)
+                #plt.ylabel("Intensity (a.u.)", fontsize=16)
+                #plt.xticks(fontsize=14)
+                #plt.yticks(fontsize=14)
 
         def computeContrast(self):
             self.defocus = float(self.defocus_input.text())
