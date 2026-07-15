@@ -18,6 +18,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvas
 
 
 strHelp = """Workflow:
+*** MainWindow ***
 If fmit-calculator was launched without a yaml input file, open a yaml file through file menu.
 Then select your .sol file from menu File/Open .sol or use initial_magnetization as it is.
 Adjust rotation angles and axis
@@ -26,6 +27,8 @@ Adjust Sensor relative size and pixel size
 	It must be larger than or equal to 1
 Filled parameter will affect holographic phase calculation by artificially filling hollow parts of
 the object.
+If you wish to access Fresnel contrast computation, check the corresponding checkBox, it will pop up
+when holographic image tab becomes accessible.
 
 Press compute button
 	Both holographic phase, xmcd and thickness map are computed
@@ -34,9 +37,17 @@ Press compute button
         pressing w key turns wireframe on
 	    pressing s key returns to solidframe on
 	You might see a preview of holographic phase, XMCD contrast or thickness map in their respective panels
+    Clicking on the holographic phase tab will show the corresponding image, and open the contrast
+    Fresnel window if it was checked
 
 .out text files are tab separated value text files
-images are unsigned int 16 bits grey pngs"""
+images are unsigned int 16 bits grey pngs
+
+*** Fresnel contrast window ***
+This window is dedicated to the computation of Fresnel contrast image. It uses the holographic
+magnetic image as an input. It allows to add electrostatic contribution, do some aberration
+corrections and set the defocussing. Clicking on the image computes its cross-section along constant y.
+"""
 
 def has_nvidia_gpu():
     ''' ask nvidia-smi if there is any nvidia GPU with proprietary driver, return true if any '''
