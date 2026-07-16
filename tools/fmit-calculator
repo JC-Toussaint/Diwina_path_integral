@@ -665,7 +665,7 @@ try:
             self.Cs = 1.2e-3 #m
             self.V0 = 20.0   #V
             self.crop = False
-            self.whatMode = "default"
+            self.mirrored = False
             self.I_used = None
             self.logStr = ""
             layout = QGridLayout()
@@ -698,49 +698,33 @@ try:
             self.crop_input.setToolTip("image cropping by 2")
             layout.addWidget(self.crop_input,5,0)
 
-            layout.addWidget(QLabel("mode:"),6,0)
-
-            radioButton = QRadioButton("default")
-            radioButton.setChecked(True)
-            radioButton.whatMode = "default"
-            radioButton.toggled.connect(self.onModeSelectorClicked)
-            layout.addWidget(radioButton,6,1)
-
-            radioButton = QRadioButton("mirrored")
-            radioButton.whatMode = "mirrored"
-            radioButton.toggled.connect(self.onModeSelectorClicked)
-            layout.addWidget(radioButton,6,2)
+            self.mirrored_input = QCheckBox("mirrored")
+            layout.addWidget(self.mirrored_input,5,1)
 
             self.contrast = QPushButton("compute Fresnel contrast")
-            layout.addWidget(self.contrast,7,0)
+            layout.addWidget(self.contrast,6,0)
             self.contrast.setToolTip("Compute Fresnel contrast, and store result in .png files")
             self.contrast.clicked.connect(self.computeContrast)
 
             self.log_display = QTextEdit()
             self.log_display.setToolTip("yaml that will be used to do the ray-tracing computation")
             self.log_display.setReadOnly(True)
-            layout.addWidget(self.log_display,8,0,2,2)
+            layout.addWidget(self.log_display,7,0,2,3)
 
             self.canvasImage = FigureCanvas(Figure(figsize=(4, 3)))
-            layout.addWidget(self.canvasImage,0,3,8,1)
+            layout.addWidget(self.canvasImage,0,3,7,1)
             self.myPlt = self.canvasImage.figure.subplots()
             self.canvasImage.mpl_connect("button_press_event",self.canvasClicked)
 
             self.canvasCurve = FigureCanvas(Figure(figsize=(4,3)))
             toolbar = NavigationToolbar(self.canvasCurve,self)
-            layout.addWidget(toolbar,8,2,1,2)
-            layout.addWidget(self.canvasCurve,9,2,1,2)
+            layout.addWidget(toolbar,7,3)#,1,1)
+            layout.addWidget(self.canvasCurve,8,3)#,1,1)
             self.curve = self.canvasCurve.figure.subplots()
 
             self.setLayout(layout)
             self.setWindowTitle("Fresnel contrast v" + __version__)
             self.log_display.setText(self.logStr)
-
-        def onModeSelectorClicked(self):
-            ''' slot: update selected mode (input parameter to compute the Fresnel contrast) '''
-            radioButton = self.sender()
-            if radioButton.isChecked():
-                self.whatMode = radioButton.whatMode
 
         def canvasClicked(self,pos):
             ''' plot a cross section along Ox direction at position y in nanometers of the Fresnel contrast image
@@ -788,7 +772,7 @@ try:
 
             phase = add_elec_phase(phase, length, C_e, self.V0)
             # Simulation Fresnel
-            if self.whatMode=="mirrored":
+            if self.mirrored_input.isChecked():
                 I = fresnel_mirrored(phase, dx, dy, crop=self.crop, E0_eV=self.E0,defocus= self.defocus, Cs= self.Cs)
             else:
                 I= fresnel_enveloppe(phase, dx, dy, E0_eV=self.E0, defocus=self.defocus, Cs=self.Cs)
