@@ -712,14 +712,19 @@ try:
             layout.addWidget(self.log_display,7,0,2,3)
 
             self.canvasImage = FigureCanvas(Figure(figsize=(4, 3)))
-            layout.addWidget(self.canvasImage,0,3,7,1)
+            toolBar_image = NavigationToolbar(self.canvasImage,self)
+            self.cross_section_btn = QPushButton("cross section")
+            self.cross_section_btn.setCheckable(True)
+            layout.addWidget(toolBar_image,0,3)
+            layout.addWidget(self.cross_section_btn,0,4)
+            layout.addWidget(self.canvasImage,1,3,6,2)
             self.myPlt = self.canvasImage.figure.subplots()
             self.canvasImage.mpl_connect("button_press_event",self.canvasClicked)
 
             self.canvasCurve = FigureCanvas(Figure(figsize=(4,3)))
             toolbar = NavigationToolbar(self.canvasCurve,self)
-            layout.addWidget(toolbar,7,3)#,1,1)
-            layout.addWidget(self.canvasCurve,8,3)#,1,1)
+            layout.addWidget(toolbar,7,3)
+            layout.addWidget(self.canvasCurve,8,3,1,2)
             self.curve = self.canvasCurve.figure.subplots()
 
             self.setLayout(layout)
@@ -733,15 +738,17 @@ try:
             '''
             Ny, Nx = self.I_used.shape
             y = pos.ydata
-            if y!=None:
+            if (y!=None) and self.cross_section_btn.isChecked():
                 y0 = (int) (0.5*(Ny + 1e-9 * y/self.dy))
-                self.updateLog("cross-section at y= " + str(y) + " nm\n")
+                s_y = str('{:.2e}'.format(y))
+                self.updateLog("cross-section at y= " + s_y + " nm\n")
                 profile = self.I_used[y0, :]
                 x = (np.arange(Nx) - (Nx - 1) / 2) * int(self.dx*1e9)
                 self.myPlt.axhline(y,color='green')
                 self.canvasImage.draw()
-                self.curve.plot(x, profile, label='cross-section', color='blue')
+                self.curve.plot(x, profile, label='y = ' + s_y, color='blue')
                 self.canvasCurve.draw()
+                self.cross_section_btn.click()
                 #added x and y limits to profile to match cropped region in Intensity image
                 #plt.ylim(-0.1, 4)
                 #plt.xlabel("x (nm)", fontsize=16)
