@@ -568,7 +568,7 @@ def aberration(E0_eV,defocus,Cs,k2):
     lam = relativistic_wavelength(E0_eV)
     return pi*lam*k2*(defocus + 0.5*Cs*(lam**2)*k2)
 
-def fresnel_enveloppe(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, convergence=0):
+def fresnel_enveloppe(phase, dx, dy, E0_eV, defocus, Cs, convergence):
     ''' convolution of an envelope and exp(j * chi) '''
     Ny, Nx = phase.shape
 
@@ -586,7 +586,7 @@ def fresnel_enveloppe(phase, dx, dy, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, conve
     psi_def = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(Psi_def)))
     return np.abs(psi_def)**2
 
-def fresnel_mirrored(phase, dx, dy, crop, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
+def fresnel_mirrored(phase, dx, dy, crop, E0_eV, defocus, Cs):
     ''' compute fresnel contrast with mirror padding
     Mirror padding 2×2 — boundary conditions C⁰ on the image edges
     [ flip_xy | flip_y ]
@@ -640,6 +640,13 @@ try:
     from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter, QPixmap
     from PyQt5.QtCore import Qt, QRegExp, QLocale, QProcess
 
+    # should be replaced by PyQtGraph someday...
+    import matplotlib
+    matplotlib.use('Qt5Agg')
+    from matplotlib.figure import Figure
+    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
+
     class helpText(QWidget):
         def __init__(self, parent=None):
             super().__init__(parent)
@@ -648,17 +655,9 @@ try:
             self.setLayout(layout)
             self.setWindowTitle("fmit-calculator v"+ __version__ +" help")
 
-    class Fresnel(QWidget):
-        def __init__(self,phaseFileName,thicknessMapFileName,parent=None):
-            ''' constructor '''
+    class FresnelCtrlPanel(QWidget):
+        def __init__(self,parent=None):
             super().__init__(parent)
-            import matplotlib
-            matplotlib.use('Qt5Agg')
-            from matplotlib.figure import Figure
-            from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-            from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
-            self.phaseFileName = phaseFileName
-            self.thicknessMapFileName = thicknessMapFileName
             self.defocus = 0.5e-3 #m
             self.convergence = 0.001e-3 #rad
             self.E0 = 2e5    #eV
@@ -666,142 +665,56 @@ try:
             self.V0 = 20.0   #V
             self.crop = False
             self.mirrored = False
-            self.I_used = None
             self.logStr = ""
+            self.initUI()
+
+        def initUI(self):
             layout = QGridLayout()
             self.defocus_input = QLineEdit(str(self.defocus))
             layout.addWidget(QLabel("defocus:"),0,0)
             layout.addWidget(self.defocus_input,0,1)
             layout.addWidget(QLabel("m"),0,2)
-
             self.convergence_input = QLineEdit(str(self.convergence))
             layout.addWidget(QLabel("convergence:"),1,0)
             layout.addWidget(self.convergence_input,1,1)
             layout.addWidget(QLabel("rad"),1,2)
-
             self.E0_input = QLineEdit(str(self.E0))
             layout.addWidget(QLabel("E0:"),2,0)
             layout.addWidget(self.E0_input,2,1)
             layout.addWidget(QLabel("eV"),2,2)
-
             self.Cs_input = QLineEdit(str(self.Cs))
             layout.addWidget(QLabel("Cs:"),3,0)
             layout.addWidget(self.Cs_input,3,1)
             layout.addWidget(QLabel("m"),3,2)
-
             self.V0_input = QLineEdit(str(self.V0))
             layout.addWidget(QLabel("V0:"),4,0)
             layout.addWidget(self.V0_input,4,1)
             layout.addWidget(QLabel("V"),4,2)
-
             self.crop_input = QCheckBox("crop")
             self.crop_input.setToolTip("image cropping by 2")
             layout.addWidget(self.crop_input,5,0)
-
             self.mirrored_input = QCheckBox("mirrored")
             layout.addWidget(self.mirrored_input,5,1)
-
             self.contrast = QPushButton("compute Fresnel contrast")
             layout.addWidget(self.contrast,6,0)
             self.contrast.setToolTip("Compute Fresnel contrast, and store result in .png files")
-            self.contrast.clicked.connect(self.computeContrast)
-
             self.log_display = QTextEdit()
             self.log_display.setToolTip("yaml that will be used to do the ray-tracing computation")
             self.log_display.setReadOnly(True)
             layout.addWidget(self.log_display,7,0,2,3)
-
-            self.canvasImage = FigureCanvas(Figure(figsize=(4, 3)))
-            toolBar_image = NavigationToolbar(self.canvasImage,self)
-            self.cross_section_btn = QPushButton("cross section")
-            self.cross_section_btn.setCheckable(True)
-            layout.addWidget(toolBar_image,0,3)
-            layout.addWidget(self.cross_section_btn,0,4)
-            layout.addWidget(self.canvasImage,1,3,6,2)
-            self.myPlt = self.canvasImage.figure.subplots()
-            self.canvasImage.mpl_connect("button_press_event",self.canvasClicked)
-
-            self.canvasCurve = FigureCanvas(Figure(figsize=(4,3)))
-            toolbar = NavigationToolbar(self.canvasCurve,self)
-            layout.addWidget(toolbar,7,3)
-            layout.addWidget(self.canvasCurve,8,3,1,2)
-            self.curve = self.canvasCurve.figure.subplots()
-
-            self.setLayout(layout)
-            self.setWindowTitle("Fresnel contrast v" + __version__)
             self.log_display.setText(self.logStr)
+            self.setLayout(layout)
 
-        def canvasClicked(self,pos):
-            ''' plot a cross section along Ox direction at position y in nanometers of the Fresnel contrast image
-            pos input is a mouse event, we only need ydata position to compute the corresponding y
-            for the cross-section to compute. Then the cross section is computed onto self.I_used image
-            '''
-            Ny, Nx = self.I_used.shape
-            y = pos.ydata
-            if (y!=None) and self.cross_section_btn.isChecked():
-                y0 = (int) (0.5*(Ny + 1e-9 * y/self.dy))
-                s_y = str('{:.2e}'.format(y))
-                self.updateLog("cross-section at y= " + s_y + " nm\n")
-                profile = self.I_used[y0, :]
-                x = (np.arange(Nx) - (Nx - 1) / 2) * int(self.dx*1e9)
-                self.myPlt.axhline(y,color='green')
-                self.canvasImage.draw()
-                self.curve.plot(x, profile, label='y = ' + s_y, color='blue')
-                self.canvasCurve.draw()
-                self.cross_section_btn.click()
-                #added x and y limits to profile to match cropped region in Intensity image
-                #plt.ylim(-0.1, 4)
-                #plt.xlabel("x (nm)", fontsize=16)
-                #plt.ylabel("Intensity (a.u.)", fontsize=16)
-                #plt.xticks(fontsize=14)
-                #plt.yticks(fontsize=14)
-
-        def computeContrast(self):
-            '''
-            slot that compute the Fresnel contrast image. It uses the holographic image contrast as
-            an input, and add the electrostatic contribution. Then it applies defocussing and takes
-            into account some aberration(s), and plot the corresponding image
-            '''
-            self.defocus = float(self.defocus_input.text())
-            self.convergence = float(self.convergence_input.text())
-            self.E0 = float(self.E0_input.text())
-            self.Cs = float(self.Cs_input.text())
-            self.V0 = float(self.V0_input.text())
-            self.crop = self.crop_input.isChecked()
-
-            C_e = electrical_constant(self.E0)
-            self.logStr += f"   Ce(E0) = {C_e} (V*m)^-1\n"
-
-            # Load phase + metadata
-            phase,dx,dy,note = load_png(self.phaseFileName,True)
-            length,_,_,note = load_png(self.thicknessMapFileName,False)
-            self.updateLog(note + "\n")
-
-            phase = add_elec_phase(phase, length, C_e, self.V0)
-            # Simulation Fresnel
-            if self.mirrored_input.isChecked():
-                I = fresnel_mirrored(phase, dx, dy, crop=self.crop, E0_eV=self.E0,defocus= self.defocus, Cs= self.Cs)
-            else:
-                I= fresnel_enveloppe(phase, dx, dy, E0_eV=self.E0, defocus=self.defocus, Cs=self.Cs)
-
-            defocus = self.defocus
-            convergence = self.convergence
-            alpha_F = (np.pi*defocus*convergence)**2/np.log(2)
-            self.I_used = coherence(I, dx, dy, alpha_F)
-            self.dx = dx
-            self.dy = dy
-            #I_ampl= amplitude(I, length, crop=args.crop, elec=1)
-            
-            Ny, Nx = I.shape
-            extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
-            self.myPlt.imshow(self.I_used, cmap="gray", extent=extent_nm)
-            self.canvasImage.draw()
-            #self.myPlt.xlabel("x (nm)")
-            #self.myPlt.ylabel("y (nm)")
-            #self.myPlt.title("Fresnel Contrast")
-            #self.myPlt.colorbar(label="Intensity")
-            #nameplot=f"fresnel_image_crop_{args.crop}_defoc_{args.defocus}m.png"
-            #self.myPlt.savefig(nameplot, dpi=150)
+        def getParams(self):
+            params = {}
+            params["defocus"] = float(self.defocus_input.text())
+            params["convergence"] = float(self.convergence_input.text())
+            params["E0"] = float(self.E0_input.text())
+            params["Cs"] = float(self.Cs_input.text())
+            params["V0"] = float(self.V0_input.text())
+            params["crop"] = self.crop_input.isChecked()
+            params["mirrored"] =  self.mirrored_input.isChecked()
+            return params
 
         def updateLog(self,textToAdd=""):
             '''
@@ -810,6 +723,137 @@ try:
             '''
             self.logStr += textToAdd
             self.log_display.setText(self.logStr)
+
+    class plotPanel(QWidget):
+        def __init__(self,parent=None):
+            super().__init__(parent)
+            self.initUI()
+
+        def initUI(self):
+            layout = QVBoxLayout()
+            self.canvas = FigureCanvas(Figure(figsize=(4,3)))
+            toolBar = NavigationToolbar(self.canvas,self)
+            layout.addWidget(toolBar)
+            self.plotter = self.canvas.figure.subplots()
+            layout.addWidget(self.canvas)
+            self.setLayout(layout)
+
+        def updatePlot(self,x,profile,s_y):
+            self.plotter.cla()
+            self.plotter.plot(x, profile, label='y = ' + s_y, color='blue')
+            #added x and y limits to profile to match cropped region in Intensity image
+            #plt.xlabel("x (nm)", fontsize=16)
+            #plt.ylabel("Intensity (a.u.)", fontsize=16)
+            #plt.xticks(fontsize=14)
+            #plt.yticks(fontsize=14)
+            self.canvas.draw()
+
+    class imagePanel(QWidget):
+        def __init__(self,parent=None):
+            super().__init__(parent)
+            self.initUI()
+
+        def initUI(self):
+            layout = QGridLayout()
+            self.canvas = FigureCanvas(Figure(figsize=(4,3)))
+            toolBar = NavigationToolbar(self.canvas,self)
+            layout.addWidget(toolBar)
+            self.cross_section_btn = QPushButton("cross section")
+            self.cross_section_btn.setCheckable(True)
+            layout.addWidget(self.cross_section_btn,0,1)
+
+            self.plotter = self.canvas.figure.subplots()
+            layout.addWidget(self.canvas,1,0,1,2)
+            self.setLayout(layout)
+
+        def updateImage(self,I,dx,dy,y=None):
+            self.plotter.cla()
+            Ny, Nx = I.shape
+            extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
+            self.plotter.imshow(I, cmap="gray", extent=extent_nm)
+            if y != None:
+                self.plotter.axhline(y,color='green')
+
+            #self.myPlt.xlabel("x (nm)")
+            #self.myPlt.ylabel("y (nm)")
+            #self.myPlt.title("Fresnel Contrast")
+            #self.myPlt.colorbar(label="Intensity")
+            self.canvas.draw()
+
+    class Fresnel(QWidget):
+        def __init__(self,phaseFileName,thicknessMapFileName,parent=None):
+            ''' constructor '''
+            super().__init__(parent)
+            self.phaseFileName = phaseFileName
+            self.thicknessMapFileName = thicknessMapFileName
+            self.I_used = None
+
+            layout = QGridLayout()
+            self.ctrlPanel = FresnelCtrlPanel()
+            self.ctrlPanel.contrast.clicked.connect(self.computeContrast)
+            layout.addWidget(self.ctrlPanel,0,0,2,1)
+
+            self.canvasImage = imagePanel()
+            layout.addWidget(self.canvasImage,0,1)
+            self.canvasImage.canvas.mpl_connect("button_press_event",self.canvasClicked)
+
+            self.canvasCurve = plotPanel()
+            layout.addWidget(self.canvasCurve,1,1)
+
+            self.setLayout(layout)
+            self.setWindowTitle("Fresnel contrast v" + __version__)
+
+        def canvasClicked(self,pos):
+            ''' plot a cross section along Ox direction at position y in nanometers of the Fresnel contrast image
+            pos input is a mouse event, we only need ydata position to compute the corresponding y
+            for the cross-section to compute. Then the cross section is computed onto self.I_used image
+            '''
+            Ny, Nx = self.I_used.shape
+            y = pos.ydata
+            if (y!=None) and self.canvasImage.cross_section_btn.isChecked():
+                y0 = (int) (0.5*(Ny + 1e-9 * y/self.dy))
+                s_y = str('{:.2e}'.format(y))
+                self.ctrlPanel.updateLog("cross-section at y= " + s_y + " nm\n")
+                profile = self.I_used[y0, :]
+                x = (np.arange(Nx) - (Nx - 1) / 2) * int(self.dx*1e9)
+                self.canvasCurve.updatePlot(x,profile,s_y)
+                self.canvasImage.updateImage(self.I_used,self.dx,self.dy,y)
+                self.canvasImage.cross_section_btn.click()
+
+        def computeContrast(self):
+            '''
+            slot that compute the Fresnel contrast image. It uses the holographic image contrast as
+            an input, and add the electrostatic contribution. Then it applies defocussing and takes
+            into account some aberration(s), and plot the corresponding image
+            '''
+            params = self.ctrlPanel.getParams()
+            defocus = params["defocus"]
+            convergence = params["convergence"]
+            E0 = params["E0"]
+            Cs = params["Cs"]
+            V0 = params["V0"]
+            C_e = electrical_constant(E0)
+            self.ctrlPanel.logStr += f"   Ce(E0) = {C_e} (V*m)^-1\n"
+
+            # Load phase + metadata
+            phase,dx,dy,note = load_png(self.phaseFileName,True)
+            length,_,_,note = load_png(self.thicknessMapFileName,False)
+            self.ctrlPanel.updateLog(note + "\n")
+
+            phase = add_elec_phase(phase, length, C_e, V0)
+            # Simulation Fresnel
+            if params["mirrored"]:
+                I = fresnel_mirrored(phase, dx, dy, params["crop"], E0, defocus, Cs)
+            else:
+                I= fresnel_enveloppe(phase, dx, dy, E0, defocus, Cs, convergence)
+
+            alpha_F = (np.pi*defocus*convergence)**2/np.log(2)
+            self.I_used = coherence(I, dx, dy, alpha_F)
+            self.dx = dx
+            self.dy = dy
+            self.canvasImage.updateImage(self.I_used,self.dx,self.dy)
+            #nameplot=f"fresnel_image_crop_{args.crop}_defoc_{args.defocus}m.png"
+            #self.myPlt.savefig(nameplot, dpi=150)
 
     class YAMLSyntaxHighlighter(QSyntaxHighlighter):
         def __init__(self, parent=None):
