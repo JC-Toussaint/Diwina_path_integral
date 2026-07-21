@@ -703,6 +703,7 @@ try:
             self.log_display.setReadOnly(True)
             layout.addWidget(self.log_display,7,0,2,3)
             self.log_display.setText(self.logStr)
+            layout.setContentsMargins(2,2,2,2)
             self.setLayout(layout)
 
         def getParams(self):
@@ -736,6 +737,7 @@ try:
             layout.addWidget(toolBar)
             self.plotter = self.canvas.figure.subplots()
             layout.addWidget(self.canvas)
+            layout.setContentsMargins(2,2,2,2)
             self.setLayout(layout)
 
         def updatePlot(self,x,profile,s_y):
@@ -764,6 +766,7 @@ try:
 
             self.plotter = self.canvas.figure.subplots()
             layout.addWidget(self.canvas,1,0,1,2)
+            layout.setContentsMargins(2,2,2,2)
             self.setLayout(layout)
 
         def updateImage(self,I,dx,dy,y=None):
@@ -788,19 +791,26 @@ try:
             self.thicknessMapFileName = thicknessMapFileName
             self.I_used = None
 
-            layout = QGridLayout()
             self.ctrlPanel = FresnelCtrlPanel()
             self.ctrlPanel.contrast.clicked.connect(self.computeContrast)
-            layout.addWidget(self.ctrlPanel,0,0,2,1)
-
             self.canvasImage = imagePanel()
-            layout.addWidget(self.canvasImage,0,1)
             self.canvasImage.canvas.mpl_connect("button_press_event",self.canvasClicked)
-
             self.canvasCurve = plotPanel()
-            layout.addWidget(self.canvasCurve,1,1)
 
+            splitter1 = QSplitter(Qt.Orientation.Vertical)
+            splitter1.addWidget(self.canvasImage)
+            splitter1.addWidget(self.canvasCurve)
+            splitter1.setSizes([300,300])
+
+            splitter2 = QSplitter(Qt.Orientation.Horizontal)
+            splitter2.addWidget(self.ctrlPanel)
+            splitter2.addWidget(splitter1)
+
+            layout = QHBoxLayout()
+            layout.addWidget(splitter2)
+            layout.setContentsMargins(2,2,2,2)
             self.setLayout(layout)
+            self.setGeometry(100,100,800,600)
             self.setWindowTitle("Fresnel contrast v" + __version__)
 
         def canvasClicked(self,pos):
