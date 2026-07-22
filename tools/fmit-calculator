@@ -753,13 +753,10 @@ try:
             self.setLayout(groupLayout)
 
         def updatePlot(self,x,profile,s_y):
+            curveName = 'section @ y = ' + s_y
             self.plotter.cla()
-            self.plotter.plot(x, profile, label='y = ' + s_y, color='blue')
-            #added x and y limits to profile to match cropped region in Intensity image
-            #plt.xlabel("x (nm)", fontsize=16)
-            #plt.ylabel("Intensity (a.u.)", fontsize=16)
-            #plt.xticks(fontsize=14)
-            #plt.yticks(fontsize=14)
+            self.plotter.plot(x, profile, label=curveName, color='blue')
+            self.plotter.set(title=curveName,xlabel='x [nm]',ylabel='Intensity [a.u.]')
             self.canvas.draw()
 
     class imagePanel(QWidget):
@@ -794,10 +791,8 @@ try:
             if y != None:
                 self.plotter.axhline(y,color='green')
 
-            #self.myPlt.xlabel("x (nm)")
-            #self.myPlt.ylabel("y (nm)")
-            #self.myPlt.title("Fresnel Contrast")
-            #self.myPlt.colorbar(label="Intensity")
+            self.plotter.set(xlabel="x [nm]", ylabel="y [nm]")
+            #self.plotter.colorbar(label="Intensity")
             self.canvas.draw()
 
     class Fresnel(QWidget):
