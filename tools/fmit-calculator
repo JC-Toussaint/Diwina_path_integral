@@ -669,7 +669,12 @@ try:
             self.initUI()
 
         def initUI(self):
+            ctrlGroupBox = QGroupBox()
+            groupLayout = QGridLayout()
+            groupLayout.addWidget(ctrlGroupBox)
             layout = QGridLayout()
+            ctrlGroupBox.setLayout(layout)
+
             self.defocus_input = QLineEdit(str(self.defocus))
             layout.addWidget(QLabel("defocus:"),0,0)
             layout.addWidget(self.defocus_input,0,1)
@@ -704,7 +709,8 @@ try:
             layout.addWidget(self.log_display,7,0,2,3)
             self.log_display.setText(self.logStr)
             layout.setContentsMargins(2,2,2,2)
-            self.setLayout(layout)
+            groupLayout.setContentsMargins(2,2,2,2)
+            self.setLayout(groupLayout)
 
         def getParams(self):
             params = {}
@@ -731,14 +737,20 @@ try:
             self.initUI()
 
         def initUI(self):
+            plotGroupBox = QGroupBox()
+            groupLayout = QGridLayout()
+            groupLayout.addWidget(plotGroupBox)
             layout = QVBoxLayout()
+            plotGroupBox.setLayout(layout)
+
             self.canvas = FigureCanvas(Figure(figsize=(4,3)))
             toolBar = NavigationToolbar(self.canvas,self)
             layout.addWidget(toolBar)
             self.plotter = self.canvas.figure.subplots()
             layout.addWidget(self.canvas)
             layout.setContentsMargins(2,2,2,2)
-            self.setLayout(layout)
+            groupLayout.setContentsMargins(2,2,2,2)
+            self.setLayout(groupLayout)
 
         def updatePlot(self,x,profile,s_y):
             self.plotter.cla()
@@ -756,18 +768,23 @@ try:
             self.initUI()
 
         def initUI(self):
+            imageGroupBox = QGroupBox()
+            groupLayout = QGridLayout()
+            groupLayout.addWidget(imageGroupBox)
             layout = QGridLayout()
+            imageGroupBox.setLayout(layout)
+
             self.canvas = FigureCanvas(Figure(figsize=(4,3)))
             toolBar = NavigationToolbar(self.canvas,self)
             layout.addWidget(toolBar)
             self.cross_section_btn = QPushButton("cross section")
             self.cross_section_btn.setCheckable(True)
             layout.addWidget(self.cross_section_btn,0,1)
-
             self.plotter = self.canvas.figure.subplots()
             layout.addWidget(self.canvas,1,0,1,2)
             layout.setContentsMargins(2,2,2,2)
-            self.setLayout(layout)
+            groupLayout.setContentsMargins(2,2,2,2)
+            self.setLayout(groupLayout)
 
         def updateImage(self,I,dx,dy,y=None):
             self.plotter.cla()
@@ -790,6 +807,7 @@ try:
             self.phaseFileName = phaseFileName
             self.thicknessMapFileName = thicknessMapFileName
             self.I_used = None
+            splitterWidth = 2
 
             self.ctrlPanel = FresnelCtrlPanel()
             self.ctrlPanel.contrast.clicked.connect(self.computeContrast)
@@ -801,10 +819,12 @@ try:
             splitter1.addWidget(self.canvasImage)
             splitter1.addWidget(self.canvasCurve)
             splitter1.setSizes([300,300])
+            splitter1.setHandleWidth(splitterWidth)
 
             splitter2 = QSplitter(Qt.Orientation.Horizontal)
             splitter2.addWidget(self.ctrlPanel)
             splitter2.addWidget(splitter1)
+            splitter2.setHandleWidth(splitterWidth)
 
             layout = QHBoxLayout()
             layout.addWidget(splitter2)
@@ -1642,6 +1662,7 @@ def get_params():
 def launchGUI(ymlFileName):
     try:
         from PyQt5.QtWidgets import QApplication
+        QApplication.setStyle("cleanlooks")
         app = QApplication(sys.argv)
         window = CombinedInterface(ymlFileName)
         window.show()
