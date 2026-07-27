@@ -753,11 +753,33 @@ try:
             self.setLayout(groupLayout)
 
         def updatePlot(self,x,profile,s_y):
+            '''
+            plot the cross-section and save it in a tsv file
+            '''
             curveName = 'section @ y = ' + s_y
             self.plotter.cla()
             self.plotter.plot(x, profile, label=curveName, color='blue')
             self.plotter.set(title=curveName,xlabel='x [nm]',ylabel='Intensity [a.u.]')
             self.canvas.draw()
+            str_metadata = "## y: " + s_y + "\n"
+            self.save("Fresnel_profile.tsv",x,profile,str_metadata)
+
+        def save(self,fileName,x,profile,metadata):
+            '''
+            save in tsv format the cross-section at y of the Fresnel contrast image
+            output text file is structured the following:
+            metadata, then header then two columns of numbers
+            metadata should start with ## then a space then keyword then : then a space and the
+            value associated to the keyword
+            header should start with the string '## columns: ' then the first column name then '\t'
+            then second column name
+            the two columns of number should be separated by a '\t'
+            '''
+            data = np.column_stack((x, profile))
+
+            np.savetxt(fileName, data, delimiter = "\t",
+                        header = "## columns: x [nm]\tIntensity [a.u.]", comments = metadata)
+            #self.updateLog(f"✔  Profile data saved in: {fileName}\n")
 
     class imagePanel(QWidget):
         def __init__(self,parent=None):
