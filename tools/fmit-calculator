@@ -817,15 +817,15 @@ try:
             self.setLayout(groupLayout)
 
         def updateImage(self,I,dx,dy,y=None):
-            self.plotter.cla()
+            self.plotter.cla() # does it call clf() ?
             Ny, Nx = I.shape
+            normColorRange = matplotlib.colors.Normalize(vmin=I.min(),vmax=I.max())
             extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
-            self.plotter.imshow(I, cmap="gray", extent=extent_nm)
+            self.plotter.imshow(I, cmap="gray", norm=normColorRange, extent=extent_nm)
             if y != None:
                 self.plotter.axhline(y,color='green')
-
             self.plotter.set(xlabel="x [nm]", ylabel="y [nm]")
-            #self.plotter.colorbar(label="Intensity")
+            #self.plotter.colorbar() #does not work, self.plotter is an instance of Axes
             self.canvas.draw()
 
     class Fresnel(QWidget):
