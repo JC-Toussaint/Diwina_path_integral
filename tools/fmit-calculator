@@ -700,19 +700,28 @@ try:
             layout.addWidget(self.crop_input,5,0)
             self.mirrored_input = QCheckBox("mirrored")
             layout.addWidget(self.mirrored_input,5,1)
+
+            layout.addWidget(QLabel("profile base name:"),6,0)
+            self.profileBaseName_input = QLineEdit("Fresnel_profile")
+            self.setToolTip("file base name for output cross-section Fresnel contrast file (tsv), if empty does not save")
+            layout.addWidget(self.profileBaseName_input,6,1,1,2)
+
             self.contrast = QPushButton("compute Fresnel contrast")
-            layout.addWidget(self.contrast,6,0)
+            layout.addWidget(self.contrast,7,1)
             self.contrast.setToolTip("Compute Fresnel contrast, and store result in .png files")
             self.log_display = QTextEdit()
             self.log_display.setToolTip("yaml that will be used to do the ray-tracing computation")
             self.log_display.setReadOnly(True)
-            layout.addWidget(self.log_display,7,0,2,3)
+            layout.addWidget(self.log_display,8,0,2,3)
             self.log_display.setText(self.logStr)
             layout.setContentsMargins(2,2,2,2)
             groupLayout.setContentsMargins(2,2,2,2)
             self.setLayout(groupLayout)
 
         def getParams(self):
+            '''
+            returns a dictionary containing the GUI getters
+            '''
             params = {}
             params["defocus"] = float(self.defocus_input.text())
             params["convergence"] = float(self.convergence_input.text())
@@ -752,7 +761,7 @@ try:
             groupLayout.setContentsMargins(2,2,2,2)
             self.setLayout(groupLayout)
 
-        def updatePlot(self,x,profile,s_y):
+        def updatePlot(self,x,profile,fileBaseName,s_y):
             '''
             plot the cross-section and save it in a tsv file
             '''
@@ -762,7 +771,9 @@ try:
             self.plotter.set(title=curveName,xlabel='x [nm]',ylabel='Intensity [a.u.]')
             self.canvas.draw()
             str_metadata = "## y: " + s_y + "\n"
-            self.save("Fresnel_profile.tsv",x,profile,str_metadata)
+            if fileBaseName != "":
+                fileName = fileBaseName + s_y +".tsv"
+                self.save(fileName,x,profile,str_metadata)
 
         def save(self,fileName,x,profile,metadata):
             '''
@@ -861,9 +872,13 @@ try:
                 y0 = (int) (0.5*(Ny + 1e-9 * y/self.dy))
                 s_y = str('{:.2e}'.format(y))
                 self.ctrlPanel.updateLog("cross-section at y= " + s_y + " nm\n")
+                fileBaseName = self.ctrlPanel.profileBaseName_input.text()
                 profile = self.I_used[y0, :]
                 x = (np.arange(Nx) - (Nx - 1) / 2) * int(self.dx*1e9)
-                self.canvasCurve.updatePlot(x,profile,s_y)
+                self.canvasCurve.updatePlot(x,profile,fileBaseName,s_y)
+                if fileBaseName != "":
+                    fullFileName = fileBaseName + s_y + ".tsv"
+                    self.ctrlPanel.updateLog("profile " + fullFileName + " written\n")
                 self.canvasImage.updateImage(self.I_used,self.dx,self.dy,y)
                 self.canvasImage.cross_section_btn.click()
 
