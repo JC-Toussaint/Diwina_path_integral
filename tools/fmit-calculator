@@ -737,12 +737,28 @@ try:
             '''
             returns a dictionary containing the GUI getters
             '''
-            params = {}
-            params["defocus"] = float(self.defocus_input.text())
-            params["convergence"] = float(self.convergence_input.text())
-            params["E0"] = float(self.E0_input.text())
-            params["Cs"] = float(self.Cs_input.text())
-            params["V0"] = float(self.V0_input.text())
+            params = {"defocus": self.defocus,
+                      "convergence": self.convergence,
+                      "E0": self.E0,
+                      "Cs": self.Cs,
+                      "V0": self.V0,
+                      "crop":False,
+                      "mirrored":False}
+            value = self.defocus_input.text()
+            if is_float(value):
+                params["defocus"] = float(value)
+            value = self.convergence_input.text()
+            if is_float(value):
+                params["convergence"] = float(value)
+            value = self.E0_input.text()
+            if is_float(value):
+                params["E0"] = float(value)
+            value = self.Cs_input.text()
+            if is_float(value):
+                params["Cs"] = float(value)
+            value = self.V0_input.text()
+            if is_float(value):
+                params["V0"] = float(value)
             params["crop"] = self.crop_input.isChecked()
             params["mirrored"] =  self.mirrored_input.isChecked()
             return params
