@@ -647,7 +647,7 @@ try:
     QFileDialog, QLineEdit, QMessageBox, QCheckBox, QMainWindow, QFrame,
     QSplitter, QTextEdit, QGroupBox, QDoubleSpinBox, QRadioButton, QAction)
 
-    from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter, QPixmap
+    from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter, QPixmap, QDoubleValidator
     from PyQt5.QtCore import Qt, QRegExp, QLocale, QProcess
 
     # should be replaced by PyQtGraph someday...
@@ -686,22 +686,27 @@ try:
             ctrlGroupBox.setLayout(layout)
 
             self.defocus_input = QLineEdit(str(self.defocus))
+            self.defocus_input.setValidator(QDoubleValidator(-1.0,1.0,10))
             layout.addWidget(QLabel("defocus:"),0,0)
             layout.addWidget(self.defocus_input,0,1)
             layout.addWidget(QLabel("m"),0,2)
             self.convergence_input = QLineEdit(str(self.convergence))
+            self.convergence_input.setValidator(QDoubleValidator(0.0,np.pi,6))
             layout.addWidget(QLabel("convergence:"),1,0)
             layout.addWidget(self.convergence_input,1,1)
             layout.addWidget(QLabel("rad"),1,2)
             self.E0_input = QLineEdit(str(self.E0))
+            self.E0_input.setValidator(QDoubleValidator(-1e10,1e10,6))
             layout.addWidget(QLabel("E0:"),2,0)
             layout.addWidget(self.E0_input,2,1)
             layout.addWidget(QLabel("eV"),2,2)
             self.Cs_input = QLineEdit(str(self.Cs))
+            self.Cs_input.setValidator(QDoubleValidator(-1.0,1.0,10))
             layout.addWidget(QLabel("Cs:"),3,0)
             layout.addWidget(self.Cs_input,3,1)
             layout.addWidget(QLabel("m"),3,2)
             self.V0_input = QLineEdit(str(self.V0))
+            self.V0_input.setValidator(QDoubleValidator(-1e6,1e6,6))
             layout.addWidget(QLabel("V0:"),4,0)
             layout.addWidget(self.V0_input,4,1)
             layout.addWidget(QLabel("V"),4,2)
