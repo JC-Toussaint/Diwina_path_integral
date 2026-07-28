@@ -45,6 +45,16 @@ magnetic image as an input. It allows to add electrostatic contribution, do some
 corrections and set the defocussing. Clicking on the image computes its cross-section along constant y.
 """
 
+def is_float(s: str) -> bool:
+    '''
+    return True if the string can be successfully converted to a float
+    '''
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
 def has_nvidia_gpu():
     ''' ask nvidia-smi if there is any nvidia GPU with proprietary driver, return true if any '''
     import subprocess
@@ -1272,13 +1282,31 @@ try:
 
         def onRotationsChanged(self):
             """ update yaml_config rotations parameters """
-            self.yaml_config['rotations']['angle1'] = float(self.angle1_input.text())
-            self.yaml_config['rotations']['axe1'] = [float(inp.text()) for inp in self.axe1_inputs]
-            self.yaml_config['rotations']['angle2'] = float(self.angle2_input.text())
-            self.yaml_config['rotations']['axe2'] = [float(inp.text()) for inp in self.axe2_inputs]
+            checkSum = 0
+            value = self.angle1_input.text()
+            if is_float(value):
+                self.yaml_config['rotations']['angle1'] = float(value)
+                checkSum += 1
+            value = self.angle2_input.text()
+            if is_float(value):
+                self.yaml_config['rotations']['angle2'] = float(value)
+                checkSum += 1
+            for i in range(3):
+                value = self.axe1_inputs[i].text()
+                if is_float(value):
+                    self.yaml_config['rotations']['axe1'][i] = float(value)
+                    checkSum += 1
+                value = self.axe2_inputs[i].text()
+                if is_float(value):
+                    self.yaml_config['rotations']['axe2'][i] = float(value)
+                    checkSum += 1
+
             self.flagComputed = False
-            self.update_yaml_display()
-            self.update_mesh()
+            if checkSum == 8: # all eight rotations parameters are floats
+                self.update_yaml_display()
+                self.statusBar().showMessage("Rotation done")
+            else:
+                self.statusBar().showMessage("Warning: a rotation parameter is undefined")
 
         def onFileBaseNameChanged(self):
             """ update yaml_config file base name, preventing empty string """
