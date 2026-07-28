@@ -761,7 +761,7 @@ try:
             groupLayout.setContentsMargins(2,2,2,2)
             self.setLayout(groupLayout)
 
-        def updatePlot(self,x,profile,fileBaseName,s_y):
+        def updatePlot(self,x,profile,fileBaseName,s_y,metadatas):
             '''
             plot the cross-section and save it in a tsv file
             '''
@@ -770,7 +770,7 @@ try:
             self.plotter.plot(x, profile, label=curveName, color='blue')
             self.plotter.set(title=curveName,xlabel='x [nm]',ylabel='Intensity [a.u.]')
             self.canvas.draw()
-            str_metadata = "## y: " + s_y + "\n"
+            str_metadata = metadatas + "## y: " + s_y + "\n"
             if fileBaseName != "":
                 fileName = fileBaseName + s_y +".tsv"
                 self.save(fileName,x,profile,str_metadata)
@@ -875,7 +875,15 @@ try:
                 fileBaseName = self.ctrlPanel.profileBaseName_input.text()
                 profile = self.I_used[y0, :]
                 x = (np.arange(Nx) - (Nx - 1) / 2) * int(self.dx*1e9)
-                self.canvasCurve.updatePlot(x,profile,fileBaseName,s_y)
+                params = self.ctrlPanel.getParams()
+                metadatas = "## defocus: " + str(params["defocus"]) + "\n"
+                metadatas += "## convergence: " + str(params["convergence"]) + "\n"
+                metadatas += "## E0: " + str(params["E0"]) + "\n"
+                metadatas += "## Cs: " + str(params["Cs"]) + "\n"
+                metadatas += "## V0: " + str(params["V0"]) + "\n"
+                metadatas += "## crop: " + str(params["crop"]) + "\n"
+                metadatas += "## mirrored: " + str(params["mirrored"]) + "\n"
+                self.canvasCurve.updatePlot(x,profile,fileBaseName,s_y,metadatas)
                 if fileBaseName != "":
                     fullFileName = fileBaseName + s_y + ".tsv"
                     self.ctrlPanel.updateLog("profile " + fullFileName + " written\n")
