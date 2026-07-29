@@ -11,6 +11,7 @@ from scipy.spatial.transform import Rotation as R
 import pyvista as pv
 from pyvistaqt import QtInteractor
 from PIL import Image
+from PIL.PngImagePlugin import PngInfo # to save png with structured metadata in tEXt chunks
 from typing import Any, Dict, List, Union
 
 strHelp = """Workflow:
@@ -554,6 +555,18 @@ def load_png(path_png,isAngle):
         note = "No Value Min/Max : mapping 0..65535 -> [-π, π]"
     return val, dx, dy, note
 
+def save_png(fileName,img,metadata=None):
+    ''' save numpy float img into a png uint16 with some metadatas and extrema values '''
+    val_min = img.min()
+    val_max = img.max()
+    img_temp = np.round(65535.0*(img-val_min)/(val_max-val_min)).astype(np.uint16)
+    png_metadata = PngInfo()
+    for key,value in metadata.items():
+        png_metadata.add_text(key,str(value))
+    png_metadata.add_text("intensity_min",str(val_min))
+    png_metadata.add_text("intensity_max",str(val_max))
+    Image.fromarray(img_temp).save(fileName, pnginfo = png_metadata)
+
 def coherence(I, dx, dy, alpha):
     ''' I is the intensity, convolution in real space with gaussian function
     '''
@@ -953,8 +966,9 @@ try:
             self.dx = dx
             self.dy = dy
             self.canvasImage.updateImage(self.I_used,self.dx,self.dy)
-            #nameplot=f"fresnel_image_crop_{args.crop}_defoc_{args.defocus}m.png"
-            #self.myPlt.savefig(nameplot, dpi=150)
+            params["phaseFileName"] = self.phaseFileName
+            params["thicknessMapFileName"] = self.thicknessMapFileName
+            #save_png("bidule_à_franges.png",self.I_used,params)
 
     class YAMLSyntaxHighlighter(QSyntaxHighlighter):
         def __init__(self, parent=None):
