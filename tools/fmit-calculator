@@ -729,18 +729,23 @@ try:
             self.mirrored_input = QCheckBox("mirrored")
             layout.addWidget(self.mirrored_input,5,1)
 
-            layout.addWidget(QLabel("profile base name:"),6,0)
+            layout.addWidget(QLabel("image base name:"),6,0)
+            self.imageBaseName_input = QLineEdit("Fresnel_image")
+            self.setToolTip("file base name for output full image Fresnel contrast file (tsv), if empty does not save")
+            layout.addWidget(self.imageBaseName_input,6,1,1,2)
+
+            layout.addWidget(QLabel("profile base name:"),7,0)
             self.profileBaseName_input = QLineEdit("Fresnel_profile")
             self.setToolTip("file base name for output cross-section Fresnel contrast file (tsv), if empty does not save")
-            layout.addWidget(self.profileBaseName_input,6,1,1,2)
+            layout.addWidget(self.profileBaseName_input,7,1,1,2)
 
             self.contrast = QPushButton("compute Fresnel contrast")
-            layout.addWidget(self.contrast,7,1)
+            layout.addWidget(self.contrast,8,1)
             self.contrast.setToolTip("Compute Fresnel contrast, and store result in .png files")
             self.log_display = QTextEdit()
             self.log_display.setToolTip("Log outputs")
             self.log_display.setReadOnly(True)
-            layout.addWidget(self.log_display,8,0,2,3)
+            layout.addWidget(self.log_display,9,0,2,3)
             self.log_display.setText(self.logStr)
             layout.setContentsMargins(2,2,2,2)
             groupLayout.setContentsMargins(2,2,2,2)
@@ -968,7 +973,9 @@ try:
             self.canvasImage.updateImage(self.I_used,self.dx,self.dy)
             params["phaseFileName"] = self.phaseFileName
             params["thicknessMapFileName"] = self.thicknessMapFileName
-            #save_png("bidule_à_franges.png",self.I_used,params)
+            imageBaseName = self.ctrlPanel.imageBaseName_input.text()
+            if imageBaseName != "":
+                save_png(imageBaseName + ".png",self.I_used,params)
 
     class YAMLSyntaxHighlighter(QSyntaxHighlighter):
         def __init__(self, parent=None):
