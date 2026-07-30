@@ -272,6 +272,19 @@ def load_yaml_from_file(filename: str) -> Dict[str, Any]:
         strMessage = f"✗ Error reading file: {e}"
         return strMessage,None
 
+def check_solFile(fileName):
+    isValidSolFile = False
+    if fileName[-4:] == ".sol":
+        try:
+            with open(fileName,'r') as file:
+                strMessage = "input .sol file exists"
+                isValidSolFile = True
+        except FileNotFoundError:
+            strMessage = "file " + fileName + " does not exists."
+    else:
+        strMessage ="not a .sol file" #it might be a math expression
+    return isValidSolFile,strMessage
+
 def check_input(yaml_config):
     """
     check that dictionary built from yaml input file contains appropriate keys
@@ -1695,7 +1708,9 @@ try:
         def compute(self):
             """Save YAML configuration and launch pathIntegral executable """
             self.save_yaml_config()
-            if self.outputFileName != "noneYet":
+            isValid,message = check_solFile(self.yaml_config["initial_magnetization"])
+            isMathExpr = "function" in self.yaml_config["initial_magnetization"] #this is not enough
+            if (self.outputFileName != "noneYet") and (isValid or isMathExpr):
                 self.compute_btn.setEnabled(False)
                 self.statusBar().showMessage(f"✓ YAML file saved: {self.outputFileName}, launch ray-tracing computations ...")
                 self.lastLog = open("lastLog.log","wb")
@@ -1710,7 +1725,7 @@ try:
                 elif os.name == "posix":
                     self.process.start("pathIntegral",[self.outputFileName])
             else:
-                self.statusBar().showMessage("Error: .sol not yet selected.")
+                self.statusBar().showMessage("Error: .sol not yet selected, or " + message)
                 self.compute_btn.setEnabled(True)
 
         def process_failed_to_start(self):
