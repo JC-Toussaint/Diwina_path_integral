@@ -7,7 +7,7 @@ import json
 import sys
 import numpy as np
 import re
-from scipy.spatial.transform import Rotation as R
+from scipy.spatial.transform import Rotation
 import pyvista as pv
 from pyvistaqt import QtInteractor
 from PIL import Image
@@ -236,10 +236,10 @@ def normalize(v):
 def apply_sequential_quaternion_rotations(points, axes_angles):
     ''' apply successive rotations to point list stored in points, in place '''
     rotated_points = points.copy()
-    rotation = R.identity()
+    rotation = Rotation.identity()
     for axis, angle in axes_angles:
         axis = normalize(np.array(axis))
-        r = R.from_rotvec(np.deg2rad(angle) * axis)
+        r = Rotation.from_rotvec(np.deg2rad(angle) * axis)
         rotation = r * rotation
     return rotation.apply(rotated_points)
 
@@ -715,55 +715,57 @@ try:
             groupLayout.addWidget(ctrlGroupBox)
             layout = QGridLayout()
             ctrlGroupBox.setLayout(layout)
-
+            self.rawMagPhaseImage = QLabel()
+            self.rawMagPhaseImage.setToolTip("raw magnetic holographic phase")
+            layout.addWidget(self.rawMagPhaseImage,0,0,1,3)
             self.defocus_input = QLineEdit(str(self.defocus))
             self.defocus_input.setValidator(QDoubleValidator(-1.0,1.0,10))
-            layout.addWidget(QLabel("defocus:"),0,0)
-            layout.addWidget(self.defocus_input,0,1)
-            layout.addWidget(QLabel("m"),0,2)
+            layout.addWidget(QLabel("defocus:"),1,0)
+            layout.addWidget(self.defocus_input,1,1)
+            layout.addWidget(QLabel("m"),1,2)
             self.convergence_input = QLineEdit(str(self.convergence))
             self.convergence_input.setValidator(QDoubleValidator(0.0,np.pi,6))
-            layout.addWidget(QLabel("convergence:"),1,0)
-            layout.addWidget(self.convergence_input,1,1)
-            layout.addWidget(QLabel("rad"),1,2)
+            layout.addWidget(QLabel("convergence:"),2,0)
+            layout.addWidget(self.convergence_input,2,1)
+            layout.addWidget(QLabel("rad"),2,2)
             self.E0_input = QLineEdit(str(self.E0))
             self.E0_input.setValidator(QDoubleValidator(-1e10,1e10,6))
-            layout.addWidget(QLabel("E0:"),2,0)
-            layout.addWidget(self.E0_input,2,1)
-            layout.addWidget(QLabel("eV"),2,2)
+            layout.addWidget(QLabel("E0:"),3,0)
+            layout.addWidget(self.E0_input,3,1)
+            layout.addWidget(QLabel("eV"),3,2)
             self.Cs_input = QLineEdit(str(self.Cs))
             self.Cs_input.setValidator(QDoubleValidator(-1.0,1.0,10))
-            layout.addWidget(QLabel("Cs:"),3,0)
-            layout.addWidget(self.Cs_input,3,1)
-            layout.addWidget(QLabel("m"),3,2)
+            layout.addWidget(QLabel("Cs:"),4,0)
+            layout.addWidget(self.Cs_input,4,1)
+            layout.addWidget(QLabel("m"),4,2)
             self.V0_input = QLineEdit(str(self.V0))
             self.V0_input.setValidator(QDoubleValidator(-1e6,1e6,6))
-            layout.addWidget(QLabel("V0:"),4,0)
-            layout.addWidget(self.V0_input,4,1)
-            layout.addWidget(QLabel("V"),4,2)
+            layout.addWidget(QLabel("V0:"),5,0)
+            layout.addWidget(self.V0_input,5,1)
+            layout.addWidget(QLabel("V"),5,2)
             self.crop_input = QCheckBox("crop")
             self.crop_input.setToolTip("image cropping by 2")
-            layout.addWidget(self.crop_input,5,0)
+            layout.addWidget(self.crop_input,6,0)
             self.mirrored_input = QCheckBox("mirrored")
-            layout.addWidget(self.mirrored_input,5,1)
+            layout.addWidget(self.mirrored_input,6,1)
 
-            layout.addWidget(QLabel("image base name:"),6,0)
+            layout.addWidget(QLabel("image base name:"),7,0)
             self.imageBaseName_input = QLineEdit("Fresnel_image")
             self.setToolTip("file base name for output full image Fresnel contrast file (tsv), if empty does not save")
-            layout.addWidget(self.imageBaseName_input,6,1,1,2)
+            layout.addWidget(self.imageBaseName_input,7,1,1,2)
 
-            layout.addWidget(QLabel("profile base name:"),7,0)
+            layout.addWidget(QLabel("profile base name:"),8,0)
             self.profileBaseName_input = QLineEdit("Fresnel_profile")
             self.setToolTip("file base name for output cross-section Fresnel contrast file (tsv), if empty does not save")
-            layout.addWidget(self.profileBaseName_input,7,1,1,2)
+            layout.addWidget(self.profileBaseName_input,8,1,1,2)
 
             self.contrast = QPushButton("compute Fresnel contrast")
-            layout.addWidget(self.contrast,8,1)
+            layout.addWidget(self.contrast,9,1)
             self.contrast.setToolTip("Compute Fresnel contrast, and store result in .png files")
             self.log_display = QTextEdit()
             self.log_display.setToolTip("Log outputs")
             self.log_display.setReadOnly(True)
-            layout.addWidget(self.log_display,9,0,2,3)
+            layout.addWidget(self.log_display,10,0,2,3)
             self.log_display.setText(self.logStr)
             layout.setContentsMargins(2,2,2,2)
             groupLayout.setContentsMargins(2,2,2,2)
@@ -905,6 +907,7 @@ try:
             splitterWidth = 2
 
             self.ctrlPanel = FresnelCtrlPanel()
+            self.ctrlPanel.rawMagPhaseImage.setPixmap( (QPixmap(self.phaseFileName)).scaled(300,300) )
             self.ctrlPanel.contrast.clicked.connect(self.computeContrast)
             self.canvasImage = imagePanel()
             self.canvasImage.canvas.mpl_connect("button_press_event",self.canvasClicked)
@@ -974,6 +977,7 @@ try:
 
             # Load phase + metadata
             phase,dx,dy,note = load_png(self.phaseFileName,True)
+            self.ctrlPanel.updateLog(note + "\n")
             length,_,_,note = load_png(self.thicknessMapFileName,False)
             self.ctrlPanel.updateLog(note + "\n")
 
