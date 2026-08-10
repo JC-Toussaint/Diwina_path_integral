@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
 
  	//fem2d.exportHoloPhase(mySettings.getSimName());
 	fem2d.exportMagIntegrals_nd_HoloPhase(mySettings.getSimName());
- 	//fem2d.exportRatioRGBscaleImage(mySettings, ExportType::HOLO_PHASE);
+ 	fem2d.exportRatioRGBscaleImage(mySettings, ExportType::HOLO_PHASE);
  	fem2d.exportRatioGrayScaleImage(mySettings, ExportType::HOLO_PHASE);
 	return 0;
 }
