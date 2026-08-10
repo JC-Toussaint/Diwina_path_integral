@@ -898,16 +898,18 @@ try:
             self.canvas.draw()
 
     class Fresnel(QWidget):
-        def __init__(self,phaseFileName,thicknessMapFileName,parent=None):
-            ''' constructor '''
+        def __init__(self,parent=None):
+            ''' constructor of the whole widget embedding an image view of the magnetic holographic
+            phase, some input widget to compute Fresnel contrast, and two matplotlib widget. The
+            first is being used to plot the computed Fresnel contrast, the second to plot a
+            cross-section along y=cste of the Fresnel contrast image '''
             super().__init__(parent)
-            self.phaseFileName = phaseFileName
-            self.thicknessMapFileName = thicknessMapFileName
+            self.phaseFileName = ""
+            self.thicknessMapFileName = ""
             self.I_used = None
             splitterWidth = 2
 
             self.ctrlPanel = FresnelCtrlPanel()
-            self.ctrlPanel.rawMagPhaseImage.setPixmap( (QPixmap(self.phaseFileName)).scaled(300,300) )
             self.ctrlPanel.contrast.clicked.connect(self.computeContrast)
             self.canvasImage = imagePanel()
             self.canvasImage.canvas.mpl_connect("button_press_event",self.canvasClicked)
@@ -930,6 +932,12 @@ try:
             self.setLayout(layout)
             self.setGeometry(100,100,800,600)
             self.setWindowTitle("Fresnel contrast v" + __version__)
+
+        def setInputFiles(self,phaseFileName,thicknessMapFileName):
+            ''' setter for input files, holographic magnetic phase and thickness map '''
+            self.phaseFileName = phaseFileName
+            self.ctrlPanel.rawMagPhaseImage.setPixmap( (QPixmap(self.phaseFileName)).scaled(300,300) )
+            self.thicknessMapFileName = thicknessMapFileName
 
         def canvasClicked(self,pos):
             ''' plot a cross section along Ox direction at position y in nanometers of the Fresnel contrast image
@@ -1457,7 +1465,8 @@ try:
                 if index == 1: #HOLO
                     self.rawPngPlot(phaseFileName, self.holo_label_image)
                     if self.fresnel_checkBox.isChecked(): 
-                        self.fresnelWindow = Fresnel(phaseFileName,thicknessMapFileName)
+                        self.fresnelWindow = Fresnel()
+                        self.fresnelWindow.setInputFiles(phaseFileName,thicknessMapFileName)
                         self.fresnelWindow.show()
                 elif index == 2: #XMCD
                     self.rawPngPlot(fileBaseName + "_STXM_XMCD.png", self.xmcd_label_image)
