@@ -24,8 +24,6 @@ Adjust Sensor relative size and pixel size
 	It must be larger than or equal to 1
 Filled parameter will affect holographic phase calculation by artificially filling hollow parts of
 the object.
-If you wish to access Fresnel contrast computation, check the corresponding checkBox, it will pop up
-when holographic image tab becomes accessible.
 
 Press compute button
 	Both holographic phase, xmcd and thickness map are computed
@@ -931,7 +929,6 @@ try:
             layout.setContentsMargins(2,2,2,2)
             self.setLayout(layout)
             self.setGeometry(100,100,800,600)
-            self.setWindowTitle("Fresnel contrast v" + __version__)
 
         def setInputFiles(self,phaseFileName,thicknessMapFileName):
             ''' setter for input files, holographic magnetic phase and thickness map '''
@@ -1048,7 +1045,7 @@ try:
     class CombinedInterface(QMainWindow):
         def __init__(self, yaml_file):
             super().__init__()
-            self.setWindowTitle("FeeLLGood Micromagnetic Image Toolbox - Calculator")
+            self.setWindowTitle("FeeLLGood Micromagnetic Image Toolbox - Calculator v" + __version__)
             self.showMaximized()
 
             # Variables
@@ -1068,7 +1065,7 @@ try:
             self.magnetization_data = None
             self.surface_nodes = None
             self.help = None
-            self.fresnelWindow = None
+            self.holoPhase_panel = None
             self.setup_ui()
 
         def setup_ui(self):
@@ -1277,7 +1274,7 @@ try:
             sensor_layout.setSpacing(spacing)
             left_layout.addWidget(sensor_group)
 
-            # output files group
+            # output files group and save and compute button
             outputFiles_group = QGroupBox("Output files")
             outputFiles_layout = QVBoxLayout(outputFiles_group)
 
@@ -1297,20 +1294,12 @@ try:
             outputFiles_layout.addWidget(self.yaml_display)
             outputFiles_layout.setSpacing(spacing)
             self.highlighter = YAMLSyntaxHighlighter(self.yaml_display.document())
-            left_layout.addWidget(outputFiles_group, stretch = 1)
-
-            # fresnel checkbox, save and compute button
-            compute_layout = QHBoxLayout()
-            self.fresnel_checkBox = QCheckBox("Fresnel contrast")
-            self.fresnel_checkBox.setToolTip("if checked, open Fresnel contrast window when clicking on holographic phase tab")
-            compute_layout.addWidget(self.fresnel_checkBox)
             self.compute_btn = QPushButton("Save YAML and Compute")
             self.compute_btn.setToolTip("Save YAML to file, compute images, and store images in .png files")
             self.compute_btn.clicked.connect(self.compute)
-            compute_layout.addWidget(self.compute_btn)
+            outputFiles_layout.addWidget(self.compute_btn)
 
-            left_layout.addLayout(compute_layout)
-
+            left_layout.addWidget(outputFiles_group, stretch = 1)
             left_layout.setContentsMargins(2,2,2,2)
             left_layout.setSpacing(spacing)
 
@@ -1323,12 +1312,9 @@ try:
             self.plotter.enable_parallel_projection()
             self.plotter.set_background("white")
             right_layout.addWidget(self.plotter.interactor,stretch=1)
-            #right_layout.setContentsMargins(0,0,0,0)
             right_layout.setSpacing(spacing)
 
-            holoPhase_panel = QWidget()
-            holoPhase_layout = QVBoxLayout(holoPhase_panel)
-            self.holo_label_image = QLabel(holoPhase_panel)
+            self.holoPhase_panel = Fresnel()
 
             xmcdContrast_panel = QWidget()
             xmcdContrast_layout = QVBoxLayout(xmcdContrast_panel)
@@ -1339,7 +1325,7 @@ try:
             self.thickness_image = QLabel(thickness_panel)
 
             self.right_visualizations.addTab(right_panel,"3D")
-            self.right_visualizations.addTab(holoPhase_panel,"Holographic phase")
+            self.right_visualizations.addTab(self.holoPhase_panel,"Holographic phase")
             self.right_visualizations.addTab(xmcdContrast_panel,"XMCD contrast")
             self.right_visualizations.addTab(thickness_panel,"Thickness map")
             for i in [1,2,3]:
@@ -1355,11 +1341,9 @@ try:
             self.load_mesh_from_config()
 
         def closeEvent(self, event):
-            """ handle close event to close help window and/or Fresnel window if opened """
+            """ handle close event to close help window if opened """
             if self.help != None:
                 self.help.close()
-            if self.fresnelWindow != None:
-                self.fresnelWindow.close()
             self.close()
 
         def onRotationsChanged(self):
@@ -1463,11 +1447,7 @@ try:
                 thicknessMapFileName = fileBaseName + "_PATH_LENGTH.png"
 
                 if index == 1: #HOLO
-                    self.rawPngPlot(phaseFileName, self.holo_label_image)
-                    if self.fresnel_checkBox.isChecked(): 
-                        self.fresnelWindow = Fresnel()
-                        self.fresnelWindow.setInputFiles(phaseFileName,thicknessMapFileName)
-                        self.fresnelWindow.show()
+                    self.holoPhase_panel.setInputFiles(phaseFileName,thicknessMapFileName)
                 elif index == 2: #XMCD
                     self.rawPngPlot(fileBaseName + "_STXM_XMCD.png", self.xmcd_label_image)
                 elif index == 3: #PATH_LENGTH
@@ -1846,6 +1826,6 @@ def main():
                 print("Warning: no NVIDIA GPU detected.")
             launchGUI(args.ymlFileName)
 
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 if __name__ == "__main__":
     main()
