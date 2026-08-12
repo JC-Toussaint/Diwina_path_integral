@@ -807,6 +807,10 @@ try:
             self.logStr += textToAdd
             self.log_display.setText(self.logStr)
 
+        def updatePixmap(self,phaseFileName):
+            ''' update Qlabel with a Qpixmap built from phaseFileName with a fixed size (300,300) '''
+            self.rawMagPhaseImage.setPixmap( (QPixmap(phaseFileName)).scaled(300,300) )
+
     class plotPanel(QWidget):
         def __init__(self,parent=None):
             super().__init__(parent)
@@ -841,6 +845,10 @@ try:
             if fileBaseName != "":
                 fileName = fileBaseName + s_y +".tsv"
                 self.save(fileName,x,profile,str_metadata)
+
+        def clearPlot(self):
+            self.plotter.cla()
+            self.canvas.draw()
 
         def save(self,fileName,x,profile,metadata):
             '''
@@ -895,6 +903,10 @@ try:
             #self.plotter.colorbar() #does not work, self.plotter is an instance of Axes
             self.canvas.draw()
 
+        def clearImage(self):
+            self.plotter.cla()
+            self.canvas.draw()
+
     class Fresnel(QWidget):
         def __init__(self,parent=None):
             ''' constructor of the whole widget embedding an image view of the magnetic holographic
@@ -933,7 +945,7 @@ try:
         def setInputFiles(self,phaseFileName,thicknessMapFileName):
             ''' setter for input files, holographic magnetic phase and thickness map '''
             self.phaseFileName = phaseFileName
-            self.ctrlPanel.rawMagPhaseImage.setPixmap( (QPixmap(self.phaseFileName)).scaled(300,300) )
+            self.ctrlPanel.updatePixmap(self.phaseFileName)
             self.thicknessMapFileName = thicknessMapFileName
 
         def canvasClicked(self,pos):
@@ -964,6 +976,12 @@ try:
                     self.ctrlPanel.updateLog("profile " + fullFileName + " written\n")
                 self.canvasImage.updateImage(self.I_used,self.dx,self.dy,y)
                 self.canvasImage.cross_section_btn.click()
+
+        def resetGraphics(self):
+            ''' this method clear qpixmap and graphics in Fresnel widget '''
+            self.ctrlPanel.rawMagPhaseImage.clear()
+            self.canvasCurve.clearPlot()
+            self.canvasImage.clearImage()
 
         def computeContrast(self):
             '''
@@ -998,6 +1016,7 @@ try:
             self.dx = dx
             self.dy = dy
             self.canvasImage.updateImage(self.I_used,self.dx,self.dy)
+            self.canvasCurve.clearPlot()
             params["phaseFileName"] = self.phaseFileName
             params["thicknessMapFileName"] = self.thicknessMapFileName
             imageBaseName = self.ctrlPanel.imageBaseName_input.text()
@@ -1713,6 +1732,7 @@ try:
                 self.statusBar().showMessage(f"✓ YAML file saved: {self.outputFileName}, launch ray-tracing computations ...")
                 self.lastLog = open("lastLog.log","wb")
                 self.lastErr = open("lastErr.log","wb")
+                self.holoPhase_panel.resetGraphics()
                 self.process = QProcess()
                 self.process.readyReadStandardOutput.connect(self.handle_pathIntegral_stdout)
                 self.process.readyReadStandardError.connect(self.handle_pathIntegral_stderr)
@@ -1741,6 +1761,10 @@ try:
             for i in [1,2,3]:
                 self.right_visualizations.setTabEnabled(i,True)
             self.update_mesh()
+            if self.right_visualizations.currentIndex() == 1: #update Holo here
+                fileBaseName = self.yaml_config['outputs']['file_basename']
+                phaseFileName = fileBaseName + "_HOLO_PHASE.png"
+                self.holoPhase_panel.ctrlPanel.updatePixmap(phaseFileName)
 
         def handle_pathIntegral_stdout(self):
             ''' write pathIntegral stdout's in a log file '''
