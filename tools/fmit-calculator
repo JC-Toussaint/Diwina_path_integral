@@ -676,7 +676,8 @@ try:
     QFileDialog, QLineEdit, QMessageBox, QCheckBox, QMainWindow, QFrame,
     QSplitter, QTextEdit, QGroupBox, QDoubleSpinBox, QRadioButton, QAction)
 
-    from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter, QPixmap, QDoubleValidator
+    from PyQt5.QtGui import ( QFont, QTextCharFormat, QColor, QSyntaxHighlighter,
+    QPainter, QPixmap, QImage, QPen, QDoubleValidator )
     from PyQt5.QtCore import Qt, QRegExp, QLocale, QProcess
 
     # should be replaced by PyQtGraph someday...
@@ -807,9 +808,33 @@ try:
             self.logStr += textToAdd
             self.log_display.setText(self.logStr)
 
-        def updatePixmap(self,phaseFileName):
-            ''' update Qlabel with a Qpixmap built from phaseFileName with a fixed size (300,300) '''
-            self.rawMagPhaseImage.setPixmap( (QPixmap(phaseFileName)).scaled(300,300) )
+        def updatePixmap(self,phaseFileName,thicknessMapFileName=None):
+            ''' update Qlabel with a Qpixmap built from phaseFileName with a fixed size (300,300)
+            contour of the thickness map is used to see the object
+            '''
+            phase_pixmap_dx = 300
+            phase_pixmap_dy = 300
+            phaseImg = QImage(QPixmap(phaseFileName)).scaled(phase_pixmap_dx,phase_pixmap_dy)
+            if thicknessMapFileName != None:
+                painter = QPainter(phaseImg)
+                pen = QPen(QColor("red"))
+                pen.setWidth(1)
+                painter.setPen(pen)
+                contourImg = QImage(QPixmap(thicknessMapFileName)).scaled(phase_pixmap_dx,phase_pixmap_dy)
+                for i in range(1,contourImg.width()-2):
+                    for j in range(1,contourImg.height()-2):
+                        l = [ contourImg.pixelColor(i-1,j-1).red(),
+                              contourImg.pixelColor(i-1,j-1).red(),
+                              contourImg.pixelColor(i-1,j-1).red(),
+                              contourImg.pixelColor(i-1,j).red(),
+                              contourImg.pixelColor(i+1,j).red(),
+                              contourImg.pixelColor(i-1,j+1).red(),
+                              contourImg.pixelColor(i-1,j+1).red(),
+                              contourImg.pixelColor(i-1,j+1).red() ]
+                        if (0 in l) and ( sum(l) != 0):
+                            painter.drawPoint(i,j)
+                painter.end()
+            self.rawMagPhaseImage.setPixmap( QPixmap.fromImage( phaseImg ) )
 
     class plotPanel(QWidget):
         def __init__(self,parent=None):
@@ -862,10 +887,8 @@ try:
             the two columns of number should be separated by a '\t'
             '''
             data = np.column_stack((x, profile))
-
             np.savetxt(fileName, data, delimiter = "\t",
                         header = "## columns: x [nm]\tIntensity [a.u.]", comments = metadata)
-            #self.updateLog(f"✔  Profile data saved in: {fileName}\n")
 
     class imagePanel(QWidget):
         def __init__(self,parent=None):
@@ -945,8 +968,8 @@ try:
         def setInputFiles(self,phaseFileName,thicknessMapFileName):
             ''' setter for input files, holographic magnetic phase and thickness map '''
             self.phaseFileName = phaseFileName
-            self.ctrlPanel.updatePixmap(self.phaseFileName)
             self.thicknessMapFileName = thicknessMapFileName
+            self.ctrlPanel.updatePixmap(self.phaseFileName,self.thicknessMapFileName)
 
         def canvasClicked(self,pos):
             ''' plot a cross section along Ox direction at position y in nanometers of the Fresnel contrast image
@@ -1850,6 +1873,6 @@ def main():
                 print("Warning: no NVIDIA GPU detected.")
             launchGUI(args.ymlFileName)
 
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 if __name__ == "__main__":
     main()
