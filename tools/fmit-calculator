@@ -583,6 +583,26 @@ def save_png(fileName,img,metadata=None):
     png_metadata.add_text("intensity_max",str(val_max))
     Image.fromarray(img_temp).save(fileName, pnginfo = png_metadata)
 
+def computeContour(thicknessMap):
+    ''' return a list of the coordinates of the contour of object(s) in thicknessMap '''
+    Ny, Nx = thicknessMap.shape
+    x=[]
+    y=[]
+    for i in range(1,Ny-2):
+        for j in range(1,Nx-2):
+            l = [ thicknessMap[i-1,j-1],
+                  thicknessMap[i+0,j-1],
+                  thicknessMap[i+1,j-1],
+                  thicknessMap[i-1,j+0],
+                  thicknessMap[i+1,j+0],
+                  thicknessMap[i-1,j+1],
+                  thicknessMap[i+0,j+1],
+                  thicknessMap[i+1,j+1] ]
+            if (0 in l) and ( sum(l) != 0):
+                x.append(j)
+                y.append(Ny-i)
+    return [x,y]
+
 def coherence(I, dx, dy, alpha):
     ''' I is the intensity, convolution in real space with gaussian function
     '''
@@ -677,7 +697,7 @@ try:
     QSplitter, QTextEdit, QGroupBox, QDoubleSpinBox, QRadioButton, QAction)
 
     from PyQt5.QtGui import ( QFont, QTextCharFormat, QColor, QSyntaxHighlighter,
-    QPainter, QPixmap, QImage, QPen, QDoubleValidator )
+    QPainter, QPixmap, QImage, QPen, qGray, QDoubleValidator )
     from PyQt5.QtCore import Qt, QRegExp, QLocale, QProcess
 
     # should be replaced by PyQtGraph someday...
@@ -820,17 +840,17 @@ try:
                 pen = QPen(QColor("red"))
                 pen.setWidth(1)
                 painter.setPen(pen)
-                contourImg = QImage(QPixmap(thicknessMapFileName)).scaled(phase_pixmap_dx,phase_pixmap_dy)
+                contourImg = QImage(QPixmap(thicknessMapFileName)).scaled(phase_pixmap_dx,phase_pixmap_dy).convertToFormat(QImage.Format_Grayscale16)
                 for i in range(1,contourImg.width()-2):
                     for j in range(1,contourImg.height()-2):
-                        l = [ contourImg.pixelColor(i-1,j-1).red(),
-                              contourImg.pixelColor(i-1,j-1).red(),
-                              contourImg.pixelColor(i-1,j-1).red(),
-                              contourImg.pixelColor(i-1,j).red(),
-                              contourImg.pixelColor(i+1,j).red(),
-                              contourImg.pixelColor(i-1,j+1).red(),
-                              contourImg.pixelColor(i-1,j+1).red(),
-                              contourImg.pixelColor(i-1,j+1).red() ]
+                        l = [ qGray(contourImg.pixel(i-1,j-1)),
+                              qGray(contourImg.pixel(i+0,j-1)),
+                              qGray(contourImg.pixel(i+1,j-1)),
+                              qGray(contourImg.pixel(i-1,j+0)),
+                              qGray(contourImg.pixel(i+1,j+0)),
+                              qGray(contourImg.pixel(i-1,j+1)),
+                              qGray(contourImg.pixel(i+0,j+1)),
+                              qGray(contourImg.pixel(i+1,j+1)) ]
                         if (0 in l) and ( sum(l) != 0):
                             painter.drawPoint(i,j)
                 painter.end()
@@ -914,15 +934,21 @@ try:
             groupLayout.setContentsMargins(2,2,2,2)
             self.setLayout(groupLayout)
 
-        def updateImage(self,I,dx,dy,y=None):
+        def updateImage(self,I,contour,dx,dy,y=None):
             self.plotter.cla() # does it call clf() ?
             Ny, Nx = I.shape
             normColorRange = matplotlib.colors.Normalize(vmin=I.min(),vmax=I.max())
             extent_nm = (-(Nx*dx)/2*1e9, (Nx*dx)/2*1e9, -(Ny*dy)/2*1e9, (Ny*dy)/2*1e9)
             self.plotter.imshow(I, cmap="gray", norm=normColorRange, extent=extent_nm)
+
+            if contour != None:
+                pix_x = list(map(lambda x: Nx*dx*1e9*(x-(Nx-1)//2)/(Nx-1),contour[0]))
+                pix_y = list(map(lambda y: Ny*dy*1e9*(y-(Ny-1)//2)/(Ny-1), contour[1]))
+                self.plotter.scatter(pix_x,pix_y,color='red',marker='o',s=1)
+
             if y != None:
                 self.plotter.axhline(y,color='green')
-            self.plotter.set(xlabel="x [nm]", ylabel="y [nm]")
+            self.plotter.set(title="Fresnel contrast", xlabel="x [nm]", ylabel="y [nm]")
             #self.plotter.colorbar() #does not work, self.plotter is an instance of Axes
             self.canvas.draw()
 
@@ -939,6 +965,7 @@ try:
             super().__init__(parent)
             self.phaseFileName = ""
             self.thicknessMapFileName = ""
+            self.contour = None
             self.I_used = None
             splitterWidth = 2
 
@@ -997,7 +1024,7 @@ try:
                 if fileBaseName != "":
                     fullFileName = fileBaseName + s_y + ".tsv"
                     self.ctrlPanel.updateLog("profile " + fullFileName + " written\n")
-                self.canvasImage.updateImage(self.I_used,self.dx,self.dy,y)
+                self.canvasImage.updateImage(self.I_used,self.contour,self.dx,self.dy,y)
                 self.canvasImage.cross_section_btn.click()
 
         def resetGraphics(self):
@@ -1025,6 +1052,7 @@ try:
             phase,dx,dy,note = load_png(self.phaseFileName,True)
             self.ctrlPanel.updateLog(note + "\n")
             length,_,_,note = load_png(self.thicknessMapFileName,False)
+            self.contour = computeContour(length)
             self.ctrlPanel.updateLog(note + "\n")
 
             phase = add_elec_phase(phase, length, C_e, V0)
@@ -1038,7 +1066,7 @@ try:
             self.I_used = coherence(I, dx, dy, alpha_F)
             self.dx = dx
             self.dy = dy
-            self.canvasImage.updateImage(self.I_used,self.dx,self.dy)
+            self.canvasImage.updateImage(self.I_used,self.contour,self.dx,self.dy)
             self.canvasCurve.clearPlot()
             params["phaseFileName"] = self.phaseFileName
             params["thicknessMapFileName"] = self.thicknessMapFileName
@@ -1787,7 +1815,8 @@ try:
             if self.right_visualizations.currentIndex() == 1: #update Holo here
                 fileBaseName = self.yaml_config['outputs']['file_basename']
                 phaseFileName = fileBaseName + "_HOLO_PHASE.png"
-                self.holoPhase_panel.ctrlPanel.updatePixmap(phaseFileName)
+                thicknessMapFileName = fileBaseName + "_PATH_LENGTH.png"
+                self.holoPhase_panel.ctrlPanel.updatePixmap(phaseFileName,thicknessMapFileName)
 
         def handle_pathIntegral_stdout(self):
             ''' write pathIntegral stdout's in a log file '''
