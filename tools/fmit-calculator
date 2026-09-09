@@ -32,16 +32,13 @@ Press compute button
         pressing w key turns wireframe on
 	    pressing s key returns to solidframe on
 	You might see a preview of holographic phase, XMCD contrast or thickness map in their respective panels
-    Clicking on the holographic phase tab will show the corresponding image, and open the contrast
-    Fresnel window if it was checked
+    Clicking on the holographic phase tab will show the corresponding image, with the Fresnel
+    contrast imaging tool, using the holographic magnetic image as an input.
+    It allows to add electrostatic contribution, do some aberration corrections and set the defocussing.
+    Clicking on the Fresnel contrast image computes its cross-section along constant y.
 
-.out text files are tab separated value text files
+.out text files are tab separated value text files, with some formatted metadata(s)
 images are unsigned int 16 bits grey pngs
-
-*** Fresnel contrast window ***
-This window is dedicated to the computation of Fresnel contrast image. It uses the holographic
-magnetic image as an input. It allows to add electrostatic contribution, do some aberration
-corrections and set the defocussing. Clicking on the image computes its cross-section along constant y.
 """
 
 def is_float(s: str) -> bool:
