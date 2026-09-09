@@ -252,7 +252,7 @@ def clean_yaml_content(content: str) -> str:
     cleaned_lines = [line.replace('\t', '  ') for line in lines]
     return '\n'.join(cleaned_lines)
 
-def load_yaml_from_file(filename: str) -> Dict[str, Any]:
+def load_yaml_from_file(filename: str) -> (str,Dict[str, Any]):
     '''
     return a status message string and yaml from input file as a dictionary
     '''
@@ -1115,14 +1115,13 @@ try:
     class CombinedInterface(QMainWindow):
         def __init__(self, yaml_file):
             super().__init__()
-            self.setWindowTitle("FeeLLGood Micromagnetic Image Toolbox - Calculator v" + __version__)
             self.inputFileName = yaml_file
-            helloMessage = ""
             if yaml_file != None:
-                helloMessage, self.yaml_config = load_yaml_from_file(yaml_file)
+                errorMessage, self.yaml_config = load_yaml_from_file(yaml_file)
+                if (errorMessage != "") and (errorMessage != None):
+                    print(errorMessage)
             else:
                 self.yaml_config = default_settings()
-            print(helloMessage)
             self.sensor_size = self.yaml_config['sensor']['relative_size']
             self.outputFileName =  "noneYet"
             self.flagComputed = False
@@ -1136,7 +1135,8 @@ try:
             self.setup_ui()
 
         def setup_ui(self):
-            """ build the PyQt5 GUI """
+            """ build the fmit-calculator GUI """
+            self.setWindowTitle("FeeLLGood Micromagnetic Image Toolbox - Calculator v" + __version__)
             central_widget = QWidget()
             self.setCentralWidget(central_widget)
             self.statusBar().showMessage("Welcome to fmit-calculator")
