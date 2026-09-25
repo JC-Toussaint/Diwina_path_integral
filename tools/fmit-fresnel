@@ -106,6 +106,17 @@ def load_png(path_png,isAngle):
 
     return val, dx, dy
 
+def pad_2x2(array):
+    top_left  = np.flipud(np.fliplr(array))
+    top_right = np.flipud(array)
+    bot_left  = np.fliplr(array)
+    bot_right = array
+
+    return np.block([
+        [top_left,  top_right],
+        [bot_left,  bot_right]
+    ])
+
 def apply_window(phase, window_type='hann', width_fraction=0.1):
     """Applique une fenêtre sur les bords de l'image
     work in progress: to check
@@ -341,6 +352,49 @@ def simulate_fresnel_mirrored(phase, dx, dy, crop, E0_eV=200e3, defocus=2e-6, Cs
         psi_def_crop = psi_def[y1:y2, x1:x2]
     return np.abs(psi_def_crop)**2 
 
+def simulate_fresnel_mirrored_ampl(phase, ampl, dx, dy, crop, E0_eV=200e3, defocus=2e-6, Cs=1.2e-3):
+    ''' compute fresnel contrast with mirror padding + amplitude
+    Mirror padding 2×2 — boundary conditions C⁰ on the image edges
+    [ flip_xy | flip_y ]
+    [ flip_x  |  φ     ]
+    optionaly cropp boolean might be turned True to center-crop by 2 the image
+    '''
+
+    Ny, Nx = phase.shape
+    lam = relativistic_wavelength(E0_eV)
+    # Padding 2*2 (mirror padding)
+    phase_pad = pad_2x2(phase)
+    ampl_pad = pad_2x2(ampl)
+    
+    # Taille résultante : (2*Ny, 2*Nx)
+    Ny_pad, Nx_pad = phase_pad.shape
+    psi0 = ampl_pad * np.exp(1j * phase_pad) #ici ajout de amplitude
+    
+    # Grille de fréquences spatiales
+    kx = np.fft.fftshift(np.fft.fftfreq(Nx_pad, d=dx))
+    ky = np.fft.fftshift(np.fft.fftfreq(Ny_pad, d=dy))
+    KX, KY = np.meshgrid(kx, ky)
+    k2 = KX**2 + KY**2
+    
+    # Fonction d'aberration : défocus + aberration sphérique
+    chi = np.pi * lam * defocus * k2 + 0.5 * np.pi * Cs * (lam**3) * (k2**2)
+    H = np.exp(1j * chi) #transfer function - renommer vers T ?
+    # Propagation dans l'espace de Fourier
+    Psi0    = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psi0)))
+    Psi_def = Psi0 * H
+    psi_def = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(Psi_def)))
+    
+    # Extraire le quadrant original (bot_right → [Ny:2Ny, Nx:2Nx])
+    psi_def_crop = psi_def[Ny:2*Ny, Nx:2*Nx]
+
+    if crop==True: #possible de faire a part une fonction avec def d'un dictionnaire
+        y1 = Ny + math.ceil(Ny/4)
+        y2 = 2*Ny - math.ceil(Ny/4)
+        x1 = Nx + math.ceil(Nx/4)
+        x2 = 2*Nx - math.ceil(Nx/4)
+        psi_def_crop = psi_def[y1:y2, x1:x2]
+    return np.abs(psi_def_crop)**2 
+
 def remove_edge_discontinuity(phase):
     """Retire les discontinuités de bord par résolution de Poisson
     To check (is it finished?)
@@ -432,7 +486,7 @@ def profile_fresnel(I, dx, dy, color='blue', label="profile", name_fig="fresnel_
     plt.plot(x, profile, label=label, color=color)
     #added x and y limits to profile to match cropped region in Intensity image
     plt.ylim(-0.1, 4)
-    plt.xlim(-500, 500) #pas necessaire ?
+    plt.xlim(-250, 250) #pas necessaire ?
     plt.xlabel("x (nm)", fontsize=16)
     plt.ylabel("Intensity (a.u.)", fontsize=16)
     plt.xticks(fontsize=14)
@@ -465,27 +519,24 @@ def coherence(I, dx, dy, alpha):
         return I
     else:
         alpha_R = 1/(4*alpha)
-        # alpha_R=1.7557623193170718e16
+        #alpha_R=1.7557623193170718e16
         print("alpha for divergence in image plane (m^-2)= ", alpha_R)
         G = np.exp(-alpha_R*(X**2 + Y**2)) #gaussian exp(-alpha*r^2)
         G /= G.sum()          # normalisation
         return fftconvolve(I, G, mode='same')
 
-def amplitude(I, length, crop, elec=1): #elec = nb d'electrons pour match experimental image, data
-    ''' attempt of fitting experimental image amplitude '''
+def amplitude(length, a_f=np.sqrt(0.91)): #a_f attenuation factor dependent on the material of the substract, 0: no attenuation
+    '''amplitude map'''
     Nx, Ny = length.shape
-    if crop==True:
-        y1 = Ny + math.ceil(Ny/4)
-        y2 = 2*Ny - math.ceil(Ny/4)
-        x1 = Nx + math.ceil(Nx/4)
-        x2 = 2*Nx - math.ceil(Nx/4)
-        length_ampl=length[y1:y2,x1:x2]
-    else:
-        length_ampl=length
-    norm_length=length_ampl/np.max(length_ampl) #error here to be corrected
-    Id = np.ones_like(I)
-    ampl = Id*elec-0.5*elec*norm_length
-    return I*ampl
+    thick=length #carto epaisseur
+    norm_thick=thick/np.max(thick)
+    print("norm_thick range:", norm_thick.min(), norm_thick.max())
+    #np.savetxt("thick_norm.tsv", norm_thick, delimiter="\t", fmt="%.8e") #pour verif, tests
+    Id = np.ones_like(length)
+    ampl=Id-(1-a_f)*norm_thick
+    print("ampl range      :", ampl.min(), ampl.max())
+    #np.savetxt("ampl.tsv", ampl, delimiter="\t", fmt="%.8e") #pour verif, tests
+    return ampl
 
 def add_elec_phase(phase, length, Ce, V0):
     ''' add electrostatic component to the phase '''
@@ -541,6 +592,8 @@ def main():
     print("Ce computed from E0, in (V*m)^-1 : ", C_e)
     
     phase = add_elec_phase(phase, length, C_e, args.V0) # Ce=6.53E6 at 300kV, 7.288E6 at 200kV
+    a_f=np.sqrt(0.91)
+    ampl=amplitude(length,a_f)
     # Simulation Fresnel
     if args.mode=="mirrored":
         I = simulate_fresnel_mirrored(phase, dx, dy, crop=args.crop, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs)
