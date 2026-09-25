@@ -565,9 +565,15 @@ def parse_args(): #ajouter option alpha pour la coherence du faisceau
     p.add_argument("--Cs", type=float, default=1.2e-3, help="Constant Cs in m, default= 1.2e-3 m")
     p.add_argument("--V0", type=float, default=20, help="Voltage V0 in V, default= 20 V")
     p.add_argument("--crop", type=str2bool, default=False, help="Enable cropping (true/false), default= False")
-    p.add_argument("--mode", type=str, default="mirrored", help="Available options: mirrored|default, default= mirrored")
-
+    p.add_argument("--mode", type=str.lower, default="mirrored", help="Available options: mirrored|default|amplitude, default = mirrored")
+    p.add_argument("--substrate", type=str.lower, choices=["carbon", "si3n4", "vacuum"], default="carbon", help="Substrate material used to set the amplitude attenuation factor")
     return p.parse_args()
+
+amplitude_factors = {
+    "carbon": np.sqrt(0.91),
+    "si3n4": np.sqrt(0.14),
+    "vacuum": np.sqrt(0.09),
+}
 
 def main():
     args = parse_args()
@@ -592,15 +598,18 @@ def main():
     print("Ce computed from E0, in (V*m)^-1 : ", C_e)
     
     phase = add_elec_phase(phase, length, C_e, args.V0) # Ce=6.53E6 at 300kV, 7.288E6 at 200kV
-    a_f=np.sqrt(0.91)
-    ampl=amplitude(length,a_f)
+    a_f = amplitude_factors[args.substrate]
+    ampl=amplitude(length,a_f=a_f)
     # Simulation Fresnel
-    if args.mode=="mirrored":
-        I = simulate_fresnel_mirrored(phase, dx, dy, crop=args.crop, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs)
-        print("Intensity computed using Mirrored computation method")
+    if args.mode == "mirrored":
+	    I = simulate_fresnel_mirrored(phase, dx, dy, crop=args.crop, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs)
+	    print("Intensity computed using Mirrored computation method")
+    elif args.mode == "amplitude":
+	    I = simulate_fresnel_mirrored_ampl(phase, ampl, dx, dy, crop=args.crop, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs)
+	    print("Intensity computed using Mirrored+Amplitude computation method")
     else:
-        I= simulate_fresnel_enveloppe(phase, dx, dy, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs) # E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, convergence=0
-        print("Intensity computed using Default computation method")
+	    I = simulate_fresnel_enveloppe(phase, dx, dy, E0_eV=args.E0, defocus=args.defocus, Cs=args.Cs) # E0_eV=200e3, defocus=2e-6, Cs=1.2e-3, convergence=0
+	    print("Intensity computed using Default computation method")
     
     defocus = args.defocus
     convergence = args.convergence
