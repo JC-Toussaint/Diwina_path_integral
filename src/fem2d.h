@@ -220,6 +220,8 @@ private:
 		int Nx = static_cast<int>((xymax - xymin) / pixel_size + 0.5) + 1;
 		int Ny = static_cast<int>((xymax - xymin) / pixel_size + 0.5) + 1;		
 		auto index = [&Nx](int i, int j) -> int { return j * Nx + i; };  // zero based numbering
+		node.reserve(Nx*Ny);
+		tri.reserve(2*(Nx-1)*(Ny-1));
 		
 		// Creation de nodes
 		for (int ix = 0; ix < Nx; ++ix) {
@@ -227,7 +229,6 @@ private:
 				Node2d node_{};
 				node_.p[0] = xymin + pixel_size * ix;
 				node_.p[1] = xymin + pixel_size * iy;
-				node_.p[2] = 0.0;
 				node.push_back(node_);
 			}
 		}
