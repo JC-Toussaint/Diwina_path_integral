@@ -1,26 +1,47 @@
 #ifndef pathIntegral_h
 #define pathIntegral_h
 
-#include <map>
-#include <set>
+#include <array>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
 #include "fem.h"
 #include "fem2d.h"
 #include "tetra.h"
 
 namespace PathInt
-    {    
+    {
     using Triplet         = std::array<int,   3>;
     using Quadruplet      = std::array<int,   4>;
+
+    /** hash function for Quadruplet, to be used in an unordered_map */
+    struct QuadrupletHash
+        {
+        std::size_t operator()(const Quadruplet &q) const noexcept
+            {
+            std::size_t h = 0;
+            for (int i : q)
+                { h ^= std::hash<int>{}(i) + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2); }
+            return h;
+            }
+        };
+
+    /** intersection point of a ray with a facet, t is the abscissa of the point along the ray */
+    struct Hit
+        {
+        CGAL::Point point;
+        Triplet facet;
+        double t;
+        };
 
     class pathIntegral
         {
         public:
-            
+
     /** constructor
-    populate a vector of CGAL::Point coordinates and a dictionary numbering each mesh node from 
-    its coordinates stored in a CGAL::Point class
-    populate CGAL triangles and quadrangles
+    populate CGAL triangles and the facet (node indices) associated to each of them
+    populate quadruplet to tetrahedron dictionary
     build CGAL tree
     */
             pathIntegral(Mesh::mesh & _msh,bool _filled):refMsh(_msh),filled(_filled)
@@ -31,29 +52,27 @@ namespace PathInt
                     {
                     Eigen::Vector3d coords = refMsh.getNode_p(i);
                     pt[i] = CGAL::Point(coords[0], coords[1], coords[2]);
-                    point_to_id[pt[i]]= i;
                     }
-                
+
                 populate_triangles(refMsh.tet);
                 populate_quads(refMsh.tet);
-                        
+
                 // constructs AABB tree
-                tree=new CGAL::Tree(triangles.begin(), triangles.end());
+                tree = std::make_unique<CGAL::Tree>(triangles.cbegin(), triangles.cend());
+                tree->build();
                 }
-            
-            ~pathIntegral() { delete tree; }
 
         /** return tetrahedron number if the two facets are adjacent else -1 */
-        int identify_tet(Triplet &facet_curr, Triplet &facet_prev);
+        int identify_tet(const Triplet &facet_curr, const Triplet &facet_prev) const;
 
-    void processNode(int nod, Fem2d& fem2d, const Settings& mySettings);
-    
-    void integrate_u(CGAL::Point &ori, CGAL::Point &ext, std::map<CGAL::Point, Triplet> &iPoint_to_facet, double &path_length, CGAL::Vector &u_integral);
+    void processNode(int nod, Fem2d& fem2d, const Settings& mySettings) const;
 
-    /** number of ray-facets intersections */
-    int search_intersections(const CGAL::Ray &ray_query, std::map<CGAL::Point, Triplet> &iPoint_to_facet);
+    void integrate_u(const std::vector<Hit> &hits, double &path_length, CGAL::Vector &u_integral) const;
 
-    void path_integrals(Settings const &mySets, const CGAL::Point &ori, const CGAL::Point &ext, std::map<CGAL::Point, Triplet> &iPoint_to_facet, double &path_length, CGAL::Vector &M_integral, double &contrast);
+    /** fill hits with the ray-facets intersection points, sorted along the ray, return the number of intersected facets */
+    int search_intersections(const CGAL::Ray &ray_query, std::vector<Hit> &hits) const;
+
+    void path_integrals(Settings const &mySets, const CGAL::Point &ori, const CGAL::Point &ext, const std::vector<Hit> &hits, double &path_length, CGAL::Vector &M_integral, double &contrast) const;
 
         private:
             /** ref to the mesh */
@@ -63,31 +82,31 @@ namespace PathInt
             const bool filled;
 
             /** CGAL AABB-Tree */
-            CGAL::Tree* tree;  
+            std::unique_ptr<CGAL::Tree> tree;
 
             /** Node coordinates stores into a vector of CGAL::Point */
             std::vector<CGAL::Point> pt;
 
             /** tetrahedron mesh splitted into triangles */
-            std::list<CGAL::Triangle> triangles;
+            std::vector<CGAL::Triangle> triangles;
 
-            /** point to its associted number */
-            std::map<CGAL::Point,     int>  point_to_id;                  
+            /** facets[i] are the sorted node indices of triangles[i] */
+            std::vector<Triplet> facets;
 
             /** quadruplet to its tetrahedron number */
-            std::map<Quadruplet, int> quad_to_tetId;
+            std::unordered_map<Quadruplet, int, QuadrupletHash> quad_to_tetId;
 
     /**
-    Populate a list of CGAL triangles from the tetrahedral mesh. Associate each triplet of points 
-    that forms a triangle with the number of the tetrahedron from which it originates.
+    Populate a vector of CGAL triangles from the tetrahedral mesh, and the vector of the
+    corresponding triplets of node indices.
     */
-        void populate_triangles(std::vector<Tetra::Tet> &tet);
+        void populate_triangles(const std::vector<Tetra::Tet> &tet);
 
-        void populate_quads(std::vector<Tetra::Tet> &tet);
-        
-        std::vector<double> facet_lagrange_polynomials(const Triplet &facet_indices, const CGAL::Point &point_curr);
- 
-        CGAL::Vector interpolate_u(const Triplet &facet_indices, const CGAL::Point &point);
+        void populate_quads(const std::vector<Tetra::Tet> &tet);
+
+        std::array<double, Facette::N> facet_lagrange_polynomials(const Triplet &facet_indices, const CGAL::Point &point_curr) const;
+
+        CGAL::Vector interpolate_u(const Triplet &facet_indices, const CGAL::Point &point) const;
         }; // end class
     } // end namespace PathInt
 #endif

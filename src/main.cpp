@@ -272,18 +272,13 @@ int main(int argc, char *argv[])
 					  mySettings.p_sensor.relative_size, mySettings.p_sensor.pixel_size);
 	fem2d.infos();
 
-	std::vector<int> nodeIndices(fem2d.getNbNodes());
-	std::iota(nodeIndices.begin(), nodeIndices.end(), 0);
-
-/*
-	std::for_each(std::execution::par, nodeIndices.begin(), nodeIndices.end(),
-	              [&](int nod) { myStuff.processNode(nod, fem2d, mySettings); });
-*/
+	const int NOD2D = fem2d.getNbNodes();
 
 	std::cout << "Start Ray Tracing" << std::endl;
-	#pragma omp parallel for
-	for (size_t i = 0; i < nodeIndices.size(); i++) {
-		myStuff.processNode(nodeIndices[i], fem2d, mySettings);
+	// the cost of a ray depends on the number of crossed facets: dynamic scheduling balances the load
+	#pragma omp parallel for schedule(dynamic, 256)
+	for (int i = 0; i < NOD2D; i++) {
+		myStuff.processNode(i, fem2d, mySettings);
 	}
 	std::cout << "End Ray Tracing" << std::endl;
 	
