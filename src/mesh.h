@@ -28,11 +28,14 @@ faces and tetrahedrons. nodes data are private. They are accessible only through
 class mesh
 {
 public:
-	/** constructor : read mesh file and computes some values related to the mesh :
+	/** constructor : read mesh file, reorder indices and computes some values related to the mesh :
      center and length along coordinates and diameter = max(l(x|y|z)), volume and surface */
 	inline mesh(Settings const &mySets /**< [in] */)
 	{
 		readMesh(mySets);
+		indexReorder(mySets.paramTetra);  // reordering of index nodes for facette orientation
+		if (mySets.verbose)
+		{ std::cout << "  reindexed\n"; }
 
 		double xmin = minNodes(Nodes::IDX_X);
 		double xmax = maxNodes(Nodes::IDX_X);
@@ -216,6 +219,69 @@ private:
 	inline double maxNodes(const Nodes::index coord) const
 	{
 		return doOnNodes(__DBL_MIN__, coord, [](double a, double b) { return a > b; });
+	}
+
+	/** redefine orientation of triangular faces in accordance with the tetrahedron
+	 * reorientation of the tetrahedrons if needed; definition of Ms on facette elements
+    Indices and orientation convention :
+
+                        v
+                      .
+                    ,/
+                   /
+                2(ic)                                 2
+              ,/|`\                                 ,/|`\
+            ,/  |  `\                             ,/  |  `\
+          ,/    '.   `\                         ,6    '.   `5
+        ,/       |     `\                     ,/       8     `\
+      ,/         |       `\                 ,/         |       `\
+     0(ia)-------'.--------1(ib) --> u     0--------4--'.--------1
+      `\.         |      ,/                 `\.         |      ,/
+         `\.      |    ,/                      `\.      |    ,9
+            `\.   '. ,/                           `7.   '. ,/
+               `\. |/                                `\. |/
+                  `3(id)                                `3
+                     `\.
+                        ` w
+
+	 */
+	void indexReorder(std::vector<Tetra::prm> const &prmTetra)
+	{
+		std::set<Facette::Fac> sf;  // implicit use of operator< redefined in class Fac
+
+		std::for_each(tet.begin(), tet.end(), [this,&sf](Tetra::Tet const &te)
+				{
+			const int ia = te.ind[0];
+			const int ib = te.ind[1];
+			const int ic = te.ind[2];
+			const int id = te.ind[3];
+
+			sf.insert(Facette::Fac(node, 0, te.idxPrm, {ia, ic, ib} ));
+			sf.insert(Facette::Fac(node, 0, te.idxPrm, {ib, ic, id} ));
+			sf.insert(Facette::Fac(node, 0, te.idxPrm, {ia, id, ic} ));
+			sf.insert(Facette::Fac(node, 0, te.idxPrm, {ia, ib, id} ));
+				});  // end for_each
+
+				std::for_each(fac.begin(), fac.end(), [this, &prmTetra, &sf](Facette::Fac &fa)
+						{
+					int i0 = fa.ind[0], i1 = fa.ind[1], i2 = fa.ind[2];
+					std::set<Facette::Fac>::iterator it = sf.end();
+					for (int perm = 0; perm < 2; perm++)
+					{
+						for (int nrot = 0; nrot < 3; nrot++)
+						{
+							Facette::Fac fc(node, 0, 0, {0, 0, 0} );
+							fc.ind[(0 + nrot) % 3] = i0;
+							fc.ind[(1 + nrot) % 3] = i1;
+							fc.ind[(2 + nrot) % 3] = i2;
+							it = sf.find(fc);
+							if (it != sf.end()) break;
+						}
+						std::swap(i1, i2);  // it seems from ref archive we do not want to swap
+						// inner fac indices but local i1 and i2
+						fa.n = fa.calc_norm(); // update normal vector
+					}                   // end perm
+						});  // end for_each
 	}
 };
 

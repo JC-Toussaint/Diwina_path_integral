@@ -81,7 +81,7 @@ public:
         }
 
 private:
-    void orientate(void) {}
+    void orientate(void) {}// orientation is done in mesh::indexReorder
 
     /** computes surface of the face */
     inline double calc_surf(void) const { return 0.5 * normal_vect().norm(); }
