@@ -2,7 +2,7 @@
 #define mesh_h
 
 /** \file mesh.h
-\brief class mesh, readMesh is expecting a mesh file in gmsh text format 2.2, with first order tetraedrons and triangular facettes.
+\brief class mesh, readMesh is expecting a mesh file in gmsh format, with first order tetraedrons and triangular facets.
  */
 
 #include <algorithm>
@@ -186,7 +186,7 @@ private:
 	/** read facettes of the settings surface regions */
 	void readTriangles(Settings const &mySets /**< [in] */);
 
-	/** reading mesh format 2.2 text file function */
+	/** read a gmsh mesh file (formats 2.2 and 4.1) */
 	void readMesh(Settings const &mySets /**< [in] */);
 
 	/** memory allocation for the nodes */
