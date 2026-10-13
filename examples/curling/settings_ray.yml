@@ -16,7 +16,7 @@ outputs:
     - "E_tot"
   mag_config_every: 100
 mesh:
-  filename: "cyl_D200_L1000_h5_noEnds_fg.msh"
+  filename: "cyl_D200_L1000_h5_fg.msh"
   length_unit: "1e-9"
   volume_regions:
     cyl_volume:
@@ -31,6 +31,14 @@ mesh:
       alpha_LLG: 0.5
   surface_regions:
     side_surface:
+      suppress_charges: false
+      Ks: 0
+      uk: [0, 0, 1]
+    inlet:
+      suppress_charges: false
+      Ks: 0
+      uk: [0, 0, 1]
+    outlet:
       suppress_charges: false
       Ks: 0
       uk: [0, 0, 1]

@@ -78,7 +78,7 @@ mesh:
 
   # Name of the file containing the mesh. As there is no valid default,
   # the user must provide this in their configuration file.
-  filename: cyl_D200_L1000_h5_noEnds_fg.msh
+  filename: cyl_D200_L1000_h5_fg.msh
 
   # Unit of length used in the mesh file, in meters.
   length_unit: 1e-9
@@ -134,11 +134,22 @@ mesh:
       # Unit vector along the surface anisotropy axis.
       uk: [0, 0, 1]
 
+    # End faces of the cylinder (z = -L/2 and z = +L/2).
+    inlet:
+      suppress_charges: false
+      Ks: 0
+      uk: [0, 0, 1]
+
+    outlet:
+      suppress_charges: false
+      Ks: 0
+      uk: [0, 0, 1]
+
 # The initial magnetization can be provided as either:
 # - the name of a file in feeLLGood’s format (‘.sol’ file)
 # - an array of three expression depending on the Cartesian spatial
 #   coordinates (x, y, z); the expression may be constants.
-initial_magnetization: sol.in
+initial_magnetization: config.sol
 
 # “Recentering” is the process by which feeLLGood tries to artificially
 # keep a domain wall in the center of the simulated volume by

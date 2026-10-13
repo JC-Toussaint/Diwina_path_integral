@@ -211,7 +211,7 @@ def apply_region_functions(points, regions, region_functions):
 
 
 def write_solution_file(m, filename="config.sol"):
-    """Write field m and metadata to sol.in file."""
+    """Write field m and metadata to config.sol file."""
     now = datetime.now().isoformat()
     hostname = socket.gethostname()
     
@@ -237,9 +237,9 @@ def write_solution_file(m, filename="config.sol"):
 
 def get_params():
     import argparse
-    description = 'generate a sol.in file'
+    description = 'generate a config.sol file'
     epilogue = '''
-fg-gensol is an executable that generates initial magnetization configurations (`sol.in` files) for
+fg-gensol is an executable that generates initial magnetization configurations (`.sol` files) for
 feeLLGood simulations from mesh files. Input mesh file has to be readable by meshio python module.
 It automatically detects physical volume regions in the input mesh and allows to define custom 
 vector fields for each region.
@@ -324,8 +324,8 @@ def main():
         plt.show()
 
 
-        print("✅ All regions are defined, generating sol.in...")
-        # If everything is OK, generate sol.in
+        print("✅ All regions are defined, generating config.sol...")
+        # If everything is OK, generate config.sol
         m = apply_region_functions(points, regions, region_functions)
         print("✅ apply region functions ...")
         write_solution_file(m)
