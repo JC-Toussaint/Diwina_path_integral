@@ -1,12 +1,12 @@
 SET(HEADERS config.h node.h expression_parser.h mesh.h
     termcolor.h settings.h tetra.h facette.h tags.h
-    chronometer.h element.h geo.h fem2d.h write_png.h pathIntegral.h
+    chronometer.h element.h geo.h fem2d.h write_png.h pathIntegral.h tetScan.h
     scalfmm_2d.hpp scalfmm3.hpp )
 
 SET(SOURCES settings.cpp read.cpp tetra.cpp expression_parser.cpp chronometer.cpp
     tags.cpp write_png.cpp exportRatioGrayScaleImage.cpp exportRatioRGBscaleImage.cpp exportMagIntegrals.cpp chapeaux.cpp
     scalfmm2d_sum.cpp direct2d_sum.cpp femutil.cpp correction.cpp exportHoloPhase.cpp
-    exportMagIntegrals_nd_HoloPhase.cpp pathIntegral.cpp)
+    exportMagIntegrals_nd_HoloPhase.cpp pathIntegral.cpp tetScan.cpp)
 
 configure_file(config.h.in ./config.h)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fopenmp")
