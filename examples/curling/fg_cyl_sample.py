@@ -4,11 +4,19 @@ Disk of diameter D in the plane z = -L/2, extruded along z over the length L;
 lengths in nm (length_unit: 1e-9 in settings.yml). Physical groups: inlet (z = -L/2),
 outlet (z = +L/2), side_surface, cyl_volume. Output: cyl_D<D>_L<L>_h<h>_fg.msh.
 
-    python3 fg_cyl_sample.py --diameter 200 --length 2000 --mesh_size 5 [--version 2|4]
+    python3 fg_cyl_sample.py --diameter 200 --length 2000 --mesh_size 5 [--version 2|4] [--settings settings.yml]
+
+With --settings, the name of the mesh file is written in the settings file (mesh: filename:), and
+the region names of the settings file are checked against the physical groups of the mesh.
 """
 import gmsh
+import re
 import sys
 import argparse
+
+# names of the physical groups, i.e. of the regions of the settings file
+VOLUME = "cyl_volume"
+INLET, OUTLET, SIDE = "inlet", "outlet", "side_surface"
 
 # -----------------------------
 # command-line arguments
@@ -23,6 +31,8 @@ parser.add_argument("--mesh_size", type=float, default=5.0,
                     help="Characteristic mesh size (nm), default = 5")
 parser.add_argument("--version", type=int, choices=[2, 4], default=4,
                     help="Version of the Gmsh ASCII mesh format (2 or 4), default = 4")
+parser.add_argument("--settings", default=None,
+                    help="settings file (yaml) in which to write the name of the mesh file")
 
 # Print the help if no argument is given
 if len(sys.argv) == 1:
@@ -99,10 +109,10 @@ print(f"volume_tag = {volume_tag}")
 print(f"side_surfaces = {side_surfaces}")
 
 # named physical groups (regions of settings.yml)
-gmsh.model.addPhysicalGroup(2, [inlet_tag], name="inlet")
-gmsh.model.addPhysicalGroup(2, [outlet_tag], name="outlet")
-gmsh.model.addPhysicalGroup(2, side_surfaces, name="side_surface")
-gmsh.model.addPhysicalGroup(3, [volume_tag], name="cyl_volume")
+gmsh.model.addPhysicalGroup(2, [inlet_tag], name=INLET)
+gmsh.model.addPhysicalGroup(2, [outlet_tag], name=OUTLET)
+gmsh.model.addPhysicalGroup(2, side_surfaces, name=SIDE)
+gmsh.model.addPhysicalGroup(3, [volume_tag], name=VOLUME)
 
 # 3D mesh generation
 gmsh.model.mesh.generate(3)
@@ -126,3 +136,40 @@ gmsh.write(filename)
 
 # finalisation
 gmsh.finalize()
+print(f"Mesh written in {filename}")
+
+def update_settings(settings_file, mesh_file, volume_regions, surface_regions):
+    """
+    Write mesh_file as the value of the key filename of the section mesh of settings_file, only
+    this line is modified so that the comments are kept. Then check that the region names of the
+    settings file are physical groups of the mesh.
+    """
+    with open(settings_file, "r") as f:
+        lines = f.readlines()
+    in_mesh = False
+    done = False
+    for i, line in enumerate(lines):
+        if re.match(r"^\S", line):  # top level key
+            in_mesh = line.startswith("mesh:")
+        elif in_mesh and re.match(r"^\s+filename:", line):
+            indent = line[:len(line) - len(line.lstrip())]
+            lines[i] = f"{indent}filename: {mesh_file}\n"
+            done = True
+            break
+    if not done:
+        sys.exit(f"Error: no 'filename:' key found in the 'mesh:' section of {settings_file}")
+    with open(settings_file, "w") as f:
+        f.writelines(lines)
+    print(f"{settings_file}: mesh filename set to {mesh_file}")
+
+    import yaml
+    with open(settings_file, "r") as f:
+        mesh_settings = yaml.safe_load(f)["mesh"]
+    for key, names in (("volume_regions", volume_regions), ("surface_regions", surface_regions)):
+        unknown = set(mesh_settings.get(key) or {}) - set(names)
+        if unknown:
+            print(f"Warning: {settings_file}: {key} {sorted(unknown)} are not physical groups "
+                  f"of the mesh {sorted(names)}")
+
+if args.settings is not None:
+    update_settings(args.settings, filename, [VOLUME], [INLET, OUTLET, SIDE])
