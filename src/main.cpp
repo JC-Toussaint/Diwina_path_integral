@@ -12,6 +12,7 @@
 #include "mesh.h"
 
 #include "pathIntegral.h"
+#include "tetScan.h"
 
 #include <gmsh.h>
 #include <execution>
@@ -92,7 +93,7 @@ void prompt(void)
 	std::cout << "\t└────────────────────────────────┘\n";
 }
 
-std::string parseOptions(Settings &settings, int argc, char *argv[], unsigned int &random_seed)
+std::string parseOptions(Settings &settings, int argc, char *argv[], unsigned int &random_seed, int &use_raytracing)
 {
 	int print_help = false;
 	int print_version = false;
@@ -113,6 +114,7 @@ std::string parseOptions(Settings &settings, int argc, char *argv[], unsigned in
 			{"", "--verify", "verify a settings file and exit", &verify},
 			{"-v", "--verbose", "enable verbose mode", &settings.verbose},
 			{"", "--seed", "set random seed", &use_fixed_seed},
+			{"", "--raytracing", "use the former ray tracing algorithm (CGAL AABB tree)", &use_raytracing},
 			{"", "", nullptr, nullptr}  // sentinel
 	};
 
@@ -189,7 +191,8 @@ int main(int argc, char *argv[])
 	chronometer counter;
 
 	unsigned int random_seed;
-	std::string filename = parseOptions(mySettings, argc, argv, random_seed);
+	int use_raytracing = false;
+	std::string filename = parseOptions(mySettings, argc, argv, random_seed, use_raytracing);
 	srand(random_seed);
 	prompt();
 	
@@ -266,21 +269,28 @@ int main(int argc, char *argv[])
 	std::cout << "sizes  : " << fem.msh.l << std::endl;
 	std::cout << "filled : " << (mySettings.filled ? "true" : "false") << std::endl;
 
-    PathInt::pathIntegral myStuff(fem.msh,mySettings.filled);
-
 	Fem2d fem2d(fem.msh.c, fem.msh.l, mySettings.p_electrostatics.CE,   mySettings.p_electrostatics.V, 
 					  mySettings.p_sensor.relative_size, mySettings.p_sensor.pixel_size);
 	fem2d.infos();
 
-	const int NOD2D = fem2d.getNbNodes();
+	if (use_raytracing) {
+		PathInt::pathIntegral myStuff(fem.msh,mySettings.filled);
+		const int NOD2D = fem2d.getNbNodes();
 
-	std::cout << "Start Ray Tracing" << std::endl;
-	// the cost of a ray depends on the number of crossed facets: dynamic scheduling balances the load
-	#pragma omp parallel for schedule(dynamic, 256)
-	for (int i = 0; i < NOD2D; i++) {
-		myStuff.processNode(i, fem2d, mySettings);
+		std::cout << "Start Ray Tracing" << std::endl;
+		// the cost of a ray depends on the number of crossed facets: dynamic scheduling balances the load
+		#pragma omp parallel for schedule(dynamic, 256)
+		for (int i = 0; i < NOD2D; i++) {
+			myStuff.processNode(i, fem2d, mySettings);
+		}
+		std::cout << "End Ray Tracing" << std::endl;
 	}
-	std::cout << "End Ray Tracing" << std::endl;
+	else {
+		std::cout << "Start Tetrahedron Scan" << std::endl;
+		PathInt::tetScan scan(fem.msh, mySettings.filled);
+		scan.run(fem2d, mySettings);
+		std::cout << "End Tetrahedron Scan" << std::endl;
+	}
 	
 	std::cout << "Start Export" << std::endl;
 	// exporting Magnetization integrals along the beam
