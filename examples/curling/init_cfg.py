@@ -4,11 +4,12 @@
 
 import numpy as np
 
-def define_region_functions(sol_sol):
-    """Define magnetization vector field for each region """
+def define_region_functions(sol_sol, R):
+    """Define magnetization vector field for each region
+    sol_sol: continuous solution omega(rho) of the curling profile, rho = r/R
+    R: radius of the cylinder, deduced from the mesh, in mesh units (nm)
+    """
     import numpy as np
-    # en nm
-    R = 100
 
     def curling(x, y, z):
         r = np.sqrt(x**2 + y**2)

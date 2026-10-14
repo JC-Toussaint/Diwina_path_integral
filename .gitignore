@@ -12,6 +12,8 @@ install_manifest.txt
 /examples/**/*.png
 /examples/**/*.msh
 /examples/**/*.out
+# written by fmit-calculator from settings.yml
+/examples/curling/settings_ray.yml
 
 # Smoke test
 smoke-test.msh

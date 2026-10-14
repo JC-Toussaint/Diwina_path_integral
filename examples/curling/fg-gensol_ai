@@ -13,22 +13,18 @@ from scipy.integrate import solve_bvp
 import matplotlib.pyplot as plt
 from datetime import datetime
 import warnings
+import yaml
 
 # ---------------------------------------------------------------
-# Parametres physiques (unites SI)
+# Les parametres physiques ne sont pas definis ici :
+# - A (Ae) et Ku (K) sont lus dans le fichier settings.yml,
+# - le rayon R du cylindre est deduit du maillage.
 # ---------------------------------------------------------------
-A  = 1.3e-11      # constante d'echange (J/m)
-Ku = -1e5         # constante d'anisotropie effective (J/m^3)
-R  = 100e-9       # rayon du cylindre (m)
-r0 = R * 1e-6     # rayon de coeur, tres petit devant R
-
-# parametre adim
-kappa = (Ku * R**2) / (2 * A)
 
 # ---------------------------------------------------------------
 # Variables adimensionnelles et domaine d'integration
 # ---------------------------------------------------------------
-epsilon = r0 / R  # Limite inferieure du domaine
+epsilon = 1e-6    # Limite inferieure du domaine : rayon de coeur r0 = epsilon*R, tres petit devant R
 N = 600           # Nombre de points de discretisation
 
 warnings.simplefilter("always")
@@ -39,13 +35,16 @@ DEBUG = False
 # ---------------------------------------------------------------
 # Equation d'Euler-Lagrange adimensionnee
 # ---------------------------------------------------------------
-def ode(rho, y):
-    omega, domega_drho = y
+def make_ode(kappa):
+    """ return the right hand side of the Euler-Lagrange equation, kappa = (Ku*R^2)/(2*A) """
+    def ode(rho, y):
+        omega, domega_drho = y
 
-    # omega'' = -omega'/rho + [1/(2*rho^2) + (Ku*R^2)/(2*A)] * sin(2*omega)
-    d2omega_drho2 = -domega_drho / rho + (1.0 / (2 * rho**2) + kappa) * np.sin(2 * omega)
+        # omega'' = -omega'/rho + [1/(2*rho^2) + (Ku*R^2)/(2*A)] * sin(2*omega)
+        d2omega_drho2 = -domega_drho / rho + (1.0 / (2 * rho**2) + kappa) * np.sin(2 * omega)
 
-    return np.vstack([domega_drho, d2omega_drho2])
+        return np.vstack([domega_drho, d2omega_drho2])
+    return ode
 
 # Conditions aux limites : omega(epsilon) = 0 et omega'(1) = 0
 def bc(ya, yb):
@@ -235,29 +234,73 @@ def write_solution_file(m, filename="config.sol"):
     print(f"✅ File '{filename}' successfully written "
           f"({len(header_lines)} header lines and {m.shape[0]} data lines).")
 
+def read_settings(settings_file):
+    """
+    Read the feeLLGood settings file: return the mesh file name, the length unit (m), and the
+    exchange constant A (J/m) and anisotropy constant Ku (J/m^3) of the volume regions, which
+    must all have the same values. The mesh file name is relative to the settings file.
+    Numbers are converted with float(): PyYAML reads values like 1e-9 or -1.e5 as strings.
+    """
+    with open(settings_file, 'r') as f:
+        settings = yaml.safe_load(f)
+    mesh = settings['mesh']
+    mesh_file = os.path.join(os.path.dirname(os.path.abspath(settings_file)), str(mesh['filename']))
+    length_unit = float(mesh.get('length_unit', 1e-9))
+
+    volume_regions = mesh.get('volume_regions') or {}
+    if not volume_regions:
+        sys.exit(f"❌ No volume region in '{settings_file}'")
+    A = {float(prm['Ae']) for prm in volume_regions.values()}
+    Ku = {float(prm['K']) for prm in volume_regions.values()}
+    if len(A) != 1 or len(Ku) != 1:
+        sys.exit(f"❌ The volume regions of '{settings_file}' must have the same Ae and K: "
+                 "the curling profile is computed for a single material")
+    for name, prm in volume_regions.items():
+        uk = np.array([float(v) for v in prm.get('uk', [0, 0, 1])])
+        if np.linalg.norm(np.cross(uk, [0, 0, 1])) > 1e-6 * np.linalg.norm(uk):
+            warnings.warn(f"⚠️  uk of region '{name}' is not along z, the cylinder axis: "
+                          "the curling profile assumes an anisotropy axis along the cylinder axis")
+    return mesh_file, length_unit, A.pop(), Ku.pop(), set(volume_regions.keys())
+
 def get_params():
     import argparse
     description = 'generate a config.sol file'
     epilogue = '''
 fg-gensol is an executable that generates initial magnetization configurations (`.sol` files) for
-feeLLGood simulations from mesh files. Input mesh file has to be readable by meshio python module.
-It automatically detects physical volume regions in the input mesh and allows to define custom 
-vector fields for each region.
+feeLLGood simulations. It reads the feeLLGood settings file: the mesh file name, its length unit,
+and the material constants Ae and K of the volume regions. The radius of the cylinder is deduced
+from the mesh. The input mesh file has to be readable by meshio python module.
+It automatically detects physical volume regions in the input mesh and allows to define custom
+vector fields for each region, in init_cfg.py.
 '''
 
     parser = argparse.ArgumentParser(description=description, epilog=epilogue,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('mshFileName',
-            help='a mesh file meshio module can open, for example a gmsh file')
+    parser.add_argument('settingsFileName',
+            help='feeLLGood settings file (yaml), for example settings.yml')
     parser.add_argument('--version',action='version',version= __version__,
             help='show the version number')
     args = parser.parse_args()
-    return args.mshFileName
+    return args.settingsFileName
 
 def main():
     """Main routine."""
-    mesh_file = get_params()
+    settings_file = get_params()
+    mesh_file, length_unit, A, Ku, settings_regions = read_settings(settings_file)
     points, regions = load_mesh(mesh_file)
+
+    # Region names must be the same in the mesh and in the settings file
+    if set(regions.keys()) != settings_regions:
+        sys.exit(f"❌ Volume regions differ between the mesh {sorted(regions.keys())} "
+                 f"and '{settings_file}' {sorted(settings_regions)}")
+
+    # Radius of the cylinder, deduced from the mesh (cylinder axis along z, through the origin)
+    region_nodes = np.unique(np.concatenate([elem['nodes'] for elems in regions.values() for elem in elems]))
+    R_mesh = np.max(np.hypot(points[region_nodes, 0], points[region_nodes, 1]))  # mesh units
+    R = R_mesh * length_unit  # m
+    kappa = (Ku * R**2) / (2 * A)
+    print(f"mesh '{os.path.basename(mesh_file)}': R = {R_mesh:g} (x {length_unit:g} m), "
+          f"A = {A:g} J/m, Ku = {Ku:g} J/m^3, kappa = {kappa:g}")
     # ---------------------------------------------------------------
     # Initialisation (Guess) et Resolution par solve_bvp
     # ---------------------------------------------------------------
@@ -270,7 +313,7 @@ def main():
     y_guess = np.vstack([omega_guess, domega_guess])
 
     # Resolution
-    sol = solve_bvp(ode, bc, rho, y_guess, tol=1e-7, max_nodes=1000000)
+    sol = solve_bvp(make_ode(kappa), bc, rho, y_guess, tol=1e-7, max_nodes=1000000)
     print("[Euler-Lagrange / BVP] status :", sol.message)
 
     # Lorsque solve_bvp résout l'équation, il ne renvoie pas seulement une liste de points discrets.
@@ -295,7 +338,7 @@ def main():
         else:
             import init_cfg
         
-        region_functions = init_cfg.define_region_functions(sol.sol)
+        region_functions = init_cfg.define_region_functions(sol.sol, R_mesh)
         
         if DEBUG:
             print(f"DEBUG: Regions in mesh: {sorted(regions.keys())}")
@@ -336,6 +379,6 @@ def main():
         traceback.print_exc()
         sys.exit(0)
 
-__version__ = '1.0.1'
+__version__ = '1.1.0'
 if __name__ == "__main__":
     main()
