@@ -1,7 +1,11 @@
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
+#include <numeric>
 #include <tuple>
+
+#include <omp.h>
 
 #include "tetScan.h"
 
@@ -9,9 +13,10 @@ using namespace PathInt;
 
 tetScan::tetScan(Mesh::mesh & _msh, bool _filled) : refMsh(_msh), filled(_filled)
     {
-    const int TET = refMsh.getNbTets();
-    tetData.resize(TET);
-    for (int t = 0; t < TET; t++)
+    nbTets = refMsh.getNbTets();
+    tetData.reset(new TetData[nbTets]);
+    #pragma omp parallel for
+    for (int t = 0; t < nbTets; t++)
         {
         const std::vector<int> &ind = refMsh.tet[t].ind;
         TetData &d = tetData[t];
@@ -37,7 +42,7 @@ tetScan::tetScan(Mesh::mesh & _msh, bool _filled) : refMsh(_msh), filled(_filled
         } // endfor t
     }
 
-bool tetScan::chord(int t, double x, double y, Chord &c) const
+bool tetScan::chord(int t, double x, double y, double tol_z, Chord &c) const
     {
     const TetData &d = tetData[t];
     const double dx = x - d.p0.x();
@@ -60,7 +65,9 @@ bool tetScan::chord(int t, double x, double y, Chord &c) const
         else
             { w_out = std::min(w_out, w); }
         }
-    if (w_in > w_out) return false;
+    // a line touching the tetrahedron (edge or vertex) gives w_in = w_out up to rounding errors
+    if (w_in > w_out + tol_z) return false;
+    w_out = std::max(w_in, w_out);
     c = Chord{d.p0.z() + w_in, d.p0.z() + w_out, t};
     return true;
     }
@@ -95,29 +102,106 @@ void tetScan::run(Fem2d &fem2d, const Settings &mySets) const
         i0 = std::max(0, static_cast<int>(std::floor((lo - origin)/pixel)));
         i1 = std::min(N - 1, static_cast<int>(std::ceil((hi - origin)/pixel)));
         };
-    const int TET = tetData.size();
-    std::vector<int> first(NOD + 1, 0);
-    for (int t = 0; t < TET; t++)
+    // Each grid row ix is handled by a single thread, so that no atomic operation is needed. For
+    // each node, the candidates are sorted by increasing tetrahedron index.
+    const int TET = nbTets;
+    std::vector<std::array<int, 4>> ranges(TET);  // ix0, ix1, iy0, iy1
+
+    // first step: list of the tetrahedrons overlapping each row, built with per thread counters
+    std::vector<int> rowFirst(N + 1);
+    std::vector<int> rowTets;
+    std::vector<int> rowCount;
+    #pragma omp parallel
         {
-        int ix0, ix1, iy0, iy1;
-        index_range(tetData[t].xmin, tetData[t].xmax, x0, ix0, ix1);
-        index_range(tetData[t].ymin, tetData[t].ymax, y0, iy0, iy1);
-        for (int ix = ix0; ix <= ix1; ix++)
-            for (int iy = iy0; iy <= iy1; iy++)
-                { first[ix*N + iy + 1]++; }
+        #pragma omp single
+        { rowCount.assign(static_cast<size_t>(omp_get_num_threads())*N, 0); }
+        int *count = rowCount.data() + static_cast<size_t>(omp_get_thread_num())*N;
+
+        #pragma omp for schedule(static)
+        for (int t = 0; t < TET; t++)
+            {
+            auto &[ix0, ix1, iy0, iy1] = ranges[t];
+            index_range(tetData[t].xmin, tetData[t].xmax, x0, ix0, ix1);
+            index_range(tetData[t].ymin, tetData[t].ymax, y0, iy0, iy1);
+            for (int ix = ix0; ix <= ix1; ix++)
+                { count[ix]++; }
+            }
+
+        #pragma omp single
+            { // counters are turned into the first position of each thread in each row
+            const int nbThreads = rowCount.size()/N;
+            int pos = 0;
+            for (int ix = 0; ix < N; ix++)
+                {
+                rowFirst[ix] = pos;
+                for (int th = 0; th < nbThreads; th++)
+                    {
+                    const int c = rowCount[static_cast<size_t>(th)*N + ix];
+                    rowCount[static_cast<size_t>(th)*N + ix] = pos;
+                    pos += c;
+                    }
+                }
+            rowFirst[N] = pos;
+            rowTets.resize(pos);
+            }
+
+        // same static distribution as the loop above: each thread fills the positions it counted
+        #pragma omp for schedule(static)
+        for (int t = 0; t < TET; t++)
+            {
+            for (int ix = ranges[t][0]; ix <= ranges[t][1]; ix++)
+                { rowTets[count[ix]++] = t; }
+            }
+        } // end omp parallel
+
+    // second step: number of candidates of each node, then first position of each node
+    std::vector<int> first(NOD + 1);
+    std::vector<int> rowSum(N + 1, 0);
+    #pragma omp parallel for schedule(dynamic, 1)
+    for (int ix = 0; ix < N; ix++)
+        {
+        int *count = first.data() + static_cast<size_t>(ix)*N;
+        std::fill(count, count + N, 0);
+        for (int k = rowFirst[ix]; k < rowFirst[ix + 1]; k++)
+            {
+            const auto &r = ranges[rowTets[k]];
+            for (int iy = r[2]; iy <= r[3]; iy++)
+                { count[iy]++; }
+            }
+        rowSum[ix + 1] = std::accumulate(count, count + N, 0);
         }
-    for (int n = 0; n < NOD; n++)
-        { first[n + 1] += first[n]; }
-    std::vector<int> candidates(first[NOD]);
-    std::vector<int> next(first.begin(), first.end() - 1);
-    for (int t = 0; t < TET; t++)
+    for (int ix = 0; ix < N; ix++)
+        { rowSum[ix + 1] += rowSum[ix]; }
+    #pragma omp parallel for
+    for (int ix = 0; ix < N; ix++)
         {
-        int ix0, ix1, iy0, iy1;
-        index_range(tetData[t].xmin, tetData[t].xmax, x0, ix0, ix1);
-        index_range(tetData[t].ymin, tetData[t].ymax, y0, iy0, iy1);
-        for (int ix = ix0; ix <= ix1; ix++)
-            for (int iy = iy0; iy <= iy1; iy++)
-                { candidates[next[ix*N + iy]++] = t; }
+        int pos = rowSum[ix];
+        for (int iy = 0; iy < N; iy++)
+            {
+            const int c = first[ix*N + iy];
+            first[ix*N + iy] = pos;
+            pos += c;
+            }
+        }
+    first[NOD] = rowSum[N];
+
+    // third step: candidates, not value initialized, filled row by row
+    std::unique_ptr<int[]> candidates(new int[first[NOD]]);
+    #pragma omp parallel
+        {
+        std::vector<int> next(N);
+        #pragma omp for schedule(dynamic, 1)
+        for (int ix = 0; ix < N; ix++)
+            {
+            std::copy(first.begin() + static_cast<size_t>(ix)*N, first.begin() + static_cast<size_t>(ix + 1)*N, next.begin());
+            for (int k = rowFirst[ix]; k < rowFirst[ix + 1]; k++)
+                {
+                const int t = rowTets[k];
+                const auto &r = ranges[t];
+                for (int iy = r[2]; iy <= r[3]; iy++)
+                    { candidates[next[iy]++] = t; }
+                }
+            }
         }
 
     const double tol_z = Z_TOL*refMsh.l[2];
@@ -139,7 +223,7 @@ void tetScan::run(Fem2d &fem2d, const Settings &mySets) const
             for (int k = first[n]; k < first[n + 1]; k++)
                 {
                 Chord c;
-                if (chord(candidates[k], x, y, c))
+                if (chord(candidates[k], x, y, tol_z, c))
                     {
                     touched = true;
                     if (c.z_out - c.z_in > tol_z) chords.push_back(c);

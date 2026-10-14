@@ -1,6 +1,7 @@
 #ifndef tetScan_h
 #define tetScan_h
 
+#include <memory>
 #include <vector>
 
 #include "fem.h"
@@ -50,7 +51,11 @@ namespace PathInt
                 double xmin, xmax, ymin, ymax;  /**< bounding box of the projection in the xy plane */
                 };
 
-            std::vector<TetData> tetData;
+            /** number of tetrahedrons */
+            int nbTets;
+
+            /** data of all the tetrahedrons, not value initialized to save time */
+            std::unique_ptr<TetData[]> tetData;
 
             /** relative tolerance, with respect to the mesh height, under which chords are
             considered of zero length, or as overlapping */
@@ -63,8 +68,8 @@ namespace PathInt
             static constexpr double BARY_TOL = 1e-10;
 
             /** compute the chord of the vertical line through (x, y) in tetrahedron t, return false if
-            the line misses the tetrahedron */
-            bool chord(int t, double x, double y, Chord &c) const;
+            the line misses the tetrahedron by more than tol_z (a touching line gives a zero length chord) */
+            bool chord(int t, double x, double y, double tol_z, Chord &c) const;
 
             /** magnetization interpolated at the point (x, y, z) of tetrahedron t */
             Eigen::Vector3d interpolate_u(int t, double x, double y, double z) const;
