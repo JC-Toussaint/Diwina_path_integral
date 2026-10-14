@@ -1,0 +1,11 @@
+# Mesh of a cylinder of diameter 200 and length 2000 with a mesh size of 5 (in nm)
+
+python3 fg_cyl_sample.py --diameter 200 --length 2000 --mesh_size 5 --version 4
+generates the mesh cyl_D200_L2000_h5_fg.msh in the ASCII format, version 4.1
+(the default format: --version 4 can be omitted).
+
+To generate a mesh in the ASCII format, version 2.2, type
+python3 fg_cyl_sample.py --diameter 200 --length 2000 --mesh_size 5 --version 2
+
+Without any argument, the script prints its help.
+Requires the gmsh Python module (pip install gmsh).
