@@ -218,7 +218,7 @@ time_integration:
   max(dt): 5e-12
 
 rotations:
-  angle1: 0
+  angle1: 90
   axe1: [1, 0, 0]
   angle2: 0
   axe2: [0, 0, 1]
