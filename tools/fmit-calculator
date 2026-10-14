@@ -198,12 +198,6 @@ def load_mesh(filename):
         import meshio
         mesh = meshio.read(filename)
         strMessage = f"✓ mesh file '{filename}' loaded, "
-        for cell_block, cell_data in zip(mesh.cells, mesh.cell_data["gmsh:physical"]):
-            cell_type = cell_block.type
-            for region_name, (region_id, dim) in mesh.field_data.items():
-                element_indices = np.where(cell_data == region_id)[0]
-
-        regions = get_region_elements(mesh)
         points = mesh.points[:, :3]
         triangles = []
         for cell_block in mesh.cells:
@@ -332,7 +326,7 @@ def check_input(yaml_config) -> (Dict[str,Any],bool):
         if 'pixel_size' in det:
             checkSum += 1
         else:
-            missingsStuffs.append("pixel_size")
+            missingStuffs.append("pixel_size")
     else:
         missingStuffs.append("sensor")
     check_bool = (checkSum == 10)
@@ -580,25 +574,40 @@ def save_png(fileName,img,metadata=None):
     png_metadata.add_text("intensity_max",str(val_max))
     Image.fromarray(img_temp).save(fileName, pnginfo = png_metadata)
 
+def contour_mask(img):
+    ''' return a boolean mask of the contour of the object(s) in the 2D array img: the pixels
+    (i,j), with 1 <= i < Ny-2 and 1 <= j < Nx-2, having among their eight neighbours at least one
+    zero and a non zero sum '''
+    Ny, Nx = img.shape
+    mask = np.zeros((Ny, Nx), dtype=bool)
+    if Ny < 4 or Nx < 4:
+        return mask
+    neighbours = [img[1+di:Ny-2+di, 1+dj:Nx-2+dj]
+                  for di, dj in [(-1,-1), (0,-1), (1,-1), (-1,0), (1,0), (-1,1), (0,1), (1,1)]]
+    has_zero = np.zeros(neighbours[0].shape, dtype=bool)
+    total = np.zeros_like(neighbours[0])
+    for n in neighbours:
+        has_zero |= (n == 0)
+        total = total + n
+    mask[1:Ny-2, 1:Nx-2] = has_zero & (total != 0)
+    return mask
+
 def computeContour(thicknessMap):
     ''' return a list of the coordinates of the contour of object(s) in thicknessMap '''
     Ny, Nx = thicknessMap.shape
-    x=[]
-    y=[]
-    for i in range(1,Ny-2):
-        for j in range(1,Nx-2):
-            l = [ thicknessMap[i-1,j-1],
-                  thicknessMap[i+0,j-1],
-                  thicknessMap[i+1,j-1],
-                  thicknessMap[i-1,j+0],
-                  thicknessMap[i+1,j+0],
-                  thicknessMap[i-1,j+1],
-                  thicknessMap[i+0,j+1],
-                  thicknessMap[i+1,j+1] ]
-            if (0 in l) and ( sum(l) != 0):
-                x.append(j)
-                y.append(Ny-i)
-    return [x,y]
+    i, j = np.nonzero(contour_mask(thicknessMap))
+    return [j.tolist(), (Ny - i).tolist()]
+
+def qimage_gray(img):
+    ''' return a 2D numpy array of qGray(img.pixel(x,y)), indexed by [y,x] '''
+    from PyQt5.QtGui import QImage
+    argb = img.convertToFormat(QImage.Format_ARGB32)
+    ptr = argb.constBits()
+    ptr.setsize(argb.sizeInBytes())
+    bgra = np.frombuffer(ptr, dtype=np.uint8).reshape(argb.height(), argb.bytesPerLine())
+    bgra = bgra[:, :4*argb.width()].reshape(argb.height(), argb.width(), 4).astype(np.int32)
+    # same formula as qGray: (11*r + 16*g + 5*b)/32
+    return (11*bgra[:, :, 2] + 16*bgra[:, :, 1] + 5*bgra[:, :, 0]) // 32
 
 def coherence(I, dx, dy, alpha):
     ''' I is the intensity, convolution in real space with gaussian function
@@ -838,18 +847,8 @@ try:
                 pen.setWidth(1)
                 painter.setPen(pen)
                 contourImg = QImage(QPixmap(thicknessMapFileName)).scaled(phase_pixmap_dx,phase_pixmap_dy).convertToFormat(QImage.Format_Grayscale16)
-                for i in range(1,contourImg.width()-2):
-                    for j in range(1,contourImg.height()-2):
-                        l = [ qGray(contourImg.pixel(i-1,j-1)),
-                              qGray(contourImg.pixel(i+0,j-1)),
-                              qGray(contourImg.pixel(i+1,j-1)),
-                              qGray(contourImg.pixel(i-1,j+0)),
-                              qGray(contourImg.pixel(i+1,j+0)),
-                              qGray(contourImg.pixel(i-1,j+1)),
-                              qGray(contourImg.pixel(i+0,j+1)),
-                              qGray(contourImg.pixel(i+1,j+1)) ]
-                        if (0 in l) and ( sum(l) != 0):
-                            painter.drawPoint(i,j)
+                for j, i in zip(*np.nonzero(contour_mask(qimage_gray(contourImg)))):
+                    painter.drawPoint(int(i), int(j))
                 painter.end()
             self.rawMagPhaseImage.setPixmap( QPixmap.fromImage( phaseImg ) )
 
@@ -1896,6 +1895,6 @@ def main():
                 print("Warning: no NVIDIA GPU detected.")
             launchGUI(args.ymlFileName)
 
-__version__ = '1.3.4'
+__version__ = '1.3.5'
 if __name__ == "__main__":
     main()
