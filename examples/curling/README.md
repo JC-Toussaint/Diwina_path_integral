@@ -1,6 +1,6 @@
 # Curling mode in a cylinder
 
-This example simulates a magnetic cylinder (diameter 200 nm, length 1000 nm) with easy-plane
+This example simulates a magnetic cylinder (diameter 100 nm, length 500 nm) with easy-plane
 anisotropy, starting from the curling mode, then computes its holographic phase and XMCD images
 with pathIntegral.
 
@@ -39,11 +39,11 @@ pip install numpy scipy matplotlib meshio gmsh pyyaml
 
 ```bash
 cd examples/curling
-./fg-mesh-cylinder --diameter 200 --length 1000 --mesh_size 5 --settings settings.yml
+./fg-mesh-cylinder --diameter 100 --length 500 --mesh_size 4 --settings settings.yml
 ```
 
-This writes `cyl_D200_L1000_h5_fg.msh` (about 190 000 nodes and 1 090 000 tetrahedra, in about
-one minute). The mesh file is not stored in git, so this step is required.
+This writes `cyl_D100_L500_h4_fg.msh` (about 48 000 nodes and 260 000 tetrahedra, in about
+10 s). The mesh file is not stored in git, so this step is required.
 
 - With `--settings settings.yml`, the name of the mesh file is written in `settings.yml`
   (`mesh: filename:`); only this line is modified, the comments are kept. The script also warns
@@ -75,7 +75,7 @@ Running the script without argument prints its help.
 
 ```yaml
 mesh:
-  filename: cyl_D200_L1000_h5_fg.msh   # written by fg-mesh-cylinder --settings
+  filename: cyl_D100_L500_h4_fg.msh    # written by fg-mesh-cylinder --settings
   length_unit: 1e-9                    # mesh lengths are in nm
   volume_regions:
     cyl_volume:                        # one entry per physical volume
@@ -102,8 +102,8 @@ initial_magnetization: config.sol      # written by fg-gensol-curling
 - `fg-gensol-curling` reads the material constants `Ae` and `K` from this file (see step 3).
 - Check also the `outputs` section: `final_time` (the time at which feeLLGood stops),
   `evol_time_step`, and `mag_config_every`, which sets how often a magnetization file is saved.
-  On this mesh, a time step took about 30 s on our test machine, so choose `final_time` accordingly:
-  the value 1e-3 s of the template is far too long.
+  On a 200 × 1000 nm mesh (1 090 000 tetrahedra), a time step took about 30 s on our test machine,
+  so choose `final_time` accordingly: the value 1e-3 s of the template is far too long.
 - `demagnetizing_field_solver.nb_threads` and `finite_element_solver.nb_threads` should match
   the number of cores of your computer (0 means all of them for the finite element solver).
 
@@ -180,7 +180,7 @@ sensor:
 ```
 
 The number of nodes of the sensor grid grows as 1/pixel_size²: with the cylinder perpendicular to
-the beam, `pixel_size: 0.5e-9` gives a 4001 × 4001 grid, and `2e-9` a 1001 × 1001 grid.
+the beam, `pixel_size: 0.5e-9` gives a 2001 × 2001 grid, and `2e-9` a 501 × 501 grid.
 
 - To image the relaxed state instead of the initial curling mode, set `initial_magnetization` to
   one of the `sim_iter<N>.sol` files written by feeLLGood.

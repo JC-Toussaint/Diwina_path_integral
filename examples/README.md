@@ -12,10 +12,10 @@ this example is sphere with uniform magnetization.
 this example is a tube with an analytic ansatz mimicking a rolled Néel domain wall onto the tube.
 
 ## curling
-this example is a cylinder (diameter 200 nm, length 1000 nm) with easy-plane anisotropy, in the curling mode (see `curling/README.md`). The angle between the magnetization and the cylinder axis is the solution of the 1D Euler-Lagrange equation, solved by `fg-gensol-curling`; `init_cfg.py` maps it onto the mesh nodes.
+this example is a cylinder (diameter 100 nm, length 500 nm) with easy-plane anisotropy, in the curling mode (see `curling/README.md`). The angle between the magnetization and the cylinder axis is the solution of the 1D Euler-Lagrange equation, solved by `fg-gensol-curling`; `init_cfg.py` maps it onto the mesh nodes.
 ```
 pip install gmsh pyyaml
-./fg-mesh-cylinder --diameter 200 --length 1000 --mesh_size 5 --settings settings.yml
+./fg-mesh-cylinder --diameter 100 --length 500 --mesh_size 4 --settings settings.yml
 ./fg-gensol-curling settings.yml
 pathIntegral settings.yml
 ```

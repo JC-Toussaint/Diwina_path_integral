@@ -78,7 +78,7 @@ mesh:
 
   # Name of the file containing the mesh. As there is no valid default,
   # the user must provide this in their configuration file.
-  filename: cyl_D200_L1000_h5_fg.msh
+  filename: cyl_D100_L500_h4_fg.msh
 
   # Unit of length used in the mesh file, in meters.
   length_unit: 1e-9
