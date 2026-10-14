@@ -215,7 +215,7 @@ def write_solution_file(m, filename="config.sol"):
     hostname = socket.gethostname()
     
     header_lines = [
-        "## generator: fg-gensol",
+        "## generator: fg-gensol-curling",
         f"## hostname: {hostname}",
         f"## real-world time: {now}",
         "## time: 0",
@@ -266,8 +266,8 @@ def get_params():
     import argparse
     description = 'generate a config.sol file'
     epilogue = '''
-fg-gensol is an executable that generates initial magnetization configurations (`.sol` files) for
-feeLLGood simulations. It reads the feeLLGood settings file: the mesh file name, its length unit,
+fg-gensol-curling is an executable that generates the initial magnetization configuration (`.sol`
+file) of the curling mode in a cylinder, for feeLLGood simulations. It reads the feeLLGood settings file: the mesh file name, its length unit,
 and the material constants Ae and K of the volume regions. The radius of the cylinder is deduced
 from the mesh. The input mesh file has to be readable by meshio python module.
 It automatically detects physical volume regions in the input mesh and allows to define custom
