@@ -370,7 +370,6 @@ def main():
         print("✅ All regions are defined, generating config.sol...")
         # If everything is OK, generate config.sol
         m = apply_region_functions(points, regions, region_functions)
-        print("✅ apply region functions ...")
         write_solution_file(m)
         
     except (AttributeError, Exception) as e:
