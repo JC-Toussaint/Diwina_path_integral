@@ -215,7 +215,7 @@ private:
 	/** return the maximum of all nodes coordinate along coord axis */
 	inline double maxNodes(const Nodes::index coord) const
 	{
-		return doOnNodes(__DBL_MIN__, coord, [](double a, double b) { return a > b; });
+		return doOnNodes(-__DBL_MAX__, coord, [](double a, double b) { return a > b; });
 	}
 };
 
