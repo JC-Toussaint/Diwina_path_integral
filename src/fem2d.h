@@ -109,18 +109,17 @@ public:
 	Fem2d(Eigen::Vector3d &_c, Eigen::Vector3d &_l, double _CE, double _V, double _relative_size, double _pixel_size):
 		relative_size(_relative_size), pixel_size(_pixel_size), CE(_CE), V(_V)
 	    {
-	    double xmin = _c[0] - 0.5*_l[0]*relative_size;
-	    double xmax = _c[0] + 0.5*_l[0]*relative_size;
-	    double ymin = _c[1] - 0.5*_l[1]*relative_size;
-	    double ymax = _c[1] + 0.5*_l[1]*relative_size;
+	    // square sensor centered on the projected geometry, its side is the largest dimension
+	    const double half = 0.5*std::max(_l[0], _l[1])*relative_size;
+	    double xmin = _c[0] - half;
+	    double xmax = _c[0] + half;
+	    double ymin = _c[1] - half;
+	    double ymax = _c[1] + half;
 
-	    double xymin = std::min(xmin, ymin);
-	    double xymax = std::max(xmax, ymax);
-
-		l = Eigen::Vector2d(xymax-xymin, xymax-xymin);
+		l = Eigen::Vector2d(xmax-xmin, ymax-ymin);
 		diam = l.maxCoeff();
-		c = Eigen::Vector2d(0.5 * (xymax + xymin), 0.5 * (xymax + xymin));
-		grid_generator(xymin, xymax, pixel_size);
+		c = Eigen::Vector2d(0.5 * (xmax + xmin), 0.5 * (ymax + ymin));
+		grid_generator(xmin, ymin, xmax-xmin, pixel_size);
 		chapeaux();
 	    }
 
@@ -210,15 +209,15 @@ private:
 	std::vector<Triangle::Tri> tri;
 
 	/**
-	 * Generate a structured square mesh in 3D space.
+	 * Generate a structured square mesh in 3D space, of side length, with its lower left corner at (xmin, ymin).
 	 * The mesh consists of nodes placed on a regular grid in the XY-plane (Z=0),
 	 * and triangles connecting the nodes to form a plane.
 	 * Nodes and triangle indices are stored in the corresponding containers.
 	 */
-	void grid_generator(double xymin, double xymax, double pixel_size)
+	void grid_generator(double xmin, double ymin, double length, double pixel_size)
 	    {
-		int Nx = static_cast<int>((xymax - xymin) / pixel_size + 0.5) + 1;
-		int Ny = static_cast<int>((xymax - xymin) / pixel_size + 0.5) + 1;		
+		int Nx = static_cast<int>(length / pixel_size + 0.5) + 1;
+		int Ny = static_cast<int>(length / pixel_size + 0.5) + 1;		
 		auto index = [&Nx](int i, int j) -> int { return j * Nx + i; };  // zero based numbering
 		node.reserve(Nx*Ny);
 		tri.reserve(2*(Nx-1)*(Ny-1));
@@ -227,8 +226,8 @@ private:
 		for (int ix = 0; ix < Nx; ++ix) {
 			for (int iy = 0; iy < Ny; ++iy) {
 				Node2d node_{};
-				node_.p[0] = xymin + pixel_size * ix;
-				node_.p[1] = xymin + pixel_size * iy;
+				node_.p[0] = xmin + pixel_size * ix;
+				node_.p[1] = ymin + pixel_size * iy;
 				node.push_back(node_);
 			}
 		}
