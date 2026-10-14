@@ -6,24 +6,24 @@ with pathIntegral.
 
 The workflow has four steps:
 
-1. generate the mesh with `fg_cyl_sample.py`,
+1. generate the mesh with `fg-mesh-cylinder`,
 2. complete `settings.yml`,
-3. compute the initial magnetization `config.sol` with `fg-gensol_ai`,
+3. compute the initial magnetization `config.sol` with `fg-gensol-curling`,
 4. relax the magnetization with feeLLGood, then image it with pathIntegral.
 
 Each parameter is set in a single place, so that the files cannot become inconsistent:
 
-- the geometry (diameter, length, mesh size) on the command line of `fg_cyl_sample.py`: it is
-  then stored in the mesh, and `fg-gensol_ai` deduces the radius of the cylinder from the mesh;
+- the geometry (diameter, length, mesh size) on the command line of `fg-mesh-cylinder`: it is
+  then stored in the mesh, and `fg-gensol-curling` deduces the radius of the cylinder from the mesh;
 - the material constants, the name of the mesh file and the region names in `settings.yml`,
-  which is read by feeLLGood, `fg-gensol_ai`, pathIntegral and fmit-calculator.
+  which is read by feeLLGood, `fg-gensol-curling`, pathIntegral and fmit-calculator.
 
 | File | Role |
 |------|------|
-| `fg_cyl_sample.py` | generates the cylinder mesh (gmsh Python API), and writes its name in `settings.yml` |
-| `settings.yml` | input file of feeLLGood, `fg-gensol_ai`, pathIntegral and fmit-calculator |
-| `fg-gensol_ai` | solves the curling profile and writes `config.sol` |
-| `init_cfg.py` | magnetization field of each volume region, called by `fg-gensol_ai` |
+| `fg-mesh-cylinder` | generates the cylinder mesh (gmsh Python API), and writes its name in `settings.yml` |
+| `settings.yml` | input file of feeLLGood, `fg-gensol-curling`, pathIntegral and fmit-calculator |
+| `fg-gensol-curling` | solves the curling profile and writes `config.sol` |
+| `init_cfg.py` | magnetization field of each volume region, called by `fg-gensol-curling` |
 | `config.sol` | initial magnetization (feeLLGood `.sol` format), one line per mesh node |
 
 ## Prerequisites
@@ -39,7 +39,7 @@ pip install numpy scipy matplotlib meshio gmsh pyyaml
 
 ```bash
 cd examples/curling
-python3 fg_cyl_sample.py --diameter 200 --length 1000 --mesh_size 5 --settings settings.yml
+./fg-mesh-cylinder --diameter 200 --length 1000 --mesh_size 5 --settings settings.yml
 ```
 
 This writes `cyl_D200_L1000_h5_fg.msh` (about 190 000 nodes and 1 090 000 tetrahedra, in about
@@ -51,7 +51,7 @@ one minute). The mesh file is not stored in git, so this step is required.
   `settings.yml` is not modified.
 
 - The mesh is written in the gmsh ASCII format 4.1 by default, or 2.2 with `--version 2`.
-  feeLLGood, pathIntegral and `fg-gensol_ai` read both formats and give the same results.
+  feeLLGood, pathIntegral and `fg-gensol-curling` read both formats and give the same results.
 - Lengths are in nanometers; this is why `length_unit: 1e-9` in the settings files.
 - The disk lies in the plane z = -L/2 and is extruded along z: the cylinder axis is z and
   z ranges from -L/2 to +L/2.
@@ -75,7 +75,7 @@ Running the script without argument prints its help.
 
 ```yaml
 mesh:
-  filename: cyl_D200_L1000_h5_fg.msh   # written by fg_cyl_sample.py --settings
+  filename: cyl_D200_L1000_h5_fg.msh   # written by fg-mesh-cylinder --settings
   length_unit: 1e-9                    # mesh lengths are in nm
   volume_regions:
     cyl_volume:                        # one entry per physical volume
@@ -92,14 +92,14 @@ mesh:
     outlet:
       suppress_charges: false
 
-initial_magnetization: config.sol      # written by fg-gensol_ai
+initial_magnetization: config.sol      # written by fg-gensol-curling
 ```
 
-- The region names must be exactly those of the physical groups of the mesh. `fg-gensol_ai` stops
+- The region names must be exactly those of the physical groups of the mesh. `fg-gensol-curling` stops
   if the volume regions of the mesh and of `settings.yml` differ.
 - `suppress_charges: true` removes the magnetic charges of a surface, to mimic an infinite
   medium. Set it on `inlet` and `outlet` to simulate an infinite cylinder.
-- `fg-gensol_ai` reads the material constants `Ae` and `K` from this file (see step 3).
+- `fg-gensol-curling` reads the material constants `Ae` and `K` from this file (see step 3).
 - Check also the `outputs` section: `final_time` (the time at which feeLLGood stops),
   `evol_time_step`, and `mag_config_every`, which sets how often a magnetization file is saved.
   On this mesh, a time step took about 30 s on our test machine, so choose `final_time` accordingly:
@@ -116,7 +116,7 @@ feellgood --verify settings.yml
 ## 3. Compute the initial magnetization
 
 ```bash
-./fg-gensol_ai settings.yml
+./fg-gensol-curling settings.yml
 ```
 
 The script:
@@ -139,7 +139,7 @@ The script:
    R in mesh units (nm);
 5. writes `config.sol`.
 
-No physical parameter is set in `fg-gensol_ai` or `init_cfg.py`: to change the diameter, generate
+No physical parameter is set in `fg-gensol-curling` or `init_cfg.py`: to change the diameter, generate
 a new mesh; to change the material, edit `settings.yml`. The curling profile is computed for a
 single material, so all the volume regions must have the same `Ae` and `K`. The anisotropy axis
 `uk` should be the cylinder axis z, otherwise a warning is printed.
