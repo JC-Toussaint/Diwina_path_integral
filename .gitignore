@@ -14,6 +14,11 @@ install_manifest.txt
 /examples/**/*.out
 # written by fmit-calculator from settings.yml
 /examples/curling/settings_ray.yml
+# outputs of the runs of the examples
+/examples/**/lastLog.log
+/examples/**/lastErr.log
+/examples/**/Fresnel_profile*.tsv
+__pycache__/
 
 # Smoke test
 smoke-test.msh
