@@ -576,20 +576,20 @@ def save_png(fileName,img,metadata=None):
 
 def contour_mask(img):
     ''' return a boolean mask of the contour of the object(s) in the 2D array img: the pixels
-    (i,j), with 1 <= i < Ny-2 and 1 <= j < Nx-2, having among their eight neighbours at least one
+    (i,j), with 1 <= i < Ny-1 and 1 <= j < Nx-1, having among their eight neighbours at least one
     zero and a non zero sum '''
     Ny, Nx = img.shape
     mask = np.zeros((Ny, Nx), dtype=bool)
-    if Ny < 4 or Nx < 4:
+    if Ny < 3 or Nx < 3:
         return mask
-    neighbours = [img[1+di:Ny-2+di, 1+dj:Nx-2+dj]
+    neighbours = [img[1+di:Ny-1+di, 1+dj:Nx-1+dj]
                   for di, dj in [(-1,-1), (0,-1), (1,-1), (-1,0), (1,0), (-1,1), (0,1), (1,1)]]
     has_zero = np.zeros(neighbours[0].shape, dtype=bool)
     total = np.zeros_like(neighbours[0])
     for n in neighbours:
         has_zero |= (n == 0)
         total = total + n
-    mask[1:Ny-2, 1:Nx-2] = has_zero & (total != 0)
+    mask[1:Ny-1, 1:Nx-1] = has_zero & (total != 0)
     return mask
 
 def computeContour(thicknessMap):
