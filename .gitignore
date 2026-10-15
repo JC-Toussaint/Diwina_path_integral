@@ -23,6 +23,7 @@ __pycache__/
 # Smoke test
 smoke-test.msh
 smoke-test_HOLO_PHASE.png
+smoke-test_HOLO_PHASE_RGB.png
 smoke-test_MZ.png
 smoke-test_M_integrals.out
 smoke-test_PATH_LENGTH.png
