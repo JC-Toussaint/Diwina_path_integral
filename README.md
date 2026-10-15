@@ -64,42 +64,19 @@ sudo apt install libfftw3-dev libopenblas-dev libpng-dev libcgal-dev
 
 ## ScalFMM Installation
 
-Clone ScalFMM repository with all its submodules - ScalFMM is a Fast Multipole Method library developed by INRIA (French National Institute for Research in Digital Science and Technology) for N-body simulations, widely used in computational physics and engineering. The --recursive flag ensures all dependent submodules are also downloaded
+Clone ScalFMM repository with all its submodules - ScalFMM is a Fast Multipole Method library developed by INRIA (French National Institute for Research in Digital Science and Technology) for N-body simulations, widely used in computational physics and engineering. The --recursive flag ensures all dependent submodules are also downloaded. The --branch flag selects the specific version to check out.
 ```bash
-git clone --recursive https://gitlab.inria.fr/solverstack/ScalFMM.git
-cd ScalFMM
-```
-
-Create a build directory and navigate to it - All compilation will happen in this isolated directory
-```bash
-mkdir build
-cd build
-```
-
-Configure compilation in Release mode (optimized) - CMake generates the necessary build files with optimization flags enabled for maximum performance in production use
-```bash
-cmake .. -DCMAKE_BUILD_TYPE=Release
-```
-
-Compile the ScalFMM project - This builds all the libraries and executables using GNU Make (part of the GNU Project by the Free Software Foundation)
-```bash
-make -j $(nproc)
-```
-
-Install ScalFMM headers
-```bash
-sudo make install
-cd ../..
+git clone --recursive --branch V3.1.1 https://gitlab.inria.fr/solverstack/ScalFMM.git
 ```
 
 ## Diwina Path Integral Project Installation
 
-Clone the main branch of the Diwina Path Integral project specifically adapted to work with the ScalFMM library from INRIA
+Clone the main branch of the Diwina Path Integral project specifically adapted to work with the ScalFMM library from INRIA. This command has to be run from the same directory as the previous `git clone` command.
 ```bash
 git clone https://github.com/JC-Toussaint/Diwina_path_integral.git
 ```
 
-Navigate to the Diwina_path directory - Enter the project directory to begin configuration and compilation
+Navigate to the Diwina\_path\_integral directory - Enter the project directory to begin configuration and compilation
 ```bash
 cd Diwina_path_integral
 ```
