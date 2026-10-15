@@ -1,8 +1,12 @@
-# Integral of the magnetization along the beam
+# Integral of the magnetization along the beam: tetrahedron scan
 
 This note describes how pathIntegral computes, for each node of the sensor grid, the integrals
-of the magnetization along the beam. The algorithm is implemented in `src/tetScan.h` and
-`src/tetScan.cpp` (class `PathInt::tetScan`), and called from `src/main.cpp`.
+of the magnetization along the beam. The algorithm, a scan of the tetrahedrons, is the default
+one. It is implemented in `src/tetScan.h` and `src/tetScan.cpp` (class `PathInt::tetScan`), and
+called from `src/main.cpp`.
+
+The former algorithm, a ray tracing in a CGAL AABB tree, is still available with the option
+`--raytracing`; it is described in [magnetization_integral_raytracing.md](magnetization_integral_raytracing.md).
 
 ## 1. Problem
 
@@ -182,18 +186,11 @@ the whole step takes about 0.2 s on 8 threads, against about 0.7 s for the forme
 - On a hollow sphere (radii 100 and 200 nm, 10 nm mesh), the path length agrees with the analytic
   chord to within 0.6 nm, in the cavity as well as in the shell, the remaining error coming from
   the faceting of the spheres.
-- The results agree with the former ray tracing algorithm to about 1e-9 (relative).
+- The results agree with the former ray tracing algorithm to about 1e-9 (relative); only the
+  `flag_inside` of a few nodes where the line is tangent to the sample, with a zero path length,
+  may differ.
 
-## 12. Former algorithm: ray tracing
-
-The former algorithm is still available with `pathIntegral --raytracing settings.yml`
-(`src/pathIntegral.h`, `src/pathIntegral.cpp`). For each grid node, it throws a ray through a CGAL
-AABB tree of all the faces of the tetrahedrons, sorts the intersection points along the ray,
-groups those closer than 1e-9 times the ray length (ray through an edge or a vertex), and finds
-the tetrahedron of each segment as the one, among the tetrahedrons sharing the faces at its ends,
-that contains its middle. It gives the same results, but is 2.4 to 4 times slower.
-
-## 13. What comes next
+## 12. What comes next
 
 The integrals of the magnetization are the input of the holographic phase. In `main.cpp`, the
 in-plane integrated magnetization is rotated by 90° around z (M′ = ez × M, i.e. Mx′ = −My,
