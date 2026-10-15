@@ -20,7 +20,7 @@ Each parameter is set in a single place, so that the files cannot become inconsi
 
 | File | Role |
 |------|------|
-| `fg-mesh-cylinder` | generates the cylinder mesh (gmsh Python API), and writes its name in `settings.yml` |
+| `fg-mesh-cylinder` | link to `python_gmsh/fg-mesh-cylinder`, which generates the cylinder mesh (gmsh Python API) and writes its name in `settings.yml` |
 | `settings.yml` | input file of feeLLGood, `fg-gensol-curling`, pathIntegral and fmit-calculator |
 | `fg-gensol-curling` | solves the curling profile and writes `config.sol` |
 | `init_cfg.py` | magnetization field of each volume region, called by `fg-gensol-curling` |
@@ -41,6 +41,9 @@ pip install numpy scipy matplotlib meshio gmsh pyyaml
 cd examples/curling
 ./fg-mesh-cylinder --diameter 100 --length 500 --mesh_size 4 --settings settings.yml
 ```
+
+`fg-mesh-cylinder` is a symbolic link to `python_gmsh/fg-mesh-cylinder`, the only copy of the script.
+On Windows, use it from WSL: without WSL, git may check out the link as a plain text file.
 
 This writes `cyl_D100_L500_h4_fg.msh` (about 48 000 nodes and 260 000 tetrahedra, in about
 10 s). The mesh file is not stored in git, so this step is required.

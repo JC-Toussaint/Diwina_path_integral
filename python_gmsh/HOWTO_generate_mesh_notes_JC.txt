@@ -1,6 +1,7 @@
 # Mesh of a cylinder of diameter 200 and length 2000 with a mesh size of 5 (in nm)
 
-The script is examples/curling/fg-mesh-cylinder. From examples/curling:
+The script fg-mesh-cylinder is in this directory; examples/curling/fg-mesh-cylinder is a
+symbolic link to it. From python_gmsh, or from examples/curling:
 
 ./fg-mesh-cylinder --diameter 200 --length 2000 --mesh_size 5 --version 4
 generates the mesh cyl_D200_L2000_h5_fg.msh in the ASCII format, version 4.1
